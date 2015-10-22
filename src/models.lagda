@@ -391,11 +391,9 @@ to go beyond these and also model renaming or printing with names.
 The record packs the properties of these relations necessary to
 define the evaluation function.
 
-%<*semantics>
 \begin{code}
 record Semantics {ℓ^E ℓ^M : Level} (𝓔 : Con → ty → Set ℓ^E) (𝓜 : Con → ty → Set ℓ^M) : Set (ℓ^E ⊔ ℓ^M) where
 \end{code}
-%</semantics>
 \AgdaHide{
 \begin{code}
   infixl 5 _⟦$⟧_
@@ -410,12 +408,10 @@ manufacture environment values given a variable in scope (\ARF{embed})
 in order to be able to craft a diagonal environment to evaluate an open
 term.
 
-%<*semantics1>
 \begin{code}
     wk      :  {Γ Δ : Con} {σ : ty} (inc : Γ ⊆ Δ) (r : 𝓔 Γ σ) → 𝓔 Δ σ
     embed   :  {Γ : Con} (σ : ty) (pr : σ ∈ Γ) → 𝓔 Γ σ
 \end{code}
-%</semantics1>
 
 The structure of the model is quite constrained: each constructor
 in the language needs a semantic counterpart. We start with the
@@ -426,11 +422,9 @@ can turn a value from the environment into a model one. The traversal
 will therefore be able to, when hitting a variable, lookup the
 corresponding value in the environment and return it.
 
-%<*semantics2>
 \begin{code}
     ⟦var⟧   :  {Γ : Con} {σ : ty} (v : 𝓔 Γ σ) → 𝓜 Γ σ
 \end{code}
-%</semantics2>
 
 The semantic λ-abstraction is notable for two reasons: first, following
 Mitchell and Moggi~\cite{mitchell1991kripke}, its structure is typical
@@ -442,11 +436,9 @@ thus prompting us to extend the evaluation environment with an additional
 value. This slight variation in the type of semantic λ-abstraction
 guarantees that such an argument will be provided to us.
 
-%<*semantics3>
 \begin{code}
     ⟦λ⟧     :  {Γ : Con} {σ τ : ty} (t : {Δ : Con} (pr : Γ ⊆ Δ) (u : 𝓔 Δ σ) → 𝓜 Δ τ) → 𝓜 Γ (σ `→ τ)
 \end{code}
-%</semantics3>
 
 The remaining fields' types are a direct translation of the types
 of the constructor they correspond to where the type constructor
@@ -478,6 +470,7 @@ module Eval {ℓ^E ℓ^M : Level} {𝓔 : (Γ : Con) (σ : ty) → Set ℓ^E} {�
 \begin{code}
   infix 10 _⊨⟦_⟧_ _⊨eval_
 \end{code}}
+%<*evaluation>
 \begin{code}
   lemma : {Δ Γ : Con} {σ : ty} (t : Γ ⊢ σ) (ρ : Δ [ 𝓔 ] Γ) → 𝓜 Δ σ
   lemma (`var v)       ρ = ⟦var⟧ $ ρ _ v
@@ -488,6 +481,7 @@ module Eval {ℓ^E ℓ^M : Level} {𝓔 : (Γ : Con) (σ : ty) → Set ℓ^E} {�
   lemma `ff            ρ = ⟦ff⟧
   lemma (`ifte b l r)  ρ = ⟦ifte⟧ (lemma b ρ) (lemma l ρ) (lemma r ρ)
 \end{code}
+%</evaluation>
 
 We introduce \AF{\_⊨⟦\_⟧\_} as an alternative name for the fundamental
 lemma and \AF{\_⊨eval\_} for the special case where we use \ARF{embed}
@@ -1533,7 +1527,9 @@ infer \AR{𝓔^A}, \AR{𝓔^B} and \AR{𝓔^R}.
 
 module Synchronised {ℓ^EA ℓ^MA ℓ^EB ℓ^MB : Level} {𝓔^A : (Γ : Con) (σ : ty) → Set ℓ^EA} {𝓜^A : (Γ : Con) (σ : ty) → Set ℓ^MA} {𝓢^A : Semantics 𝓔^A 𝓜^A} {𝓔^B : (Γ : Con) (σ : ty) → Set ℓ^EB} {𝓜^B : (Γ : Con) (σ : ty) → Set ℓ^MB} {𝓢^B : Semantics 𝓔^B 𝓜^B} {ℓ^RE ℓ^RM : Level} {𝓔^R : {Γ : Con} {σ : ty} (u^A : 𝓔^A Γ σ) (u^B : 𝓔^B Γ σ) → Set ℓ^RE} {𝓜^R : {Γ : Con} {σ : ty} (mA : 𝓜^A Γ σ) (mB : 𝓜^B Γ σ) → Set ℓ^RM} (𝓡 : Synchronisable 𝓢^A 𝓢^B 𝓔^R 𝓜^R) where
   open Synchronisable 𝓡
-
+\end{code}\vspace{-2.5em}
+%<*relational>
+\begin{code}
   lemma :  {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Δ [ 𝓔^B ] Γ} (ρ^R : `∀[ 𝓔^A , 𝓔^B ] 𝓔^R ρ^A ρ^B) →
            𝓜^R (𝓢^A ⊨⟦ t ⟧ ρ^A) (𝓢^B ⊨⟦ t ⟧ ρ^B)
   lemma (`var v)       ρ^R = R⟦var⟧ v ρ^R
@@ -1544,6 +1540,7 @@ module Synchronised {ℓ^EA ℓ^MA ℓ^EB ℓ^MB : Level} {𝓔^A : (Γ : Con) (
   lemma `ff            ρ^R = R⟦ff⟧
   lemma (`ifte b l r)  ρ^R = R⟦ifte⟧ (lemma b ρ^R) (lemma l ρ^R) (lemma r ρ^R)
 \end{code}
+%</relational>
 
 \paragraph{Examples of Synchronisable Semantics}
 
@@ -1686,10 +1683,12 @@ And that's enough to prove that evaluating a term in two
 environments related in a pointwise manner by \AF{EQREL}
 yields two semantic objects themselves related by \AF{EQREL}.
 
+%<*synchroexample>
 \begin{code}
 SynchronisableNormalise :  Synchronisable Normalise^βιξη Normalise^βιξη
                            (EQREL _ _) (EQREL _ _)
 \end{code}
+%</synchroexample>
 \AgdaHide{
 \begin{code}
 SynchronisableNormalise =
@@ -1708,11 +1707,13 @@ We omit the details of the easy proof but still recall the type
 of the corollary of the fundamental lemma one obtains in this
 case:
 
+%<*synchroexample2>
 \begin{code}
-refl^βιξη :  {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) {ρ^A ρ^B : Δ [ _⊨^βιξη_ ] Γ} (ρ^R : (σ : ty) (pr : σ ∈ Γ) → EQREL Δ σ (ρ^A σ pr) (ρ^B σ pr)) →
+refl^βιξη :  {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) {ρ^A ρ^B : Δ [ _⊨^βιξη_ ] Γ} (ρ^R : `∀[ _⊨^βιξη_ , _ ] (EQREL _ _) ρ^A ρ^B) →
              EQREL Δ σ (Normalise^βιξη ⊨⟦ t ⟧ ρ^A) (Normalise^βιξη ⊨⟦ t ⟧ ρ^B)
 refl^βιξη t ρ^R = lemma t ρ^R where open Synchronised SynchronisableNormalise
 \end{code}
+%</synchroexample2>
 
 
 We can now move on to the more complex example of a proof

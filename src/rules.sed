@@ -1,4 +1,7 @@
 # Super- and subscripts.
+## fix to make it work with Agda 2.4.2.4
+s/\\textasciicircum\([^{]\)/\\textasciicircum\{\}\1/g
+## Usual rules
 s/‿\([^\}]*\)\\textasciicircum{}\([^\}]*\)/\^\{\\AgdaFontStyle\{\\scriptscriptstyle \2\}\}\_\{\\AgdaFontStyle\{\\scriptscriptstyle \1\}\}/g
 s/\\textasciicircum{}\([^.\}]*\)‿\([^\}]*\)/\^\{\\AgdaFontStyle\{\\scriptscriptstyle \1\}\}\_\{\\AgdaFontStyle\{\\scriptscriptstyle \2\}\}/g
 s/\\textasciicircum{}\([^.\}]*\)/\{\^\\AgdaFontStyle\{\\scriptscriptstyle\{\}\1\}\}/g

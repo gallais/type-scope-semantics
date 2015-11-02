@@ -37,8 +37,7 @@ framework yields immediate benefits: we can deploy some logical
 relations generically over these instances and obtain for instance
 the fusion lemmas for renaming, substitution and normalisation by
 evaluation as simple corollaries of the appropriate fundamental
-lemma. All of this work has been formalised in Agda and is available
-at \url{https://github.com/gallais/type-scope-semantics}
+lemma. All of this work has been formalised in Agda.
 \end{abstract}
 
 \section*{Introduction}
@@ -131,7 +130,6 @@ Bruijn levels to recover de Bruijn indices.
 
 \AgdaHide{
 \begin{code}
-{-# OPTIONS --no-eta #-}
 module models where
 
 open import Level using (Level ; _⊔_)
@@ -465,7 +463,7 @@ beforehand.
 \begin{code}
 module Eval {ℓ^E ℓ^M : Level} {𝓔 : (Γ : Con) (σ : ty) → Set ℓ^E} {𝓜 : (Γ : Con) (σ : ty) → Set ℓ^M} (𝓢 : Semantics 𝓔 𝓜) where
   open Semantics 𝓢
-\end{code}\vspace{-2.5em}%ugly but it works!
+\end{code}\vspace{ -2.5em}%ugly but it works!
 \AgdaHide{
 \begin{code}
   infix 10 _⊨⟦_⟧_ _⊨eval_
@@ -539,7 +537,7 @@ record Syntactic {ℓ : Level} (𝓔 : (Γ : Con) (σ : ty) → Set ℓ) : Set �
   field  embed  : {Γ : Con} (σ : ty) → σ ∈ Γ → 𝓔 Γ σ
          wk     : {Γ Δ : Con} {σ : ty} → Γ ⊆ Δ → 𝓔 Γ σ → 𝓔 Δ σ
          ⟦var⟧  : {Γ : Con} {σ : ty} → 𝓔 Γ σ → Γ ⊢ σ
-\end{code}\vspace{-1.5em}%ugly but it works!
+\end{code}\vspace{ -1.5em}%ugly but it works!
 %</syntactic>
 \begin{code}
 syntactic : {ℓ : Level} {𝓔 : (Γ : Con) (σ : ty) → Set ℓ} (syn : Syntactic 𝓔) → Semantics 𝓔 _⊢_
@@ -580,7 +578,7 @@ have been flipped.
 
 \begin{code}
 wk^⊢ : {Δ Γ : Con} {σ : ty} (inc : Γ ⊆ Δ) (t : Γ ⊢ σ) → Δ ⊢ σ
-wk^⊢ = flip $ Renaming ⊨⟦_⟧_
+wk^⊢ inc t = Renaming ⊨⟦ t ⟧ inc
 \end{code}
 
 \paragraph{Simultaneous Substitution}
@@ -605,7 +603,7 @@ substitution.
 
 \begin{code}
 subst : {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) (ρ : Δ [ _⊢_ ] Γ) → Δ ⊢ σ
-subst = Substitution ⊨⟦_⟧_
+subst t ρ = Substitution ⊨⟦ t ⟧ ρ
 \end{code}
 
 \section{Printing with Names}
@@ -763,10 +761,10 @@ nameContext Δ ε        =  return $ λ _ ()
 nameContext Δ (Γ ∙ σ)  =  nameContext Δ Γ >>= λ g →
                         get >>= λ names → put (tail names) >>
                         return ([ Name ] g `∙ mkName (head names))
-\end{code}}\vspace{-2em}%ugly but it works!
+\end{code}}\vspace{ -2em}%ugly but it works!
 \begin{code}
 print : {Γ : Con} {σ : ty} (t : Γ ⊢ σ) → String
-print {Γ} t = proj₁ $ (nameContext Γ Γ >>= runPrinter ∘ Printing ⊨⟦ t ⟧_) names
+print {Γ} t = proj₁ $ (nameContext Γ Γ >>= runPrinter ∘ λ ρ → Printing ⊨⟦ t ⟧ ρ) names
 \end{code}
 
 We can observe \AF{print}'s behaviour by writing a test.
@@ -1195,7 +1193,7 @@ from constructor-headed terms.
 \begin{code}
 reflect^βιξ : {Γ : Con} (σ : ty) (t : Γ ⊢[ R^βιξ ]^ne σ) → Γ ⊨^βιξ σ
 reflect^βιξ σ = inj₁
-\end{code}\vspace{-1.5em}
+\end{code}\vspace{ -1.5em}
 \AgdaHide{
 \begin{code}
 mutual
@@ -1527,7 +1525,7 @@ infer \AR{𝓔^A}, \AR{𝓔^B} and \AR{𝓔^R}.
 
 module Synchronised {ℓ^EA ℓ^MA ℓ^EB ℓ^MB : Level} {𝓔^A : (Γ : Con) (σ : ty) → Set ℓ^EA} {𝓜^A : (Γ : Con) (σ : ty) → Set ℓ^MA} {𝓢^A : Semantics 𝓔^A 𝓜^A} {𝓔^B : (Γ : Con) (σ : ty) → Set ℓ^EB} {𝓜^B : (Γ : Con) (σ : ty) → Set ℓ^MB} {𝓢^B : Semantics 𝓔^B 𝓜^B} {ℓ^RE ℓ^RM : Level} {𝓔^R : {Γ : Con} {σ : ty} (u^A : 𝓔^A Γ σ) (u^B : 𝓔^B Γ σ) → Set ℓ^RE} {𝓜^R : {Γ : Con} {σ : ty} (mA : 𝓜^A Γ σ) (mB : 𝓜^B Γ σ) → Set ℓ^RM} (𝓡 : Synchronisable 𝓢^A 𝓢^B 𝓔^R 𝓜^R) where
   open Synchronisable 𝓡
-\end{code}\vspace{-2.5em}
+\end{code}\vspace{ -2.5em}
 %<*relational>
 \begin{code}
   lemma :  {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Δ [ 𝓔^B ] Γ} (ρ^R : `∀[ 𝓔^A , 𝓔^B ] 𝓔^R ρ^A ρ^B) →
@@ -1620,7 +1618,7 @@ symEQREL : {Γ : Con} (σ : ty) {S T : Γ ⊨^βιξη σ} → EQREL Γ σ S T �
 symEQREL `Unit     eq = ⟨⟩
 symEQREL `Bool     eq = PEq.sym eq
 symEQREL (σ `→ τ)  eq = λ inc eqVW → symEQREL τ (eq inc (symEQREL σ eqVW))
-\end{code}}\vspace{-2.5em}%ugly but it works!
+\end{code}}\vspace{ -2.5em}%ugly but it works!
 \begin{code}
 transEQREL : {Γ : Con} (σ : ty) {S T U : Γ ⊨^βιξη σ} → EQREL Γ σ S T → EQREL Γ σ T U → EQREL Γ σ S U
 \end{code}
@@ -1636,7 +1634,7 @@ transEQREL (σ `→ τ)  eq₁ eq₂ =
   λ inc eqVW → transEQREL τ (eq₁ inc (reflEQREL σ eqVW)) (eq₂ inc eqVW)
 
 reflEQREL σ eq = transEQREL σ eq (symEQREL σ eq)
-\end{code}}\vspace{-2.5em}%ugly but it works!
+\end{code}}\vspace{ -2.5em}%ugly but it works!
 \begin{code}
 wk^EQREL :  {Δ Γ : Con} (σ : ty) (inc : Γ ⊆ Δ) {T U : Γ ⊨^βιξη σ} → EQREL Γ σ T U → EQREL Δ σ (wk^βιξη σ inc T) (wk^βιξη σ inc U)
 \end{code}
@@ -1996,7 +1994,7 @@ RenamingSubstitutionFusable :
 \begin{code}
 RenamingSubstitutionFusable =
   record { 𝓔^R‿∙   = λ ρ^R eq → [ eq , ρ^R ]
-         ; 𝓔^R‿wk  = λ inc ρ^R σ pr → PEq.cong (Renaming ⊨⟦_⟧ inc) (ρ^R σ pr)
+         ; 𝓔^R‿wk  = λ inc ρ^R σ pr → PEq.cong (λ t → Renaming ⊨⟦ t ⟧ inc) (ρ^R σ pr)
          ; R⟦var⟧    = λ v ρ^R → ρ^R _ v
          ; embed^BC   = PEq.refl }
 \end{code}}
@@ -2020,7 +2018,7 @@ SubstitutionRenamingFusable =
                                    (ρ^R σ pr)) ]
          ; 𝓔^R‿wk  = λ inc {ρ^A} {ρ^B} {ρ^C} ρ^R σ pr →
                          PEq.trans (PEq.sym (RenRen.lemma (ρ^A σ pr) (λ _ _ → PEq.refl)))
-                                   (PEq.cong (Renaming ⊨⟦_⟧ inc) (ρ^R σ pr))
+                                   (PEq.cong (λ t → Renaming ⊨⟦ t ⟧ inc) (ρ^R σ pr))
          ; R⟦var⟧    = λ v ρ^R → ρ^R _ v
          ; embed^BC   = PEq.refl }
 \end{code}}
@@ -2045,7 +2043,7 @@ SubstitutionFusable =
                                    (ρ^R σ pr)) ]
          ; 𝓔^R‿wk  = λ inc {ρ^A} {ρ^B} {ρ^C} ρ^R σ pr →
                          PEq.trans (PEq.sym (SubstRen.lemma (ρ^A σ pr) (λ _ _ → PEq.refl)))
-                                   (PEq.cong (Renaming ⊨⟦_⟧ inc) (ρ^R σ pr))
+                                   (PEq.cong (λ t → Renaming ⊨⟦ t ⟧ inc) (ρ^R σ pr))
          ; R⟦var⟧    = λ v ρ^R → ρ^R _ v
          ; embed^BC   = PEq.refl }
 

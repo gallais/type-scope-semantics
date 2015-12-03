@@ -29,7 +29,7 @@ renextend = pop!
 %<*rename>
 \begin{code}
 ren : {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) (ρ : Δ [ ren𝓔 ] Γ) → Δ ⊢ σ
-ren (`var v)       ρ = ren⟦var⟧ (ρ _ v)
+ren (`var v)       ρ = ren⟦var⟧ (lookup ρ v)
 ren (t `$ u)       ρ = ren t ρ `$ ren u ρ
 ren (`λ t)         ρ = `λ (ren t (renextend ρ))
 ren `⟨⟩            ρ = `⟨⟩
@@ -40,14 +40,14 @@ ren (`ifte b l r)  ρ = `ifte (ren b ρ) (ren l ρ) (ren r ρ)
 %</rename>
 \begin{code}
 subextend : {Γ Δ : Con} {σ : ty} (ρ : Δ [ _⊢_ ] Γ) → Δ ∙ σ [ _⊢_ ] Γ ∙ σ
-subextend ρ = [ _⊢_ ] (λ σ pr → ren (ρ σ pr) (step refl)) `∙ `var zero
+subextend ρ = wk[ wk^⊢ ] (step refl) ρ `∙ `var zero
 
 sub⟦var⟧ = id
 \end{code}
 %<*subst>
 \begin{code}
 sub : {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) (ρ : Δ [ sub𝓔 ] Γ) → Δ ⊢ σ
-sub (`var v)       ρ = sub⟦var⟧ (ρ _ v)
+sub (`var v)       ρ = sub⟦var⟧ (lookup ρ v)
 sub (t `$ u)       ρ = sub t ρ `$ sub u ρ
 sub (`λ t)         ρ = `λ (sub t (subextend ρ))
 sub `⟨⟩            ρ = `⟨⟩
@@ -60,9 +60,9 @@ sub (`ifte b l r)  ρ = `ifte (sub b ρ) (sub l ρ) (sub r ρ)
 %<*synextend>
 \begin{code}
 synextend : {Γ Δ : Con} {σ : ty} {𝓔 : (Γ : Con) (σ : ty) → Set} (𝓢 : Syntactic 𝓔) (ρ : Δ [ 𝓔 ] Γ) → Δ ∙ σ [ 𝓔 ] Γ ∙ σ
-synextend {𝓔 = 𝓔} 𝓢 ρ = [ 𝓔 ] ρ′ `∙ var
-  where  var  = Syntactic.embed 𝓢 _ zero
-         ρ′   = λ σ → Syntactic.wk 𝓢 (step refl) ∘ ρ σ
+synextend {𝓔 = 𝓔} 𝓢 ρ = ρ′ `∙ var
+  where  var  = Syntactic.embed 𝓢 zero
+         ρ′   = pack $ Syntactic.wk 𝓢 (step refl) ∘ lookup ρ
 \end{code}
 %</synextend>
 
@@ -70,7 +70,7 @@ synextend {𝓔 = 𝓔} 𝓢 ρ = [ 𝓔 ] ρ′ `∙ var
 %<*syn>
 \begin{code}
 syn : {Γ Δ : Con} {σ : ty} {𝓔 : (Γ : Con) (σ : ty) → Set} (𝓢 : Syntactic 𝓔) (t : Γ ⊢ σ) (ρ : Δ [ 𝓔 ] Γ) → Δ ⊢ σ
-syn 𝓢 (`var v)       ρ = Syntactic.⟦var⟧ 𝓢 (ρ _ v)
+syn 𝓢 (`var v)       ρ = Syntactic.⟦var⟧ 𝓢 (lookup ρ v)
 syn 𝓢 (t `$ u)       ρ = syn 𝓢 t ρ `$ syn 𝓢 u ρ
 syn 𝓢 (`λ t)         ρ = `λ (syn 𝓢 t (synextend 𝓢 ρ))
 syn 𝓢 `⟨⟩            ρ = `⟨⟩
@@ -90,13 +90,13 @@ semλ ⟦t⟧ ρ inc u = ⟦t⟧ (ρ inc u)
 ⟨⟩ = tt
 
 semextend : {Γ Δ Θ : Con} {σ : ty} (ρ : Δ [ _⊨^βιξη_ ] Γ) → Δ ⊆ Θ → Θ ⊨^βιξη σ → Θ [ _⊨^βιξη_ ] Γ ∙ σ
-semextend ρ inc u = [ _⊨^βιξη_ ] (λ σ → wk^βιξη σ inc ∘ ρ σ) `∙ u
+semextend ρ inc u = pack (wk^βιξη _ inc ∘ lookup ρ) `∙ u
 \end{code}
 
 %<*sem>
 \begin{code}
 sem : {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) (ρ : Δ [ _⊨^βιξη_ ] Γ) → Δ ⊨^βιξη σ
-sem (`var v)       ρ = sem⟦var⟧ (ρ _ v)
+sem (`var v)       ρ = sem⟦var⟧ (lookup ρ v)
 sem (t `$ u)       ρ = sem t ρ $^βιξη sem u ρ
 sem (`λ t)         ρ = semλ (sem t) (semextend ρ)
 sem `⟨⟩            ρ = ⟨⟩
@@ -165,13 +165,13 @@ record Synchronisable {𝓔^A 𝓔^B 𝓜^A 𝓜^B : (Γ : Con) (σ : ty) → Se
 \end{code}}\vspace{ -2em}
 \uncover<2->{
 \begin{code}
-    𝓔^R‿wk  :  {Γ Δ Θ : Con} (inc : Δ ⊆ Θ) {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Δ [ 𝓔^B ] Γ} (ρ^R : `∀[ 𝓔^A , 𝓔^B ] 𝓔^R {Γ} {Δ} ρ^A ρ^B) →
-               `∀[ 𝓔^A , 𝓔^B ] 𝓔^R (wk[ 𝓢^A.wk ] inc ρ^A) (wk[ 𝓢^B.wk ] inc ρ^B)
+    𝓔^R‿wk  :  {Γ Δ Θ : Con} (inc : Δ ⊆ Θ) {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Δ [ 𝓔^B ] Γ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
+               `∀[ 𝓔^R ] (wk[ 𝓢^A.wk ] inc ρ^A) (wk[ 𝓢^B.wk ] inc ρ^B)
 \end{code}}\vspace{ -2em}
 \uncover<3->{
 \begin{code}
-    R⟦var⟧    :  {Γ Δ : Con} {σ : ty} (v : σ ∈ Γ) {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Δ [ 𝓔^B ] Γ} (ρ^R : `∀[ 𝓔^A , 𝓔^B ] 𝓔^R ρ^A ρ^B) →
-                 𝓜^R (𝓢^A.⟦var⟧ (ρ^A σ v)) (𝓢^B.⟦var⟧ (ρ^B σ v))
+    R⟦var⟧    :  {Γ Δ : Con} {σ : ty} (v : σ ∈ Γ) {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Δ [ 𝓔^B ] Γ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
+                 𝓜^R (𝓢^A.⟦var⟧ (lookup ρ^A v)) (𝓢^B.⟦var⟧ (lookup ρ^B v))
 \end{code}}\vspace{ -2em}
 \uncover<4->{
 \begin{code}

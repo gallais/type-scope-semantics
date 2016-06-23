@@ -12,7 +12,12 @@ altName :: String
 altName = "-raw"
 
 cleanup :: Text -> Text
-cleanup = T.concat . fmap (P.head . splitOn "\\end{code}") . P.tail . splitOn "\\begin{code}"
+cleanup = T.unlines
+        . P.dropWhile (T.null . T.filter (/= ' '))
+        . P.concatMap T.lines
+        . fmap (P.head . splitOn "\\end{code}")
+        . P.tail
+        . splitOn "\\begin{code}"
 
 alterName :: Text -> Text
 alterName txt =

@@ -13,6 +13,11 @@ record Var_⇒[_]_ {ℓ : Level} (Γ : Context) (𝓔 : Model ℓ) (Δ : Context
   field lookup : {σ : Type} (v : σ ∈ Γ) → 𝓔 Δ σ
 open Var_⇒[_]_ public
 
+infixr 10 _<$>_
+_<$>_ : {ℓ ℓ′ : Level} {Γ Δ θ : Context} {𝓓 : Model ℓ} {𝓔 : Model ℓ′}
+        (f : {σ : Type} → 𝓓 Δ σ → 𝓔 θ σ) → Var Γ ⇒[ 𝓓 ] Δ → Var Γ ⇒[ 𝓔 ] θ
+lookup (f <$> ρ) v = f (lookup ρ v)
+
 -- Parallel substitutions are quite evidently environments:
 Substitution : Context → Context → Set
 Substitution Γ Δ = Var Γ ⇒[ _⊢_ ] Δ
@@ -30,7 +35,7 @@ refl : {Γ : Context} → Renaming Γ Γ
 lookup refl v = v
 
 step : {Γ Δ : Context} {σ : Type} → Renaming Γ Δ → Renaming Γ (Δ ∙ σ)
-lookup (step ren) v = 1+ lookup ren v
+step ren = 1+_ <$> ren
 
 pop! : {Γ Δ : Context} {σ : Type} → Renaming Γ Δ → Renaming (Γ ∙ σ) (Δ ∙ σ)
 lookup (pop! ren) zero   = zero
@@ -62,10 +67,10 @@ lookup (ρ `∙ s) (1+ n)  = lookup ρ n
 
 wk[_] :  {ℓ : Level} {Δ : Context} {𝓔 : Model ℓ} (wk : Weakening 𝓔)
          {Γ Θ : Context} → Renaming Δ Θ → Var Γ ⇒[ 𝓔 ] Δ → Var Γ ⇒[ 𝓔 ] Θ
-lookup (wk[ wk ] ren ρ) v = wk ren (lookup ρ v)
+wk[ wk ] ren ρ = wk ren <$> ρ
 
 -- A weak form of transitivity: any environment may be pre-composed
 -- with a renaming to yield another environment.
 trans : {ℓ : Level} {Γ Δ Θ : Context} {𝓔 : Model ℓ} →
         Renaming Γ Δ → Var Δ ⇒[ 𝓔 ] Θ → Var Γ ⇒[ 𝓔 ] Θ
-lookup (trans ren env) v = lookup env (lookup ren v)
+trans ren env = lookup env <$> ren

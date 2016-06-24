@@ -1,7 +1,7 @@
 module Semantics.Printing where
 
 open import Syntax.Core
-open import Semantics.Environment
+open import Semantics.Environment hiding (_<$>_)
 open import Semantics.Specification
 
 open import Function

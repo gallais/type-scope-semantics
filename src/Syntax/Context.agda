@@ -1,6 +1,7 @@
 module Syntax.Context where
 
 open import Syntax.Type
+open import Data.Nat
 
 -- A context is a backwards list of types.
 infixl 10 _∙_
@@ -37,3 +38,8 @@ data _∈_ (σ : Type) : Context → Set where
 
 _∋_ : Context → Type → Set
 Γ ∋ σ = σ ∈ Γ
+
+-- Each context has a size
+size : Context → ℕ
+size ε       = zero
+size (Γ ∙ _) = 1 + size Γ

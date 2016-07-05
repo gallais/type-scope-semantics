@@ -6,7 +6,7 @@ open import Syntax.Normal.Weakening
 open import Semantics.Model
 open import Semantics.Environment
 open import Semantics.Specification
-open import Semantics.Syntactic.Renaming
+open import Semantics.Syntactic.Instances
 
 open import Data.Empty
 open import Data.Unit
@@ -44,7 +44,7 @@ mutual
   reify⋆ : {Γ : Context} (σ : Type) → Γ ⊨⋆ σ → Γ ⊢^whnf σ
   reify⋆ `Unit     T = `⟨⟩
   reify⋆ `Bool     T = if T then `tt else `ff
-  reify⋆ (σ `→ τ)  T = `λ $ proj₁ $ T (step refl) var‿0
+  reify⋆ (σ `→ τ)  T = `λ $ proj₁ $ T extend var‿0
     where var‿0 = reflect _ $ `var zero
 
   reify : {Γ : Context} (σ : Type) → Γ ⊨ σ → Γ ⊢^whnf σ
@@ -63,8 +63,14 @@ ifte (b , inj₂ B)   (l , L) (r , R) = `ifte b l r , (if B then L else R)
 Normalise : Semantics _⊨_ _⊨_
 Normalise = record
   { embed = pack (reflect _ ∘ `var); wk = wk; ⟦var⟧ = id
-  ; _⟦$⟧_ = _$$_; ⟦λ⟧ = λ t → `λ (proj₁ $ t (step refl) (reflect _ $ `var zero)) , inj₂ t
+  ; _⟦$⟧_ = _$$_; ⟦λ⟧ = λ t → `λ (proj₁ $ t extend (reflect _ $ `var zero)) , inj₂ t
   ; ⟦⟨⟩⟧ = `⟨⟩ , inj₂ tt; ⟦tt⟧ = `tt  , inj₂ true; ⟦ff⟧ = `ff  , inj₂ false; ⟦ifte⟧  = ifte }
 
+eval : Evaluation _ _
+eval = Fundamental.lemma Normalise
+
+eval' : Evaluation' _
+eval' = Fundamental.lemma' Normalise
+
 norm : {Γ : Context} {σ : Type} → Γ ⊢ σ → Γ ⊢^whnf σ
-norm t = reify _ $ Fundamental.lemma' Normalise t
+norm t = reify _ $ eval' t

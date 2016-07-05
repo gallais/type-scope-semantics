@@ -1,4 +1,4 @@
-module Properties.Synchronisable where
+module Properties.Synchronisable.Specification where
 
 open import Syntax.Core
 open import Semantics.Model

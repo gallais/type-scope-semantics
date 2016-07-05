@@ -6,14 +6,16 @@ open import Semantics.Environment as Env hiding (refl ; trans)
 open import Semantics.Specification using (module Semantics)
 open import Semantics.Instances
 open import Properties.Relation
-open import Properties.Synchronisable
+open import Properties.Relation.βιξη
+open import Properties.Synchronisable.Specification
 
+open import Data.Unit
 open import Data.Product
 open import Function
 open import Relation.Binary.PropositionalEquality
 
 SynchronisableRenamingSubstitution :
-  Synchronisable 𝓢^Renaming 𝓢^Substitution (mkRModel (λ v t → `var v ≡ t)) (mkRModel _≡_)
+  Synchronisable 𝓢^Renaming 𝓢^Substitution (mkRModel (λ v t → `var v ≡ t)) Equality
 SynchronisableRenamingSubstitution =
   record
     { 𝓔^R‿wk  = λ ren ρ^R → pack^R $ cong (rename ren) ∘ lookup^R ρ^R
@@ -31,54 +33,6 @@ RenamingIsASubstitution :
   rename ρ t ≡ substitute t (`var <$> ρ)
 RenamingIsASubstitution t ρ = corollary t (pack^R $ λ _ → refl)
   where corollary = Fundamental.lemma SynchronisableRenamingSubstitution 
-
-open import Data.Unit
-
-EQREL : (Γ : Context) (σ : Type) (T U : Γ βιξη.⊨ σ) → Set
-EQREL Γ `Unit     T U = ⊤
-EQREL Γ `Bool     T U = T ≡ U
-EQREL Γ (σ `→ τ)  T U =
-  {Δ : Context} (inc : Renaming Γ Δ) {V W : Δ βιξη.⊨ σ} →
-  EQREL Δ σ V W → EQREL Δ τ (T inc V) (U inc W)
-
-_≣_ : RModel _ βιξη._⊨_ βιξη._⊨_
-_≣_ = mkRModel (λ {Γ} {σ} → EQREL Γ σ)
-
-sym≣ : Symmetric _≣_
-sym≣ {σ = `Unit}  eq = tt
-sym≣ {σ = `Bool}  eq = sym eq
-sym≣ {σ = σ `→ τ} eq = λ inc eqVW → sym≣ (eq inc (sym≣ eqVW))
-
-mutual
-
-  trans≣ : Transitive _≣_
-  trans≣ {σ = `Unit}  eq₁ eq₂ = tt
-  trans≣ {σ = `Bool}  eq₁ eq₂ = trans eq₁ eq₂
-  trans≣ {σ = σ `→ τ} eq₁ eq₂ = λ inc eqVW → trans≣ (eq₁ inc (refl≣ eqVW)) (eq₂ inc eqVW)
-
-  refl≣ : {Γ : Context} {σ : Type} {S T : Γ βιξη.⊨ σ} → related _≣_ S T → related _≣_ S S
-  refl≣ eq = trans≣ eq (sym≣ eq)
-
-wk^≣ :  {Δ Γ : Context} {σ : Type} (ren : Renaming Γ Δ) {T U : Γ βιξη.⊨ σ} →
-  related _≣_ T U → related _≣_ (βιξη.wk^⊨ ren T) (βιξη.wk^⊨ ren U)
-wk^≣ {σ = `Unit}  ren eq = tt
-wk^≣ {σ = `Bool}  ren eq = cong (wk^nf ren) eq
-wk^≣ {σ = σ `→ τ} ren eq = λ inc eqVW → eq (Env.trans ren inc) eqVW
-
-mutual
-
-  reify^≣ : {Γ : Context} (σ : Type) {T U : Γ βιξη.⊨ σ} →
-            related _≣_ T U → βιξη.reify σ T ≡ βιξη.reify σ U
-  reify^≣ `Unit    R = refl
-  reify^≣ `Bool    R = R
-  reify^≣ (σ `→ τ) R = cong `λ (reify^≣ τ (R (step Env.refl) (reflect^≣ σ refl)))
-
-  reflect^≣ : {Γ : Context} (σ : Type) {t u : Γ ⊢[ βιξη.R ]^ne σ} →
-              t ≡ u → related _≣_ (βιξη.reflect σ t) (βιξη.reflect σ u)
-  reflect^≣ `Unit    eq = tt
-  reflect^≣ `Bool    eq = cong (`neu tt) eq
-  reflect^≣ (σ `→ τ) eq = λ ren eq′ →
-    reflect^≣ τ $ cong₂ (_`$_ ∘ wk^ne ren) eq $ reify^≣ σ eq′
 
 ifteRelNorm :
   let open Semantics βιξη.Normalise in
@@ -101,3 +55,9 @@ SynchronisableNormalise =
           ; R⟦ff⟧    = refl
           ; R⟦ifte⟧  = ifteRelNorm
           }
+
+refl^βιξη :  {Γ Δ : Context} {σ : Type} (t : Γ ⊢ σ)
+             {ρ^A ρ^B : Var Γ ⇒[ βιξη._⊨_ ] Δ} (ρ^R : `∀[ _≣_ ] ρ^A ρ^B) →
+             related _≣_ (βιξη.eval t ρ^A) (βιξη.eval t ρ^B)
+refl^βιξη t ρ^R = lemma SynchronisableNormalise t ρ^R where
+  open Properties.Synchronisable.Specification.Fundamental

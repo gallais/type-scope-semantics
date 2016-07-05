@@ -44,7 +44,7 @@ mutual
   reify⋆ : Reify R _⊨⋆_
   reify⋆ `Unit     T = `⟨⟩
   reify⋆ `Bool     T = if T then `tt else `ff
-  reify⋆ (σ `→ τ)  T = `λ (reify τ (T (step refl) var‿0))
+  reify⋆ (σ `→ τ)  T = `λ (reify τ (T extend var‿0))
     where var‿0 = inj₁ $ `var zero
 
   reify : Reify R _⊨_
@@ -65,6 +65,12 @@ Normalise = record
   { embed = pack (reflect _ ∘ `var); wk = wk^⊨; ⟦var⟧   = id
   ; _⟦$⟧_ = _$$_; ⟦λ⟧ = inj₂
   ; ⟦⟨⟩⟧ = inj₂ tt; ⟦tt⟧ = inj₂ true; ⟦ff⟧ = inj₂ false; ⟦ifte⟧  = ifte }
-          
+
+eval : Evaluation _ _
+eval = Fundamental.lemma Normalise
+
+eval' : Evaluation' _
+eval' = Fundamental.lemma' Normalise
+
 norm : Normalisation R
-norm t = reify _ $ Fundamental.lemma' Normalise t
+norm t = reify _ $ eval' t

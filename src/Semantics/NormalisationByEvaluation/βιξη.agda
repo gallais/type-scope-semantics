@@ -31,7 +31,6 @@ infixr 5 _$$_
 _$$_ : Applicative _⊨_
 t $$ u = t refl u
 
-
 mutual
 
   var‿0 : {Γ : Context} {σ : Type} → Γ ∙ σ ⊨ σ
@@ -45,7 +44,7 @@ mutual
   reify : Reify R _⊨_
   reify `Unit     T = `⟨⟩
   reify `Bool     T = T
-  reify (σ `→ τ)  T = `λ (reify τ (T (step refl) var‿0))
+  reify (σ `→ τ)  T = `λ (reify τ (T extend var‿0))
 
 ifte : {Γ : Context} {σ : Type} → Γ ⊨ `Bool → Γ ⊨ σ → Γ ⊨ σ → Γ ⊨ σ
 ifte `tt         l r = l
@@ -53,10 +52,24 @@ ifte `ff         l r = r
 ifte (`neu _ T)  l r = reflect _ (`ifte T (reify _ l) (reify _ r))
 
 Normalise : Semantics _⊨_ _⊨_
-Normalise = record
-  { embed = pack (reflect _ ∘ `var); wk = wk^⊨; ⟦var⟧ = id
-  ; _⟦$⟧_ = _$$_; ⟦λ⟧ = id
-  ; ⟦⟨⟩⟧ = tt; ⟦tt⟧ = `tt; ⟦ff⟧ = `ff; ⟦ifte⟧  = ifte }
+Semantics.wk     Normalise = wk^⊨
+Semantics.embed  Normalise = pack (reflect _ ∘ `var)
+Semantics.⟦var⟧  Normalise = id
+Semantics.⟦λ⟧    Normalise = id
+Semantics._⟦$⟧_  Normalise = _$$_
+Semantics.⟦⟨⟩⟧   Normalise = tt
+Semantics.⟦tt⟧   Normalise = `tt
+Semantics.⟦ff⟧   Normalise = `ff
+Semantics.⟦ifte⟧ Normalise = ifte
 
-norm : Normalisation R
-norm t = reify _ $ Fundamental.lemma' Normalise t
+eval : Evaluation _ _
+eval = Fundamental.lemma Normalise
+
+eval' : Evaluation' _
+eval' = Fundamental.lemma' Normalise
+
+norm : ∀ {Γ Δ σ} → Γ ⊢ σ → Var Γ ⇒[ _⊨_ ] Δ → Δ ⊢[ R ]^nf σ
+norm t ρ = reify _ $ eval t ρ
+
+norm' : Normalisation R
+norm' t = reify _ $ eval' t

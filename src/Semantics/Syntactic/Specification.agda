@@ -14,11 +14,18 @@ module Fundamental {ℓ : Level} {𝓔 : Model ℓ} (𝓢 : Syntactic 𝓔) wher
 
   open Syntactic 𝓢
 
+  -- Using copatterns here guarantees that these things are not unfolded
+  -- when normalising goals thus making them more readable.
   syntactic : Semantics 𝓔 _⊢_
-  syntactic = record
-    { wk      = wk; embed   = embed; ⟦var⟧   = ⟦var⟧
-    ; ⟦λ⟧     = λ t → `λ (t (step refl) (lookup embed zero))
-    ; _⟦$⟧_   = _`$_; ⟦⟨⟩⟧ = `⟨⟩; ⟦tt⟧ = `tt; ⟦ff⟧ = `ff; ⟦ifte⟧  = `ifte }
+  Semantics.wk     syntactic = wk
+  Semantics.embed  syntactic = embed
+  Semantics.⟦var⟧  syntactic = ⟦var⟧
+  Semantics.⟦λ⟧    syntactic = λ t → `λ (t extend (lookup embed zero))
+  Semantics._⟦$⟧_  syntactic = _`$_
+  Semantics.⟦⟨⟩⟧   syntactic = `⟨⟩
+  Semantics.⟦tt⟧   syntactic = `tt
+  Semantics.⟦ff⟧   syntactic = `ff
+  Semantics.⟦ifte⟧ syntactic = `ifte
 
   lemma : {Δ Γ : Context} {σ : Type} → Γ ⊢ σ → Var Γ ⇒[ 𝓔 ] Δ → Δ ⊢ σ
   lemma = Semantics.Fundamental.lemma syntactic

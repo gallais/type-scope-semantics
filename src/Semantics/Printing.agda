@@ -24,8 +24,8 @@ record Printer (Γ : Context) (σ : Type) : Set where
   constructor mkPrinter
   field runPrinter : State (Stream String) String
 
-open Name
-open Printer
+open Name public
+open Printer public
 
 formatλ : String → String → String
 formatλ x b = "λ" ++ x ++ ". " ++ b
@@ -84,14 +84,20 @@ name = get >>= λ names →
        put (tail names) >>
        return (mkName $ head names)
 
-init : {Γ : Context} → State (Stream String) (Var Γ ⇒[ Name ] Γ)
-init {Γ} = go Γ where
+init : (Γ Δ : Context) → State (Stream String) (Var Γ ⇒[ Name ] Δ)
+init ε       Δ = return `ε
+init (Γ ∙ σ) Δ = (_`∙_ <$> init Γ Δ) ⊛ name
 
-  go : (Γ : Context) {Δ : Context} → State (Stream String) (Var Γ ⇒[ Name ] Δ)
-  go ε       = return `ε
-  go (Γ ∙ σ) = (_`∙_ <$> go Γ) ⊛ name
+init' : {Γ : Context} → State (Stream String) (Var Γ ⇒[ Name ] Γ)
+init' = init _ _
+
+printer : Evaluation Name Printer
+printer = Fundamental.lemma Printing
+
+printer' : Evaluation' Printer
+printer' = Fundamental.lemma' Printing
 
 print : {Γ : Context} {σ : Type} → Γ ⊢ σ → String
 print t =
   let printer = Fundamental.lemma Printing t
-  in proj₁ $ init >>= runPrinter ∘ printer $ names
+  in proj₁ $ init' >>= runPrinter ∘ printer $ names

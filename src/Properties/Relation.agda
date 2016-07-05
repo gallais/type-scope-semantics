@@ -1,12 +1,13 @@
 module Properties.Relation where
 
-open import Level
+open import Level hiding (zero)
 open import Syntax.Type
 open import Syntax.Context hiding (_∋_)
 open import Semantics.Model
 open import Semantics.Environment
 open import Semantics.Specification
 open import Function
+open import Relation.Binary.PropositionalEquality as PropEq
 
 record RModel
   {ℓ^A ℓ^B : Level} (ℓ^R : Level)
@@ -15,6 +16,9 @@ record RModel
   constructor mkRModel
   field related : {Γ : Context} {σ : Type} → 𝓜^A Γ σ → 𝓜^B Γ σ → Set ℓ^R
 open RModel public
+
+Equality : {ℓ : Level} {𝓜 : Model ℓ} → RModel _ 𝓜 𝓜
+Equality = mkRModel _≡_
 
 Symmetric : {ℓ^A ℓ^R : Level} {𝓜^A : Model ℓ^A} → RModel ℓ^R 𝓜^A 𝓜^A → Set (ℓ^R ⊔ ℓ^A)
 Symmetric {𝓜^A = 𝓜^A} 𝓜^R = {Γ : Context} {σ : Type} {T U : 𝓜^A Γ σ} →
@@ -65,3 +69,15 @@ _∙^R_ :
   `∀[ 𝓔^R ] (ρ^A `∙ u^A) (ρ^B `∙ u^B)
 lookup^R (ρ^R ∙^R u^R) zero    = u^R
 lookup^R (ρ^R ∙^R u^R) (1+ v)  = lookup^R ρ^R v
+
+_∙^R′_ :
+  {ℓ^A ℓ^B ℓ^R : Level} {𝓔^A : Model ℓ^A} {𝓔^B : Model ℓ^B} {𝓔^R : RModel ℓ^R 𝓔^A 𝓔^B} →
+  {Δ Γ : Context} {σ : Type}  {ρ^A : Var (Γ ∙ σ) ⇒[ 𝓔^A ] Δ} {ρ^B : Var Γ ∙ σ ⇒[ 𝓔^B ] Δ}
+  (ρ^R : ∀ {σ} (v : σ ∈ Γ) → related 𝓔^R (lookup ρ^A (1+ v)) (lookup ρ^B (1+ v))) →
+  related 𝓔^R (lookup ρ^A zero) (lookup ρ^B zero) →
+  `∀[ 𝓔^R ] ρ^A ρ^B
+lookup^R (ρ^R ∙^R′ u^R) zero    = u^R
+lookup^R (ρ^R ∙^R′ u^R) (1+ v)  = ρ^R v
+
+refl^R : {ℓ : Level} {𝓔 : Model ℓ} {Γ Δ : Context} {ρ : Var Γ ⇒[ 𝓔 ] Δ} → `∀[ Equality ] ρ ρ
+refl^R = pack^R (λ _ → PropEq.refl)

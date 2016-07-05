@@ -37,6 +37,9 @@ lookup refl v = v
 step : {Γ Δ : Context} {σ : Type} → Renaming Γ Δ → Renaming Γ (Δ ∙ σ)
 step ren = 1+_ <$> ren
 
+extend : {Γ : Context} {σ : Type} → Renaming Γ (Γ ∙ σ)
+extend = step refl
+
 pop! : {Γ Δ : Context} {σ : Type} → Renaming Γ Δ → Renaming (Γ ∙ σ) (Δ ∙ σ)
 lookup (pop! ren) zero   = zero
 lookup (pop! ren) (1+ v) = 1+ lookup ren v

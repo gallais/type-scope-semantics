@@ -7,11 +7,9 @@ open import Semantics.Environment hiding (refl)
 open import Function
 open import Relation.Binary.PropositionalEquality
 
--- RENAMING
+-- RENAMING & SUBSTITUTION
 
-
--- SUBSTITUTION
-open import Semantics.Syntactic.Substitution
+open import Semantics.Syntactic.Instances
 
 substAPP : {σ : Type} → substitute APP (`ε `∙ FORCE `∙ (THUNK `$ ID))
          ≡ (ε ⊢ σ `→ σ ∋ ID')
@@ -45,8 +43,8 @@ printID' = refl
 -- NORMALISING
 open import Semantics.NormalisationByEvaluation.βιξη
 
-normID'Bool : norm (ε ⊢ `Bool `→ `Bool ∋ ID') ≡ `λ (`neu _ (`var zero))
+normID'Bool : norm' (ε ⊢ `Bool `→ `Bool ∋ ID') ≡ `λ (`neu _ (`var zero))
 normID'Bool = refl
 
-normID'Unit : norm (ε ⊢ `Unit `→ `Unit ∋ ID') ≡ `λ `⟨⟩
+normID'Unit : norm' (ε ⊢ `Unit `→ `Unit ∋ ID') ≡ `λ `⟨⟩
 normID'Unit = refl

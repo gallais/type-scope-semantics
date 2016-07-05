@@ -23,11 +23,18 @@ record Semantics {ℓ^E ℓ^M : Level}
     ⟦ff⟧    :  {Γ : Context} → 𝓜 Γ `Bool
     ⟦ifte⟧  :  {Γ : Context} {σ : Type} → 𝓜 Γ `Bool → 𝓜 Γ σ → 𝓜 Γ σ → 𝓜 Γ σ
 
+
+Evaluation : {ℓ^E ℓ^M : Level} (𝓔 : Model ℓ^E) (𝓜 :  Model ℓ^M) → Set (ℓ^M ⊔ ℓ^E)
+Evaluation 𝓔 𝓜 = {Γ Δ : Context} {σ : Type} → Γ ⊢ σ → Var Γ ⇒[ 𝓔 ] Δ → 𝓜 Δ σ
+
+Evaluation' : {ℓ^M : Level} (𝓜 :  Model ℓ^M) → Set ℓ^M
+Evaluation' 𝓜 = {Γ : Context} {σ : Type} → Γ ⊢ σ → 𝓜 Γ σ
+
 module Fundamental {ℓ^E ℓ^M : Level}
        {𝓔  : Model ℓ^E} {𝓜 : Model ℓ^M} (𝓢 : Semantics 𝓔 𝓜) where
   open Semantics 𝓢
 
-  lemma : {Δ Γ : Context} {σ : Type} → Γ ⊢ σ → Var Γ ⇒[ 𝓔 ] Δ → 𝓜 Δ σ
+  lemma : Evaluation 𝓔 𝓜
   lemma (`var v)       ρ = ⟦var⟧ (lookup ρ v)
   lemma (t `$ u)       ρ = lemma t ρ ⟦$⟧ lemma u ρ
   lemma (`λ t)         ρ = ⟦λ⟧ (λ inc u → lemma t (wk[ wk ] inc ρ `∙ u))
@@ -36,5 +43,5 @@ module Fundamental {ℓ^E ℓ^M : Level}
   lemma `ff            ρ = ⟦ff⟧
   lemma (`ifte b l r)  ρ = ⟦ifte⟧ (lemma b ρ) (lemma l ρ) (lemma r ρ)
 
-  lemma' : {Γ : Context} {σ : Type} → Γ ⊢ σ → 𝓜 Γ σ
+  lemma' : Evaluation' 𝓜
   lemma' t = lemma t embed

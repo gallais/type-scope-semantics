@@ -3,9 +3,17 @@ module Semantics.Examples where
 open import Syntax hiding (_∋_)
 open import Syntax.Core.Examples
 open import Semantics.Environment hiding (refl)
-
+open import Data.Unit
+open import Data.Bool
 open import Function
 open import Relation.Binary.PropositionalEquality
+
+-- EMBEDDING
+
+open import Semantics.Embedding
+
+True : eval' (`ifte (ID `$ `ff) `ff `tt) tt ≡ true
+True = refl
 
 -- RENAMING & SUBSTITUTION
 

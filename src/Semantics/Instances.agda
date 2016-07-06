@@ -1,5 +1,6 @@
 module Semantics.Instances where
 
+open import Semantics.Embedding           public
 open import Semantics.Syntactic.Instances public
 open import Semantics.Printing            public
 open import Semantics.NormalisationByEvaluation.βιξη

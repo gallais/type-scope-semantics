@@ -12,6 +12,9 @@ open import Semantics.Model
 open import Semantics.Environment
 open import Semantics.Specification
 
+-- The simplest model probably: Embedding in Agda
+open import Semantics.Embedding
+
 -- Syntactic Models are very simple Models
 open import Semantics.Syntactic.Specification
 open import Semantics.Syntactic.Instances

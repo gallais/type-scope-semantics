@@ -1,7 +1,7 @@
 module Syntax.Calculus where
 
 open import Syntax.Type
-open import Syntax.Context
+open import Syntax.Context Type
 
 -- The calculus is defined in a well-scoped and well-typed
 -- manner using an inductive family. A term effectively

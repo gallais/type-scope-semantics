@@ -1,56 +1,15 @@
 module Semantics.Environment where
 
-open import Syntax.Core
+open import Syntax.Core hiding (_<$>_)
 open import Semantics.Model
+open import Semantics.Environment.Core as EC hiding (Var_⇒[_]_ ; Weakening) public
 
-infix 5 Var_⇒[_]_
-
--- An environment Var Γ ⇒[ 𝓔 ] Δ simply maps each variable of
--- type σ in Γ to an element of type 𝓔 Δ σ.
-
-record Var_⇒[_]_ {ℓ : Level} (Γ : Context) (𝓔 : Model ℓ) (Δ : Context) : Set ℓ where
-  constructor pack
-  field lookup : {σ : Type} (v : σ ∈ Γ) → 𝓔 Δ σ
-open Var_⇒[_]_ public
-
-infixr 10 _<$>_
-_<$>_ : {ℓ ℓ′ : Level} {Γ Δ θ : Context} {𝓓 : Model ℓ} {𝓔 : Model ℓ′}
-        (f : {σ : Type} → 𝓓 Δ σ → 𝓔 θ σ) → Var Γ ⇒[ 𝓓 ] Δ → Var Γ ⇒[ 𝓔 ] θ
-lookup (f <$> ρ) v = f (lookup ρ v)
+Var_⇒[_]_ = EC.Var_⇒[_]_ {Type}
+Weakening = EC.Weakening Type
 
 -- Parallel substitutions are quite evidently environments:
 Substitution : Context → Context → Set
 Substitution Γ Δ = Var Γ ⇒[ _⊢_ ] Δ
-
--- However, the simplest example of such an environment is Renaming.
--- It comes with various combinators corresponding to the key
--- elements identified by Altenkirch, Hofmann and Streicher
--- in their 'category of weakenings' in "Categorical reconstruction
--- of a reduction free normalization proof"
-
-Renaming : Context → Context → Set
-Renaming Γ Δ = Var Γ ⇒[ _∋_ ] Δ 
-
-refl : {Γ : Context} → Renaming Γ Γ
-lookup refl v = v
-
-step : {Γ Δ : Context} {σ : Type} → Renaming Γ Δ → Renaming Γ (Δ ∙ σ)
-step ren = 1+_ <$> ren
-
-extend : {Γ : Context} {σ : Type} → Renaming Γ (Γ ∙ σ)
-extend = step refl
-
-pop! : {Γ Δ : Context} {σ : Type} → Renaming Γ Δ → Renaming (Γ ∙ σ) (Δ ∙ σ)
-lookup (pop! ren) zero   = zero
-lookup (pop! ren) (1+ v) = 1+ lookup ren v
-
--- Renaming naturally gives rise to a notion of weakening for Models
-Weakening : {ℓ : Level} → Model ℓ → Set ℓ
-Weakening 𝓔 = {Γ Δ : Context} {σ : Type} → Renaming Γ Δ → 𝓔 Γ σ → 𝓔 Δ σ
-
--- And Variables can trivially be renamed:
-wk^∋ : Weakening _∋_
-wk^∋ ren v = lookup ren v
 
 -- We can naturally define simple combinators for the empty
 -- environment and the extension of an existing environment

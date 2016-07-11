@@ -2,7 +2,7 @@ module Properties.Relation where
 
 open import Level hiding (zero)
 open import Syntax.Type
-open import Syntax.Context hiding (_∋_)
+open import Syntax.Context Type hiding (_∋_)
 open import Semantics.Model
 open import Semantics.Environment
 open import Semantics.Specification

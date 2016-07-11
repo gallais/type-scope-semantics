@@ -1,6 +1,6 @@
 module Properties.Fusable.Instances where
 
-open import Syntax.Core
+open import Syntax.Core hiding (_<$>_)
 open import Syntax.Normal
 open import Semantics.Environment as Env hiding (refl)
 import Semantics.Specification

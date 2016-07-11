@@ -3,9 +3,7 @@ module Semantics.Model where
 open import Level as L using (Level ; _⊔_) public
 open import Syntax.Core
 open import Syntax.Normal
-
-Model : (ℓ : Level) → Set (L.suc ℓ)
-Model ℓ = Context → Type → Set ℓ
+open import Semantics.Model.Core Type public
 
 Applicative : {ℓ : Level} → Model ℓ → Set ℓ
 Applicative 𝓜 = {Γ : Context} {σ τ : Type} → 𝓜 Γ (σ `→ τ) → 𝓜 Γ σ → 𝓜 Γ τ

@@ -19,6 +19,10 @@ open import Semantics.Embedding
 open import Semantics.Syntactic.Specification
 open import Semantics.Syntactic.Instances
 
+-- Conversion to CPS via Moggi's ML
+open import Semantics.CPS.CBV
+open import Semantics.CPS.CBN
+
 -- Monadic Model
 open import Semantics.Printing
 

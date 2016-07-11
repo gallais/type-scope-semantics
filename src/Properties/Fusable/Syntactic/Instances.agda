@@ -1,6 +1,6 @@
 module Properties.Fusable.Syntactic.Instances where
 
-open import Syntax.Core
+open import Syntax.Core hiding (_<$>_)
 open import Semantics.Environment as Env hiding (refl)
 open import Semantics.Syntactic.Instances
 open import Properties.Relation

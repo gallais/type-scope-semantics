@@ -1,6 +1,6 @@
 module Properties.Synchronisable.Instances where
 
-open import Syntax
+open import Syntax hiding (_<$>_)
 open import Syntax.Normal.Weakening
 open import Semantics.Environment as Env hiding (refl ; trans)
 open import Semantics.Specification using (module Semantics)

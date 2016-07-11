@@ -1,6 +1,6 @@
 module Semantics.Printing where
 
-open import Syntax.Core
+open import Syntax.Core hiding (_<$>_)
 open import Semantics.Environment hiding (_<$>_)
 open import Semantics.Specification
 
@@ -70,7 +70,7 @@ names : Stream String
 names = flatten $ zipWith cons letters $ "" ∷ ♯ Stream.map show (allNatsFrom 0)
   where
     cons : (Char × List Char) → String → (String × List String)
-    cons (c , cs) suffix = appendSuffix c , map appendSuffix cs where
+    cons (c , cs) suffix = appendSuffix c , List.map appendSuffix cs where
       appendSuffix : Char → String
       appendSuffix c  = fromList (c ∷ []) ++ suffix
 

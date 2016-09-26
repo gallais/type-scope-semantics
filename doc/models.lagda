@@ -1,14 +1,15 @@
-\documentclass[preprint]{sigplanconf}
+\documentclass[preprint,10pt]{sigplanconf}
 
 \usepackage{amsmath,amstext,amsthm}
 \usepackage[english]{babel}
 \usepackage[references]{agda}
 \usepackage{hyperref,cleveref}
+\usepackage{todonotes}
 \usepackage{catchfilebetweentags}
 
 \setlength\mathindent{0em}
 
-\setmainfont[Ligatures=TeX]{XITS}
+\setmainfont{XITS}
 \setmathfont{XITS Math}
 
 \usepackage{mathpartir}
@@ -29,7 +30,7 @@
 \copyrightdata{978-1-nnnn-nnnn-n/yy/mm}
 \copyrightdoi{nnnnnnn.nnnnnnn}
 
-\title{Type and Scope Preserving Semantics and their Properties}
+\title{Type-and-Scope Safe Programs and their Proofs}
 % \subtitle{Subtitle Text, if any}
 
 \authorinfo{}
@@ -97,7 +98,7 @@ type in the environment, they may be turned into terms (which is
 what is needed in the variable case), new ones may be manufactured
 and old ones weakened (precisely what going under a binder entails)
 then they give rise to a type and scope preserving traversal.
-
+\todo{∘ vs ∙}
 \begin{figure}[h]
 \ExecuteMetaData[motivation.tex]{kit}
 \caption{Kit traversal for the STLC\label{kit}}
@@ -200,10 +201,10 @@ infixr 5 1+_
 \end{code}}
 %<*ty>
 \begin{code}
-data ty : Set where
-  `Unit  : ty
-  `Bool  : ty
-  _`→_   : (σ τ : ty) → ty
+data Ty : Set where
+  `Unit  : Ty
+  `Bool  : Ty
+  _`→_   : (σ τ : Ty) → Ty
 \end{code}
 %</ty>
 
@@ -216,17 +217,17 @@ indices~\cite{de1972lambda}.
 
 %<*context>
 \begin{code}
-data Con : Set where
-  ε    : Con
-  _∙_  : Con → ty → Con
+data Cx : Set where
+  ε    : Cx
+  _∙_  : Cx → Ty → Cx
 \end{code}
 %</context>
 
 %<*var>
 \begin{code}
-data _∈_ (σ : ty) : Con → Set where
-  zero  : {Γ : Con} → σ ∈ (Γ ∙ σ)
-  1+_   : {Γ : Con} {τ : ty} → σ ∈ Γ → σ ∈ (Γ ∙ τ)
+data _∈_ (σ : Ty) : Cx → Set where
+  zero  : {Γ : Cx} → σ ∈ (Γ ∙ σ)
+  1+_   : {Γ : Cx} {τ : Ty} → σ ∈ Γ → σ ∈ (Γ ∙ τ)
 \end{code}
 %</var>
 
@@ -247,7 +248,7 @@ of a conditional (\AIC{`ifte}) need to have the same type.
 \begin{code}
 open import Data.Nat as ℕ using (ℕ ; _+_)
 
-size : Con → ℕ
+size : Cx → ℕ
 size ε        = 0
 size (Γ ∙ _)  = 1 + size Γ
 
@@ -256,13 +257,13 @@ infixl 5 _`$_
 \end{code}}
 %<*term>
 \begin{code}
-data _⊢_ (Γ : Con) : (σ : ty) → Set where
-  `var     : {σ : ty} (v : σ ∈ Γ) → Γ ⊢ σ
-  _`$_     : {σ τ : ty} (t : Γ ⊢ (σ `→ τ)) (u : Γ ⊢ σ) → Γ ⊢ τ
-  `λ       : {σ τ : ty} (t : Γ ∙ σ ⊢ τ) → Γ ⊢ (σ `→ τ)
+data _⊢_ (Γ : Cx) : (σ : Ty) → Set where
+  `var     : {σ : Ty} (v : σ ∈ Γ) → Γ ⊢ σ
+  _`$_     : {σ τ : Ty} (t : Γ ⊢ (σ `→ τ)) (u : Γ ⊢ σ) → Γ ⊢ τ
+  `λ       : {σ τ : Ty} (t : Γ ∙ σ ⊢ τ) → Γ ⊢ (σ `→ τ)
   `⟨⟩      : Γ ⊢ `Unit
   `tt `ff  : Γ ⊢ `Bool
-  `ifte    : {σ : ty} (b : Γ ⊢ `Bool) (l r : Γ ⊢ σ) → Γ ⊢ σ
+  `ifte    : {σ : Ty} (b : Γ ⊢ `Bool) (l r : Γ ⊢ σ) → Γ ⊢ σ
 \end{code}
 %</term>
 \section{A Generic Notion of Environment}
@@ -294,11 +295,11 @@ infix 5 Var_⇒[_]_
 %<*environment>
 \begin{code}
 Model : (ℓ : Level) → Set (Level.suc ℓ)
-Model ℓ = Con → ty → Set ℓ
+Model ℓ = Cx → Ty → Set ℓ
 
-record Var_⇒[_]_ {ℓ : Level} (Γ : Con) (𝓔 : Model ℓ) (Δ : Con) : Set ℓ where
+record Var_⇒[_]_ {ℓ : Level} (Γ : Cx) (𝓔 : Model ℓ) (Δ : Cx) : Set ℓ where
   constructor pack
-  field lookup : {σ : ty} (v : σ ∈ Γ) → 𝓔 Δ σ
+  field lookup : {σ : Ty} (v : σ ∈ Γ) → 𝓔 Δ σ
 open Var_⇒[_]_ public
 \end{code}
 %</environment>
@@ -317,10 +318,10 @@ hence our decision to make it possible to tell Agda which relation we are
 working with.
 
 \begin{code}
-`ε : {ℓ : Level} {Δ : Con} {𝓔 : Model ℓ} → Var ε ⇒[ 𝓔 ] Δ
+`ε : {ℓ : Level} {Δ : Cx} {𝓔 : Model ℓ} → Var ε ⇒[ 𝓔 ] Δ
 lookup `ε ()
 
-_`∙_ :  {ℓ : Level} {Γ Δ : Con} {𝓔 : Model ℓ} {σ : ty} → Var Γ ⇒[ 𝓔 ] Δ → 𝓔 Δ σ → Var (Γ ∙ σ) ⇒[ 𝓔 ] Δ
+_`∙_ :  {ℓ : Level} {Γ Δ : Cx} {𝓔 : Model ℓ} {σ : Ty} → Var Γ ⇒[ 𝓔 ] Δ → 𝓔 Δ σ → Var (Γ ∙ σ) ⇒[ 𝓔 ] Δ
 lookup (ρ `∙ s) zero    = s
 lookup (ρ `∙ s) (1+ n)  = lookup ρ n
 \end{code}
@@ -344,7 +345,7 @@ variable of type \AB{σ} in \AB{Γ} to one of the same type in \AB{Δ}.
 infix 5 _⊆_
 \end{code}}
 \begin{code}
-_⊆_ : (Γ Δ : Con) → Set
+_⊆_ : (Γ Δ : Cx) → Set
 Γ ⊆ Δ = Var Γ ⇒[ flip _∈_ ] Δ
 \end{code}
 
@@ -364,8 +365,8 @@ Weakening 𝓔 = ∀ {Γ Δ σ} → Γ ⊆ Δ → 𝓔 Γ σ → 𝓔 Δ σ
 wk^∈ : Weakening (flip _∈_)
 wk^∈ inc v = lookup inc v
 
-wk[_] :  {ℓ : Level} {Δ : Con} {𝓔 : Model ℓ} → Weakening 𝓔 →
-         {Γ Θ : Con} → Δ ⊆ Θ → Var Γ ⇒[ 𝓔 ] Δ  →  Var Γ ⇒[ 𝓔 ] Θ
+wk[_] :  {ℓ : Level} {Δ : Cx} {𝓔 : Model ℓ} → Weakening 𝓔 →
+         {Γ Θ : Cx} → Δ ⊆ Θ → Var Γ ⇒[ 𝓔 ] Δ  →  Var Γ ⇒[ 𝓔 ] Θ
 lookup (wk[ wk ] inc ρ) = wk inc ∘ lookup ρ
 \end{code}
 
@@ -375,16 +376,16 @@ constructors Altenkirch, Hofmann and Streicher's ``Category of
 Weakenings"~\cite{altenkirch1995categorical} is based on.
 
 \begin{code}
-refl : {Γ : Con} → Γ ⊆ Γ
+refl : {Γ : Cx} → Γ ⊆ Γ
 refl = pack id
 
-trans : {ℓ : Level} {Γ Δ Θ : Con} {𝓔 : Model ℓ} → Γ ⊆ Δ → Var Δ ⇒[ 𝓔 ] Θ → Var Γ ⇒[ 𝓔 ] Θ
+trans : {ℓ : Level} {Γ Δ Θ : Cx} {𝓔 : Model ℓ} → Γ ⊆ Δ → Var Δ ⇒[ 𝓔 ] Θ → Var Γ ⇒[ 𝓔 ] Θ
 lookup (trans inc ρ) = lookup ρ ∘ lookup inc
 
-step : {Δ Γ : Con} {σ : ty} → Γ ⊆ Δ → Γ ⊆ (Δ ∙ σ)
+step : {Δ Γ : Cx} {σ : Ty} → Γ ⊆ Δ → Γ ⊆ (Δ ∙ σ)
 step inc = trans inc $ pack 1+_
 
-pop! : {Δ Γ : Con} {σ : ty} → Γ ⊆ Δ → (Γ ∙ σ) ⊆ (Δ ∙ σ)
+pop! : {Δ Γ : Cx} {σ : Ty} → Γ ⊆ Δ → (Γ ∙ σ) ⊆ (Δ ∙ σ)
 pop! inc = step inc `∙ zero
 \end{code}
 
@@ -431,7 +432,7 @@ term.
 
 \begin{code}
     wk      :  Weakening 𝓔
-    embed   :  {Γ : Con} {σ : ty} → σ ∈ Γ → 𝓔 Γ σ
+    embed   :  {Γ : Cx} {σ : Ty} → σ ∈ Γ → 𝓔 Γ σ
 \end{code}
 
 The structure of the model is quite constrained: each constructor
@@ -444,7 +445,7 @@ will therefore be able to, when hitting a variable, lookup the
 corresponding value in the environment and return it.
 
 \begin{code}
-    ⟦var⟧   :  {Γ : Con} {σ : ty} → 𝓔 Γ σ → 𝓜 Γ σ
+    ⟦var⟧   :  {Γ : Cx} {σ : Ty} → 𝓔 Γ σ → 𝓜 Γ σ
 \end{code}
 
 The semantic λ-abstraction is notable for two reasons: first, following
@@ -458,15 +459,15 @@ value. This slight variation in the type of semantic λ-abstraction
 guarantees that such an argument will be provided to us.
 
 \begin{code}
-  Kripke : {ℓ^E ℓ^M : Level} → Model ℓ^E → Model ℓ^M → Con → ty → ty → Set (ℓ^E ⊔ ℓ^M)
-  Kripke 𝓔 𝓜 Γ σ τ = {Δ : Con} → Γ ⊆ Δ → 𝓔 Δ σ → 𝓜 Δ τ
+  Kripke : {ℓ^E ℓ^M : Level} → Model ℓ^E → Model ℓ^M → Cx → Ty → Ty → Set (ℓ^E ⊔ ℓ^M)
+  Kripke 𝓔 𝓜 Γ σ τ = {Δ : Cx} → Γ ⊆ Δ → 𝓔 Δ σ → 𝓜 Δ τ
 \end{code}
 \AgdaHide{
 \begin{code}
   field
 \end{code}}
 \begin{code}
-    ⟦λ⟧     :  {Γ : Con} {σ τ : ty} → Kripke 𝓔 𝓜 Γ σ τ → 𝓜 Γ (σ `→ τ)
+    ⟦λ⟧     :  {Γ : Cx} {σ τ : Ty} → Kripke 𝓔 𝓜 Γ σ τ → 𝓜 Γ (σ `→ τ)
 \end{code}
 
 The remaining fields' types are a direct translation of the types
@@ -476,7 +477,7 @@ with the one corresponding to model values (\AB{𝓜}).
 
 \begin{code}
   Applicative : {ℓ : Level} → Model ℓ → Set ℓ
-  Applicative 𝓜 = {Γ : Con} {σ τ : ty} → 𝓜 Γ (σ `→ τ) → 𝓜 Γ σ → 𝓜 Γ τ
+  Applicative 𝓜 = {Γ : Cx} {σ τ : Ty} → 𝓜 Γ (σ `→ τ) → 𝓜 Γ σ → 𝓜 Γ τ
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -484,10 +485,10 @@ with the one corresponding to model values (\AB{𝓜}).
 \end{code}}
 \begin{code}
     _⟦$⟧_   :  Applicative 𝓜
-    ⟦⟨⟩⟧    :  {Γ : Con} → 𝓜 Γ `Unit
-    ⟦tt⟧    :  {Γ : Con} → 𝓜 Γ `Bool
-    ⟦ff⟧    :  {Γ : Con} → 𝓜 Γ `Bool
-    ⟦ifte⟧  :  {Γ : Con} {σ : ty} → 𝓜 Γ `Bool → 𝓜 Γ σ → 𝓜 Γ σ → 𝓜 Γ σ
+    ⟦⟨⟩⟧    :  {Γ : Cx} → 𝓜 Γ `Unit
+    ⟦tt⟧    :  {Γ : Cx} → 𝓜 Γ `Bool
+    ⟦ff⟧    :  {Γ : Cx} → 𝓜 Γ `Bool
+    ⟦ifte⟧  :  {Γ : Cx} {σ : Ty} → 𝓜 Γ `Bool → 𝓜 Γ σ → 𝓜 Γ σ → 𝓜 Γ σ
 \end{code}
 
 The fundamental lemma of semantics is then proven in a module indexed by
@@ -500,7 +501,7 @@ argument can be stored in the environment which will have been weakened
 beforehand.
 
 \begin{code}
-module Eval {ℓ^E ℓ^M : Level} {𝓔 : (Γ : Con) (σ : ty) → Set ℓ^E} {𝓜 : (Γ : Con) (σ : ty) → Set ℓ^M} (𝓢 : Semantics 𝓔 𝓜) where
+module Eval {ℓ^E ℓ^M : Level} {𝓔 : (Γ : Cx) (σ : Ty) → Set ℓ^E} {𝓜 : (Γ : Cx) (σ : Ty) → Set ℓ^M} (𝓢 : Semantics 𝓔 𝓜) where
   open Semantics 𝓢
 \end{code}\vspace{ -2.5em}%ugly but it works!
 \AgdaHide{
@@ -509,7 +510,7 @@ module Eval {ℓ^E ℓ^M : Level} {𝓔 : (Γ : Con) (σ : ty) → Set ℓ^E} {�
 \end{code}}
 %<*evaluation>
 \begin{code}
-  lemma : {Δ Γ : Con} {σ : ty} → Γ ⊢ σ → Var Γ ⇒[ 𝓔 ] Δ → 𝓜 Δ σ
+  lemma : {Δ Γ : Cx} {σ : Ty} → Γ ⊢ σ → Var Γ ⇒[ 𝓔 ] Δ → 𝓜 Δ σ
   lemma (`var v)       ρ = ⟦var⟧ $ lookup ρ v
   lemma (t `$ u)       ρ = lemma t ρ ⟦$⟧ lemma u ρ
   lemma (`λ t)         ρ = ⟦λ⟧ λ inc u → lemma t $ wk[ wk ] inc ρ `∙ u
@@ -533,10 +534,10 @@ the term \AB{t} in the environment \AB{ρ}. Similarly, \AB{𝓢} \AF{⊨eval}
 \AB{𝓢} (using a diagonal environment).
 
 \begin{code}
-  _⊨⟦_⟧_ : {Δ Γ : Con} {σ : ty} → Γ ⊢ σ → Var Γ ⇒[ 𝓔 ] Δ → 𝓜 Δ σ
+  _⊨⟦_⟧_ : {Δ Γ : Cx} {σ : Ty} → Γ ⊢ σ → Var Γ ⇒[ 𝓔 ] Δ → 𝓜 Δ σ
   _⊨⟦_⟧_ = lemma
 
-  _⊨eval_ : {Γ : Con} {σ : ty} → Γ ⊢ σ → 𝓜 Γ σ
+  _⊨eval_ : {Γ : Cx} {σ : Ty} → Γ ⊢ σ → 𝓜 Γ σ
   _⊨eval_ t = _⊨⟦_⟧_ t (pack embed)
 \end{code}
 \AgdaHide{
@@ -567,14 +568,14 @@ the \AF{syntactic} function turning its inhabitants into associated
 
 %<*syntactic>
 \begin{code}
-record Syntactic {ℓ : Level} (𝓔 : (Γ : Con) (σ : ty) → Set ℓ) : Set ℓ where
-  field  embed  : {Γ : Con} {σ : ty} → σ ∈ Γ → 𝓔 Γ σ
+record Syntactic {ℓ : Level} (𝓔 : (Γ : Cx) (σ : Ty) → Set ℓ) : Set ℓ where
+  field  embed  : {Γ : Cx} {σ : Ty} → σ ∈ Γ → 𝓔 Γ σ
          wk     : Weakening 𝓔
-         ⟦var⟧  : {Γ : Con} {σ : ty} → 𝓔 Γ σ → Γ ⊢ σ
+         ⟦var⟧  : {Γ : Cx} {σ : Ty} → 𝓔 Γ σ → Γ ⊢ σ
 \end{code}\vspace{ -1.5em}%ugly but it works!
 %</syntactic>
 \begin{code}
-syntactic : {ℓ : Level} {𝓔 : (Γ : Con) (σ : ty) → Set ℓ} (syn : Syntactic 𝓔) → Semantics 𝓔 _⊢_
+syntactic : {ℓ : Level} {𝓔 : (Γ : Cx) (σ : Ty) → Set ℓ} (syn : Syntactic 𝓔) → Semantics 𝓔 _⊢_
 syntactic syn = let open Syntactic syn in record
   { wk      = wk; embed   = embed; ⟦var⟧   = ⟦var⟧
   ; ⟦λ⟧     = λ t → `λ $ t (step refl) $ embed zero
@@ -641,7 +642,7 @@ is once again more interesting: it is an implementation of simultaneous
 substitution.
 
 \begin{code}
-subst : {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) (ρ : Var Γ ⇒[ _⊢_ ] Δ) → Δ ⊢ σ
+subst : {Γ Δ : Cx} {σ : Ty} (t : Γ ⊢ σ) (ρ : Var Γ ⇒[ _⊢_ ] Δ) → Δ ⊢ σ
 subst t ρ = Substitution ⊨⟦ t ⟧ ρ
 \end{code}
 
@@ -684,11 +685,11 @@ open import Relation.Binary.PropositionalEquality as PEq using (_≡_)
 }
 
 \begin{code}
-record Name (Γ : Con) (σ : ty) : Set where
+record Name (Γ : Cx) (σ : Ty) : Set where
   constructor mkName
   field runName : String
 
-record Printer (Γ : Con) (σ : ty) : Set where
+record Printer (Γ : Cx) (σ : Ty) : Set where
   constructor mkPrinter
   field runPrinter : State (Stream String) String
 \end{code}
@@ -754,7 +755,7 @@ numbers \AB{m}s, \AB{n}s, etc.
 
 \begin{code}
   where
-    deBruijn : {Γ : Con} {σ : ty} → σ ∈ Γ → ℕ
+    deBruijn : {Γ : Cx} {σ : Ty} → σ ∈ Γ → ℕ
     deBruijn zero    = 0
     deBruijn (1+ n)  = 1 + deBruijn n
 \end{code}
@@ -811,7 +812,7 @@ init : ∀ Γ → State (Stream String) (Var Γ ⇒[ Name ] Γ)
 init Γ = nameContext Γ Γ
 \end{code}}\vspace{ -2em}%ugly but it works!
 \begin{code}
-print : {Γ : Con} {σ : ty} → Γ ⊢ σ → String
+print : {Γ : Cx} {σ : Ty} → Γ ⊢ σ → String
 print {Γ} t = proj₁ $  (init Γ >>= λ ρ →
                        runPrinter (Printing ⊨⟦ t ⟧ ρ)) names
 \end{code}
@@ -825,7 +826,7 @@ As we can see, it receives the name \AStr{"a"} whilst the binder introduced by
 the η-expansion is called \AStr{"b"}.
 
 \begin{code}
-pretty$ : {σ τ : ty} → print {Γ = ε ∙ σ `→ τ} (`λ $ `var (1+ zero) `$ `var zero) ≡ "λb. a (b)"
+pretty$ : {σ τ : Ty} → print {Γ = ε ∙ σ `→ τ} (`λ $ `var (1+ zero) `$ `var zero) ≡ "λb. a (b)"
 pretty$ = PEq.refl
 \end{code}
 
@@ -856,7 +857,7 @@ be a collection of fields which translates here to all the elements of the
 infixl 10 _⟨_/var₀⟩
 \end{code}}
 \begin{code}
-eta : {Γ : Con} {σ τ : ty} → Γ ⊢ (σ `→ τ) → Γ ⊢ (σ `→ τ)
+eta : {Γ : Cx} {σ τ : Ty} → Γ ⊢ (σ `→ τ) → Γ ⊢ (σ `→ τ)
 eta t = `λ $ wk^⊢ (step refl) t `$ `var zero
 \end{code}
 
@@ -870,7 +871,7 @@ eta t = `λ $ wk^⊢ (step refl) t `$ `var zero
 \end{mathpar}
 
 \begin{code}
-_⟨_/var₀⟩ : {Γ : Con} {σ τ : ty} (t : Γ ∙ σ ⊢ τ) (u : Γ ⊢ σ) → Γ ⊢ τ
+_⟨_/var₀⟩ : {Γ : Cx} {σ τ : Ty} (t : Γ ∙ σ ⊢ τ) (u : Γ ⊢ σ) → Γ ⊢ τ
 t ⟨ u /var₀⟩ = subst t $ pack `var `∙ u
 \end{code}
 
@@ -935,17 +936,17 @@ infix 5 _⊢[_]^ne_ _⊢[_]^nf_
 mutual
 \end{code}}
 \begin{code}
-  data _⊢[_]^ne_ (Γ : Con) (R : ty → Set) (σ : ty) : Set where
+  data _⊢[_]^ne_ (Γ : Cx) (R : Ty → Set) (σ : Ty) : Set where
     `var   : (v : σ ∈ Γ) → Γ ⊢[ R ]^ne σ
-    _`$_   : {τ : ty} (t : Γ ⊢[ R ]^ne τ `→ σ) (u : Γ ⊢[ R ]^nf τ) → Γ ⊢[ R ]^ne σ
+    _`$_   : {τ : Ty} (t : Γ ⊢[ R ]^ne τ `→ σ) (u : Γ ⊢[ R ]^nf τ) → Γ ⊢[ R ]^ne σ
     `ifte  : (b : Γ ⊢[ R ]^ne `Bool) (l r : Γ ⊢[ R ]^nf σ) → Γ ⊢[ R ]^ne σ
 
-  data _⊢[_]^nf_ (Γ : Con) (R : ty → Set) : (σ : ty) → Set where
-    `embed  : {σ : ty} (pr : R σ) (t : Γ ⊢[ R ]^ne σ) → Γ ⊢[ R ]^nf σ
+  data _⊢[_]^nf_ (Γ : Cx) (R : Ty → Set) : (σ : Ty) → Set where
+    `embed  : {σ : Ty} (pr : R σ) (t : Γ ⊢[ R ]^ne σ) → Γ ⊢[ R ]^nf σ
     `⟨⟩     : Γ ⊢[ R ]^nf `Unit
     `tt     : Γ ⊢[ R ]^nf `Bool
     `ff     : Γ ⊢[ R ]^nf `Bool
-    `λ      : {σ τ : ty} (b : Γ ∙ σ ⊢[ R ]^nf τ) → Γ ⊢[ R ]^nf (σ `→ τ)
+    `λ      : {σ τ : Ty} (b : Γ ∙ σ ⊢[ R ]^nf τ) → Γ ⊢[ R ]^nf (σ `→ τ)
 \end{code}
 
 Once more, context inclusions induce the expected notions of weakening \AF{wk^{ne}}
@@ -956,8 +957,8 @@ with binding.
 
 \AgdaHide{
 \begin{code}
-wk^ne : {Δ Γ : Con} (inc : Γ ⊆ Δ) {R : ty → Set} {σ : ty} (ne : Γ ⊢[ R ]^ne σ) → Δ ⊢[ R ]^ne σ
-wk^nf : {Δ Γ : Con} (inc : Γ ⊆ Δ) {R : ty → Set} {σ : ty} (ne : Γ ⊢[ R ]^nf σ) → Δ ⊢[ R ]^nf σ
+wk^ne : {Δ Γ : Cx} (inc : Γ ⊆ Δ) {R : Ty → Set} {σ : Ty} (ne : Γ ⊢[ R ]^ne σ) → Δ ⊢[ R ]^ne σ
+wk^nf : {Δ Γ : Cx} (inc : Γ ⊆ Δ) {R : Ty → Set} {σ : Ty} (ne : Γ ⊢[ R ]^nf σ) → Δ ⊢[ R ]^nf σ
 wk^ne inc (`var v)        = `var $′ wk^∈ inc v
 wk^ne inc (ne `$ u)       = wk^ne inc ne `$ wk^nf inc u
 wk^ne inc (`ifte ne l r)  = `ifte (wk^ne inc ne) (wk^nf inc l) (wk^nf inc r)
@@ -969,16 +970,16 @@ wk^nf inc `ff           = `ff
 wk^nf inc (`λ nf)       = `λ $′ wk^nf (pop! inc) nf
 
 infix 5 [_,_]
-[_,_] : {ℓ : Level} {Γ : Con} {τ : ty} {P : (σ : ty) (pr : σ ∈ Γ ∙ τ) → Set ℓ} →
+[_,_] : {ℓ : Level} {Γ : Cx} {τ : Ty} {P : (σ : Ty) (pr : σ ∈ Γ ∙ τ) → Set ℓ} →
         (p0 : P τ zero) →
-        (pS : (σ : ty) (n : σ ∈ Γ) → P σ (1+ n)) →
-        (σ : ty) (pr : σ ∈ Γ ∙ τ) → P σ pr
+        (pS : (σ : Ty) (n : σ ∈ Γ) → P σ (1+ n)) →
+        (σ : Ty) (pr : σ ∈ Γ ∙ τ) → P σ pr
 [ p0 , pS ] σ zero    = p0
 [ p0 , pS ] σ (1+ n)  = pS σ n
 
 mutual
 
-  wk^nf-refl′ : {Γ : Con} {R : ty → Set} {σ : ty} {f : Γ ⊆ Γ} (prf : (σ : ty) (pr : σ ∈ Γ) → lookup f pr ≡ pr) →
+  wk^nf-refl′ : {Γ : Cx} {R : Ty → Set} {σ : Ty} {f : Γ ⊆ Γ} (prf : (σ : Ty) (pr : σ ∈ Γ) → lookup f pr ≡ pr) →
                 (t : Γ ⊢[ R ]^nf σ) → wk^nf f t ≡ t
   wk^nf-refl′ prf (`embed pr t)  = PEq.cong (`embed pr) $ wk^ne-refl′ prf t
   wk^nf-refl′ prf `⟨⟩            = PEq.refl
@@ -986,7 +987,7 @@ mutual
   wk^nf-refl′ prf `ff            = PEq.refl
   wk^nf-refl′ prf (`λ t)         = PEq.cong `λ $ wk^nf-refl′ ([ PEq.refl , (λ σ → PEq.cong 1+_ ∘ prf σ) ]) t
 
-  wk^ne-refl′ : {Γ : Con} {R : ty → Set} {σ : ty} {f : Γ ⊆ Γ} (prf : (σ : ty) (pr : σ ∈ Γ) → lookup f pr ≡ pr) →
+  wk^ne-refl′ : {Γ : Cx} {R : Ty → Set} {σ : Ty} {f : Γ ⊆ Γ} (prf : (σ : Ty) (pr : σ ∈ Γ) → lookup f pr ≡ pr) →
                 (t : Γ ⊢[ R ]^ne σ) → wk^ne f t ≡ t
   wk^ne-refl′ prf (`var v)       = PEq.cong `var $ prf _ v
   wk^ne-refl′ prf (t `$ u)       = PEq.cong₂ _`$_ (wk^ne-refl′ prf t) (wk^nf-refl′ prf u)
@@ -994,8 +995,8 @@ mutual
 
 mutual
 
-  wk^nf-trans′ : {Θ Δ Γ : Con} {R : ty → Set} {σ : ty} {inc₁ : Γ ⊆ Δ} {inc₂ : Δ ⊆ Θ}
-                 {f : Γ ⊆ Θ} (prf : (σ : ty) (pr : σ ∈ Γ) → lookup (trans inc₁ inc₂) pr ≡ lookup f pr)
+  wk^nf-trans′ : {Θ Δ Γ : Cx} {R : Ty → Set} {σ : Ty} {inc₁ : Γ ⊆ Δ} {inc₂ : Δ ⊆ Θ}
+                 {f : Γ ⊆ Θ} (prf : (σ : Ty) (pr : σ ∈ Γ) → lookup (trans inc₁ inc₂) pr ≡ lookup f pr)
                  (t : Γ ⊢[ R ]^nf σ) →  wk^nf inc₂ (wk^nf inc₁ t) ≡ wk^nf f t
   wk^nf-trans′ prf (`embed pr t)  = PEq.cong (`embed pr) (wk^ne-trans′ prf t)
   wk^nf-trans′ prf `⟨⟩            = PEq.refl
@@ -1003,24 +1004,24 @@ mutual
   wk^nf-trans′ prf `ff            = PEq.refl
   wk^nf-trans′ prf (`λ t)         = PEq.cong `λ $ wk^nf-trans′ ([ PEq.refl , (λ σ → PEq.cong 1+_ ∘ prf σ) ]) t
 
-  wk^ne-trans′ : {Θ Δ Γ : Con} {R : ty → Set} {σ : ty} {inc₁ : Γ ⊆ Δ} {inc₂ : Δ ⊆ Θ}
-                 {f : Γ ⊆ Θ} (prf : (σ : ty) (pr : σ ∈ Γ) → lookup (trans inc₁ inc₂) pr ≡ lookup f pr)
+  wk^ne-trans′ : {Θ Δ Γ : Cx} {R : Ty → Set} {σ : Ty} {inc₁ : Γ ⊆ Δ} {inc₂ : Δ ⊆ Θ}
+                 {f : Γ ⊆ Θ} (prf : (σ : Ty) (pr : σ ∈ Γ) → lookup (trans inc₁ inc₂) pr ≡ lookup f pr)
                  (t : Γ ⊢[ R ]^ne σ) →  wk^ne inc₂ (wk^ne inc₁ t) ≡ wk^ne f t
   wk^ne-trans′ prf (`var v)       = PEq.cong `var (prf _ v)
   wk^ne-trans′ prf (t `$ u)       = PEq.cong₂ _`$_ (wk^ne-trans′ prf t) (wk^nf-trans′ prf u)
   wk^ne-trans′ prf (`ifte b l r)  = PEq.cong₂ (uncurry `ifte) (PEq.cong₂ _,_ (wk^ne-trans′ prf b) (wk^nf-trans′ prf l)) (wk^nf-trans′ prf r)
 
-wk^nf-refl : {Γ : Con} {R : ty → Set} {σ : ty} (t : Γ ⊢[ R ]^nf σ) → wk^nf refl t ≡ t
+wk^nf-refl : {Γ : Cx} {R : Ty → Set} {σ : Ty} (t : Γ ⊢[ R ]^nf σ) → wk^nf refl t ≡ t
 wk^nf-refl = wk^nf-refl′ (λ _ _ → PEq.refl)
 
-wk^ne-refl : {Γ : Con} {R : ty → Set} {σ : ty} (t : Γ ⊢[ R ]^ne σ) → wk^ne refl t ≡ t
+wk^ne-refl : {Γ : Cx} {R : Ty → Set} {σ : Ty} (t : Γ ⊢[ R ]^ne σ) → wk^ne refl t ≡ t
 wk^ne-refl = wk^ne-refl′ (λ _ _ → PEq.refl)
 
-wk^nf-trans : {Θ Δ Γ : Con} {R : ty → Set} {σ : ty} (inc₁ : Γ ⊆ Δ) (inc₂ : Δ ⊆ Θ)
+wk^nf-trans : {Θ Δ Γ : Cx} {R : Ty → Set} {σ : Ty} (inc₁ : Γ ⊆ Δ) (inc₂ : Δ ⊆ Θ)
                (t : Γ ⊢[ R ]^nf σ) →  wk^nf inc₂ (wk^nf inc₁ t) ≡ wk^nf (trans inc₁ inc₂) t
 wk^nf-trans inc₁ inc₂ = wk^nf-trans′ (λ _ _ → PEq.refl)
 
-wk^ne-trans : {Θ Δ Γ : Con} {R : ty → Set} {σ : ty} (inc₁ : Γ ⊆ Δ) (inc₂ : Δ ⊆ Θ)
+wk^ne-trans : {Θ Δ Γ : Cx} {R : Ty → Set} {σ : Ty} (inc₁ : Γ ⊆ Δ) (inc₂ : Δ ⊆ Θ)
                (t : Γ ⊢[ R ]^ne σ) →  wk^ne inc₂ (wk^ne inc₁ t) ≡ wk^ne (trans inc₁ inc₂) t
 wk^ne-trans inc₁ inc₂ = wk^ne-trans′ (λ _ _ → PEq.refl)
 \end{code}}
@@ -1043,7 +1044,7 @@ inhabitants of \AB{Γ} \AF{⊨^{βιξη}} \AIC{`Unit} are indeed equal and all 
 of \AB{Γ} \AF{⊨^{βιξη}} (\AB{σ} \AIC{`→} \AB{τ}) are functions in Agda.
 
 \begin{code}
-R^βιξη : ty → Set
+R^βιξη : Ty → Set
 R^βιξη `Bool  = ⊤
 R^βιξη _      = ⊥
 \end{code}
@@ -1054,10 +1055,10 @@ infix 5 _⊨^βιξη_
 \end{code}}
 %<*sem>
 \begin{code}
-_⊨^βιξη_ : (Γ : Con) (σ : ty) → Set
+_⊨^βιξη_ : (Γ : Cx) (σ : Ty) → Set
 Γ ⊨^βιξη `Unit     = ⊤
 Γ ⊨^βιξη `Bool     = Γ ⊢[ R^βιξη ]^nf `Bool
-Γ ⊨^βιξη (σ `→ τ)  = {Δ : Con} → Γ ⊆ Δ → Δ ⊨^βιξη σ → Δ ⊨^βιξη τ
+Γ ⊨^βιξη (σ `→ τ)  = {Δ : Cx} → Γ ⊆ Δ → Δ ⊨^βιξη σ → Δ ⊨^βιξη τ
 \end{code}
 %</sem>
 
@@ -1065,7 +1066,7 @@ Normal forms may be weakened, and context inclusions may be composed hence
 the rather simple definition of weakening for inhabitants of the model.
 
 \begin{code}
-wk^βιξη : {Δ Γ : Con} (σ : ty) (inc : Γ ⊆ Δ) (T : Γ ⊨^βιξη σ) → Δ ⊨^βιξη σ
+wk^βιξη : {Δ Γ : Cx} (σ : Ty) (inc : Γ ⊆ Δ) (T : Γ ⊨^βιξη σ) → Δ ⊨^βιξη σ
 wk^βιξη `Unit     inc T = T
 wk^βιξη `Bool     inc T = wk^nf inc T
 wk^βιξη (σ `→ τ)  inc T = λ inc′ → T $′ trans inc inc′
@@ -1083,7 +1084,7 @@ is not at all an issue.
 infixr 5 _$^βιξη_
 \end{code}}
 \begin{code}
-_$^βιξη_ : {Γ : Con} {σ τ : ty} (t : Γ ⊨^βιξη σ `→ τ) (u : Γ ⊨^βιξη σ) → Γ ⊨^βιξη τ
+_$^βιξη_ : {Γ : Cx} {σ τ : Ty} (t : Γ ⊨^βιξη σ `→ τ) (u : Γ ⊨^βιξη σ) → Γ ⊨^βιξη τ
 t $^βιξη u = t refl u
 \end{code}
 
@@ -1100,15 +1101,15 @@ are turned into functions in the host language.
 mutual
 \end{code}}
 \begin{code}
-  var‿0^βιξη : {Γ : Con} {σ : ty} → Γ ∙ σ ⊨^βιξη σ
+  var‿0^βιξη : {Γ : Cx} {σ : Ty} → Γ ∙ σ ⊨^βιξη σ
   var‿0^βιξη = reflect^βιξη _ $′ `var zero
 
-  reflect^βιξη : {Γ : Con} (σ : ty) (t : Γ ⊢[ R^βιξη ]^ne σ) → Γ ⊨^βιξη σ
+  reflect^βιξη : {Γ : Cx} (σ : Ty) (t : Γ ⊢[ R^βιξη ]^ne σ) → Γ ⊨^βιξη σ
   reflect^βιξη `Unit     t = ⟨⟩
   reflect^βιξη `Bool     t = `embed _ t
   reflect^βιξη (σ `→ τ)  t = λ inc u → reflect^βιξη τ $′ wk^ne inc t `$ reify^βιξη σ u
 
-  reify^βιξη : {Γ : Con} (σ : ty) (T : Γ ⊨^βιξη σ) → Γ ⊢[ R^βιξη ]^nf σ
+  reify^βιξη : {Γ : Cx} (σ : Ty) (T : Γ ⊨^βιξη σ) → Γ ⊢[ R^βιξη ]^nf σ
   reify^βιξη `Unit     T = `⟨⟩
   reify^βιξη `Bool     T = T
   reify^βιξη (σ `→ τ)  T = `λ $′ reify^βιξη τ $′ T (step refl) var‿0^βιξη
@@ -1119,7 +1120,7 @@ is a value, the appropriate branch is picked; if it is stuck the whole expressio
 is reflected in the model.
 
 \begin{code}
-ifte^βιξη : {Γ : Con} {σ : ty} (b : Γ ⊨^βιξη `Bool) (l r : Γ ⊨^βιξη σ) → Γ ⊨^βιξη σ
+ifte^βιξη : {Γ : Cx} {σ : Ty} (b : Γ ⊨^βιξη `Bool) (l r : Γ ⊨^βιξη σ) → Γ ⊨^βιξη σ
 ifte^βιξη `tt           l r = l
 ifte^βιξη `ff           l r = r
 ifte^βιξη (`embed _ T)  l r = reflect^βιξη _ $′ `ifte T (reify^βιξη _ l) (reify^βιξη _ r)
@@ -1145,7 +1146,7 @@ consists of η-expanded variables. Normalisation is obtained by reifying
 the result of evaluation.
 
 \begin{code}
-norm^βιξη : {Γ : Con} (σ : ty) (t : Γ ⊢ σ) → Γ ⊢[ R^βιξη ]^nf σ
+norm^βιξη : {Γ : Cx} (σ : Ty) (t : Γ ⊢ σ) → Γ ⊢[ R^βιξη ]^nf σ
 norm^βιξη σ t = reify^βιξη σ $′ Normalise^βιξη ⊨eval t
 \end{code}
 
@@ -1182,20 +1183,20 @@ together with the \emph{acting} model (\AF{\_⊨^{βιξ⋆}\_}):
 
 \AgdaHide{
 \begin{code}
-R^βιξ : ty → Set
+R^βιξ : Ty → Set
 R^βιξ _ = ⊤
 
 infix 5 _⊨^βιξ_ _⊨^βιξ⋆_
 mutual
 \end{code}}
 \begin{code}
-  _⊨^βιξ_   : (Γ : Con) (σ : ty) → Set
+  _⊨^βιξ_   : (Γ : Cx) (σ : Ty) → Set
   Γ ⊨^βιξ σ  = Γ ⊢[ R^βιξ ]^ne σ ⊎ Γ ⊨^βιξ⋆ σ
 
-  _⊨^βιξ⋆_  : (Γ : Con) (σ : ty) → Set
+  _⊨^βιξ⋆_  : (Γ : Cx) (σ : Ty) → Set
   Γ ⊨^βιξ⋆ `Unit     = ⊤
   Γ ⊨^βιξ⋆ `Bool     = Bool
-  Γ ⊨^βιξ⋆ (σ `→ τ)  = {Δ : Con} → Γ ⊆ Δ → Δ ⊨^βιξ σ → Δ ⊨^βιξ τ
+  Γ ⊨^βιξ⋆ (σ `→ τ)  = {Δ : Cx} → Γ ⊆ Δ → Δ ⊨^βιξ σ → Δ ⊨^βιξ τ
 \end{code}
 
 These mutual definitions allow us to make a careful distinction between values
@@ -1212,12 +1213,12 @@ albeit slightly more complex than for the usual definition of Normalisation
 by Evaluation seen in Section ~\ref{normbye}.
 
 \begin{code}
-wk^βιξ⋆ : {Δ Γ : Con} (inc : Γ ⊆ Δ) {σ : ty} (T : Γ ⊨^βιξ⋆ σ) → Δ ⊨^βιξ⋆ σ
+wk^βιξ⋆ : {Δ Γ : Cx} (inc : Γ ⊆ Δ) {σ : Ty} (T : Γ ⊨^βιξ⋆ σ) → Δ ⊨^βιξ⋆ σ
 wk^βιξ⋆ inc {`Unit   } T = T
 wk^βιξ⋆ inc {`Bool   } T = T
 wk^βιξ⋆ inc {σ `→ τ  } T = λ inc′ → T $′ trans inc inc′
 
-wk^βιξ : {Δ Γ : Con} {σ : ty} (inc : Γ ⊆ Δ) (T : Γ ⊨^βιξ σ) → Δ ⊨^βιξ σ
+wk^βιξ : {Δ Γ : Cx} {σ : Ty} (inc : Γ ⊆ Δ) (T : Γ ⊨^βιξ σ) → Δ ⊨^βιξ σ
 wk^βιξ inc (inj₁ ne)  = inj₁ $ wk^ne inc ne
 wk^βιξ inc (inj₂ T)   = inj₂ $ wk^βιξ⋆ inc T
 \end{code}
@@ -1231,7 +1232,7 @@ is not the case: all the values in the acting model are notionally obtained
 from constructor-headed terms.
 
 \begin{code}
-reflect^βιξ : {Γ : Con} (σ : ty) (t : Γ ⊢[ R^βιξ ]^ne σ) → Γ ⊨^βιξ σ
+reflect^βιξ : {Γ : Cx} (σ : Ty) (t : Γ ⊢[ R^βιξ ]^ne σ) → Γ ⊨^βιξ σ
 reflect^βιξ σ = inj₁
 \end{code}\vspace{ -1.5em}
 \AgdaHide{
@@ -1239,13 +1240,13 @@ reflect^βιξ σ = inj₁
 mutual
 \end{code}}
 \begin{code}
-  reify^βιξ⋆ : {Γ : Con} (σ : ty) (T : Γ ⊨^βιξ⋆ σ) → Γ ⊢[ R^βιξ ]^nf σ
+  reify^βιξ⋆ : {Γ : Cx} (σ : Ty) (T : Γ ⊨^βιξ⋆ σ) → Γ ⊢[ R^βιξ ]^nf σ
   reify^βιξ⋆ `Unit     T = `⟨⟩
   reify^βιξ⋆ `Bool     T = if T then `tt else `ff
   reify^βιξ⋆ (σ `→ τ)  T = `λ $′ reify^βιξ τ $′ T (step refl) var‿0^βιξ
     where var‿0^βιξ = inj₁ $ `var zero
 
-  reify^βιξ : {Γ : Con} (σ : ty) (T : Γ ⊨^βιξ σ) → Γ ⊢[ R^βιξ ]^nf σ
+  reify^βιξ : {Γ : Cx} (σ : Ty) (T : Γ ⊨^βιξ σ) → Γ ⊢[ R^βιξ ]^nf σ
   reify^βιξ σ (inj₁ ne)  = `embed _ ne
   reify^βιξ σ (inj₂ T)   = reify^βιξ⋆ σ T
 \end{code}
@@ -1261,11 +1262,11 @@ the definition of the semantical ``if then else''.
 infixr 5 _$^βιξ_
 \end{code}}
 \begin{code}
-_$^βιξ_ : {Γ : Con} {σ τ : ty} (t : Γ ⊨^βιξ (σ `→ τ)) (u : Γ ⊨^βιξ σ) → Γ ⊨^βιξ τ
+_$^βιξ_ : {Γ : Cx} {σ τ : Ty} (t : Γ ⊨^βιξ (σ `→ τ)) (u : Γ ⊨^βιξ σ) → Γ ⊨^βιξ τ
 (inj₁ ne)  $^βιξ u = inj₁ $ ne `$ reify^βιξ _ u
 (inj₂ F)   $^βιξ u = F refl u
 
-ifte^βιξ : {Γ : Con} {σ : ty} (b : Γ ⊨^βιξ `Bool) (l r : Γ ⊨^βιξ σ) → Γ ⊨^βιξ σ
+ifte^βιξ : {Γ : Cx} {σ : Ty} (b : Γ ⊨^βιξ `Bool) (l r : Γ ⊨^βιξ σ) → Γ ⊨^βιξ σ
 ifte^βιξ (inj₁ ne) l r = inj₁ $ `ifte ne (reify^βιξ _ l) (reify^βιξ _ r)
 ifte^βιξ (inj₂ T)  l r = if T then l else r
 \end{code}
@@ -1282,7 +1283,7 @@ Normalise^βιξ = record
   ; _⟦$⟧_ = _$^βιξ_; ⟦λ⟧ = inj₂
   ; ⟦⟨⟩⟧ = inj₂ ⟨⟩; ⟦tt⟧ = inj₂ true; ⟦ff⟧ = inj₂ false; ⟦ifte⟧  = ifte^βιξ }
           
-norm^βιξ : {Γ : Con} (σ : ty) (t : Γ ⊢ σ) → Γ ⊢[ R^βιξ ]^nf σ
+norm^βιξ : {Γ : Cx} (σ : Ty) (t : Γ ⊢ σ) → Γ ⊢[ R^βιξ ]^nf σ
 norm^βιξ σ t = reify^βιξ σ $′ Normalise^βιξ ⊨eval t
 \end{code}
 
@@ -1303,21 +1304,21 @@ and \AF{erase^{whne}} with codomain \AD{\_⊢\_} (we omit their simple definitio
 infix 5 _⊢^whne_ _⊢^whnf_
 \end{code}}
 \begin{code}
-data _⊢^whne_ (Γ : Con) (σ : ty) : Set where
+data _⊢^whne_ (Γ : Cx) (σ : Ty) : Set where
   `var   : (v : σ ∈ Γ) → Γ ⊢^whne σ
-  _`$_   : {τ : ty} (t : Γ ⊢^whne (τ `→ σ)) (u : Γ ⊢ τ) → Γ ⊢^whne σ
+  _`$_   : {τ : Ty} (t : Γ ⊢^whne (τ `→ σ)) (u : Γ ⊢ τ) → Γ ⊢^whne σ
   `ifte  : (b : Γ ⊢^whne `Bool) (l r : Γ ⊢ σ) → Γ ⊢^whne σ
 
-data _⊢^whnf_ (Γ : Con) : (σ : ty) → Set where
-  `embed   : {σ : ty} (t : Γ ⊢^whne σ) → Γ ⊢^whnf σ
+data _⊢^whnf_ (Γ : Cx) : (σ : Ty) → Set where
+  `embed   : {σ : Ty} (t : Γ ⊢^whne σ) → Γ ⊢^whnf σ
   `⟨⟩      : Γ ⊢^whnf `Unit
   `tt `ff  : Γ ⊢^whnf `Bool
-  `λ       : {σ τ : ty} (b : Γ ∙ σ ⊢ τ) → Γ ⊢^whnf (σ `→ τ)
+  `λ       : {σ τ : Ty} (b : Γ ∙ σ ⊢ τ) → Γ ⊢^whnf (σ `→ τ)
 \end{code}
 \AgdaHide{
 \begin{code}
-wk^whne : {Δ Γ : Con} (inc : Γ ⊆ Δ) {σ : ty} (ne : Γ ⊢^whne σ) → Δ ⊢^whne σ
-wk^whnf : {Δ Γ : Con} (inc : Γ ⊆ Δ) {σ : ty} (ne : Γ ⊢^whnf σ) → Δ ⊢^whnf σ
+wk^whne : {Δ Γ : Cx} (inc : Γ ⊆ Δ) {σ : Ty} (ne : Γ ⊢^whne σ) → Δ ⊢^whne σ
+wk^whnf : {Δ Γ : Cx} (inc : Γ ⊆ Δ) {σ : Ty} (ne : Γ ⊢^whnf σ) → Δ ⊢^whnf σ
 wk^whne inc (`var v)        = `var $′ wk^∈ inc v
 wk^whne inc (ne `$ u)       = wk^whne inc ne `$ wk^⊢ inc u
 wk^whne inc (`ifte ne l r)  = `ifte (wk^whne inc ne) (wk^⊢ inc l) (wk^⊢ inc r)
@@ -1328,7 +1329,7 @@ wk^whnf inc `tt         = `tt
 wk^whnf inc `ff         = `ff
 wk^whnf inc (`λ b)      = `λ $′ wk^⊢ (pop! inc) b
 
-erase^whne : {Γ : Con} {σ : ty} (t : Γ ⊢^whne σ) → Γ ⊢ σ
+erase^whne : {Γ : Cx} {σ : Ty} (t : Γ ⊢^whne σ) → Γ ⊢ σ
 erase^whne (`var v)       = `var v
 erase^whne (t `$ u)       = erase^whne t `$ u
 erase^whne (`ifte t l r)  = `ifte (erase^whne t) l r
@@ -1350,38 +1351,38 @@ need to be evaluated.
 mutual
 \end{code}}
 \begin{code}
-  _⊨^βι_ : (Γ : Con) (σ : ty) → Set
+  _⊨^βι_ : (Γ : Cx) (σ : Ty) → Set
   Γ ⊨^βι σ  = Γ ⊢ σ  × (Γ ⊢^whne σ ⊎ Γ ⊨^βι⋆ σ)
 
-  _⊨^βι⋆_ : (Γ : Con) (σ : ty) → Set
+  _⊨^βι⋆_ : (Γ : Cx) (σ : Ty) → Set
   Γ ⊨^βι⋆ `Unit     = ⊤
   Γ ⊨^βι⋆ `Bool     = Bool
-  Γ ⊨^βι⋆ (σ `→ τ)  = {Δ : Con} → Γ ⊆ Δ → Δ ⊨^βι σ → Δ ⊨^βι τ
+  Γ ⊨^βι⋆ (σ `→ τ)  = {Δ : Cx} → Γ ⊆ Δ → Δ ⊨^βι σ → Δ ⊨^βι τ
 \end{code}
 
 \AgdaHide{
 \begin{code}
-wk^βι⋆ : {Δ Γ : Con} (inc : Γ ⊆ Δ) {σ : ty} (T : Γ ⊨^βι⋆ σ) → Δ ⊨^βι⋆ σ
+wk^βι⋆ : {Δ Γ : Cx} (inc : Γ ⊆ Δ) {σ : Ty} (T : Γ ⊨^βι⋆ σ) → Δ ⊨^βι⋆ σ
 wk^βι⋆ inc {`Unit   } T = T
 wk^βι⋆ inc {`Bool   } T = T
 wk^βι⋆ inc {σ `→ τ  } T = λ inc′ → T $′ trans inc inc′
 
-wk^βι : {Δ Γ : Con}{σ : ty} (inc : Γ ⊆ Δ) (T : Γ ⊨^βι σ) → Δ ⊨^βι σ
+wk^βι : {Δ Γ : Cx}{σ : Ty} (inc : Γ ⊆ Δ) (T : Γ ⊨^βι σ) → Δ ⊨^βι σ
 wk^βι inc (t , inj₁ ne)  = wk^⊢ inc t , inj₁ (wk^whne inc ne)
 wk^βι inc (t , inj₂ T)   = wk^⊢ inc t , inj₂ (wk^βι⋆ inc T)
 
-reflect^βι : {Γ : Con} (σ : ty) (t : Γ ⊢^whne σ) → Γ ⊨^βι σ
+reflect^βι : {Γ : Cx} (σ : Ty) (t : Γ ⊢^whne σ) → Γ ⊨^βι σ
 reflect^βι σ t = erase^whne t , inj₁ t
 
 mutual
 
-  reify^βι⋆ : {Γ : Con} (σ : ty) (T : Γ ⊨^βι⋆ σ) → Γ ⊢^whnf σ
+  reify^βι⋆ : {Γ : Cx} (σ : Ty) (T : Γ ⊨^βι⋆ σ) → Γ ⊢^whnf σ
   reify^βι⋆ `Unit     T = `⟨⟩
   reify^βι⋆ `Bool     T = if T then `tt else `ff
   reify^βι⋆ (σ `→ τ)  T = `λ $ proj₁ $ T (step refl) var‿0^βι
     where var‿0^βι = reflect^βι _ $ `var zero
 
-  reify^βι : {Γ : Con} (σ : ty) (T : Γ ⊨^βι σ) → Γ ⊢^whnf σ
+  reify^βι : {Γ : Cx} (σ : Ty) (T : Γ ⊨^βι σ) → Γ ⊢^whnf σ
   reify^βι σ (t , inj₁ ne) = `embed ne
   reify^βι σ (t , inj₂ T)  = reify^βι⋆ σ T
 \end{code}}
@@ -1400,11 +1401,11 @@ reduce enough to expose either a constructor or a variable.
 infixr 5 _$^βι_
 \end{code}}
 \begin{code}
-_$^βι_ : {Γ : Con} {σ τ : ty} (t : Γ ⊨^βι σ `→ τ) (u : Γ ⊨^βι σ) → Γ ⊨^βι τ
+_$^βι_ : {Γ : Cx} {σ τ : Ty} (t : Γ ⊨^βι σ `→ τ) (u : Γ ⊨^βι σ) → Γ ⊨^βι τ
 (t , inj₁ ne)  $^βι (u , U) = t `$ u , inj₁ (ne `$ u)
 (t , inj₂ T)   $^βι (u , U) = t `$ u , proj₂ (T refl (u , U))
 
-ifte^βι : {Γ : Con} {σ : ty} (b : Γ ⊨^βι `Bool) (l r : Γ ⊨^βι σ) → Γ ⊨^βι σ
+ifte^βι : {Γ : Cx} {σ : Ty} (b : Γ ⊨^βι `Bool) (l r : Γ ⊨^βι σ) → Γ ⊨^βι σ
 ifte^βι (b , inj₁ ne)  (l , L) (r , R) = `ifte b l r , inj₁ (`ifte ne l r)
 ifte^βι (b , inj₂ B)   (l , L) (r , R) = `ifte b l r , (if B then L else R)
 \end{code}
@@ -1423,7 +1424,7 @@ Normalise^βι = record
 \end{code}
 \AgdaHide{
 \begin{code}
-norm^βι : {Γ : Con} (σ : ty) (t : Γ ⊢ σ) → Γ ⊢^whnf σ
+norm^βι : {Γ : Cx} (σ : Ty) (t : Γ ⊢ σ) → Γ ⊢^whnf σ
 norm^βι σ t = reify^βι σ $′ Normalise^βι ⊨eval t
 \end{code}}
 
@@ -1471,17 +1472,17 @@ using the \AF{`∀[\_,\_]} predicate transformer omitted here.
 \AgdaHide{
 \begin{code}
 record `∀[_] {ℓ^A ℓ^B ℓ^R : Level} {𝓔^A : Model ℓ^A} {𝓔^B : Model ℓ^B}
-             (𝓔^R : {Γ : Con} {σ : ty} (u^A : 𝓔^A Γ σ) (u^B : 𝓔^B Γ σ) → Set ℓ^R)
-             {Γ Δ : Con} (ρ^A : Var Γ ⇒[ 𝓔^A ] Δ) (ρ^B : Var Γ ⇒[ 𝓔^B ] Δ) : Set ℓ^R where
+             (𝓔^R : {Γ : Cx} {σ : Ty} (u^A : 𝓔^A Γ σ) (u^B : 𝓔^B Γ σ) → Set ℓ^R)
+             {Γ Δ : Cx} (ρ^A : Var Γ ⇒[ 𝓔^A ] Δ) (ρ^B : Var Γ ⇒[ 𝓔^B ] Δ) : Set ℓ^R where
   constructor pack^R
-  field lookup^R : {σ : ty} (v : σ ∈ Γ) → 𝓔^R (lookup ρ^A v) (lookup ρ^B v)
+  field lookup^R : {σ : Ty} (v : σ ∈ Γ) → 𝓔^R (lookup ρ^A v) (lookup ρ^B v)
 open `∀[_]
 \end{code}}
 \begin{code}
-record Synchronisable {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^RE ℓ^RM : Level} {𝓔^A : (Γ : Con) (σ : ty) → Set ℓ^EA} {𝓜^A : (Γ : Con) (σ : ty) → Set ℓ^MA} {𝓔^B : (Γ : Con) (σ : ty) → Set ℓ^EB} {𝓜^B : (Γ : Con) (σ : ty) → Set ℓ^MB}
+record Synchronisable {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^RE ℓ^RM : Level} {𝓔^A : (Γ : Cx) (σ : Ty) → Set ℓ^EA} {𝓜^A : (Γ : Cx) (σ : Ty) → Set ℓ^MA} {𝓔^B : (Γ : Cx) (σ : Ty) → Set ℓ^EB} {𝓜^B : (Γ : Cx) (σ : Ty) → Set ℓ^MB}
   (𝓢^A : Semantics 𝓔^A 𝓜^A) (𝓢^B : Semantics 𝓔^B 𝓜^B)
-  (𝓔^R  : {Γ : Con} {σ : ty} → 𝓔^A Γ σ → 𝓔^B Γ σ → Set ℓ^RE)
-  (𝓜^R  : {Γ : Con} {σ : ty} → 𝓜^A Γ σ → 𝓜^B Γ σ → Set ℓ^RM) : Set (ℓ^RE ⊔ ℓ^RM ⊔ ℓ^EA ⊔ ℓ^EB ⊔ ℓ^MA ⊔ ℓ^MB) where
+  (𝓔^R  : {Γ : Cx} {σ : Ty} → 𝓔^A Γ σ → 𝓔^B Γ σ → Set ℓ^RE)
+  (𝓜^R  : {Γ : Cx} {σ : Ty} → 𝓜^A Γ σ → 𝓜^B Γ σ → Set ℓ^RM) : Set (ℓ^RE ⊔ ℓ^RM ⊔ ℓ^EA ⊔ ℓ^EB ⊔ ℓ^MA ⊔ ℓ^MB) where
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -1495,7 +1496,7 @@ need to have. \ARF{𝓔^R‿wk} states that two synchronised environments
 can be weakened whilst staying synchronised.
 
 \begin{code}
-    𝓔^R‿wk  :  {Γ Δ Θ : Con} (inc : Δ ⊆ Θ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Γ ⇒[ 𝓔^B ] Δ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
+    𝓔^R‿wk  :  {Γ Δ Θ : Cx} (inc : Δ ⊆ Θ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Γ ⇒[ 𝓔^B ] Δ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
                `∀[ 𝓔^R ] (wk[ 𝓢^A.wk ] inc ρ^A) (wk[ 𝓢^B.wk ] inc ρ^B)
 \end{code}
 
@@ -1508,7 +1509,7 @@ indeed get synchronised values in the model by applying \ARF{⟦var⟧}
 to the looked up values.
 
 \begin{code}
-    R⟦var⟧    :  {Γ Δ : Con} {σ : ty} (v : σ ∈ Γ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Γ ⇒[ 𝓔^B ] Δ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
+    R⟦var⟧    :  {Γ Δ : Cx} {σ : Ty} (v : σ ∈ Γ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Γ ⇒[ 𝓔^B ] Δ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
                  𝓜^R (𝓢^A.⟦var⟧ (lookup ρ^A v)) (𝓢^B.⟦var⟧ (lookup ρ^B v))
 \end{code}
 
@@ -1519,7 +1520,7 @@ values is enough to guarantee that evaluating the lambdas in the original
 environments will produce synchronised values.
 
 \begin{code}
-    R⟦λ⟧      :  {Γ : Con} {σ τ : ty} {f^A : {Δ : Con} → Γ ⊆ Δ → 𝓔^A Δ σ → 𝓜^A Δ τ} → {f^B : {Δ : Con} → Γ ⊆ Δ → 𝓔^B Δ σ → 𝓜^B Δ τ} → (f^r :  {Δ : Con} (inc : Γ ⊆ Δ) {u^A : 𝓔^A Δ σ} {u^B : 𝓔^B Δ σ} (u^R : 𝓔^R u^A u^B) → 𝓜^R  (f^A inc u^A) (f^B inc u^B)) →
+    R⟦λ⟧      :  {Γ : Cx} {σ τ : Ty} {f^A : {Δ : Cx} → Γ ⊆ Δ → 𝓔^A Δ σ → 𝓜^A Δ τ} → {f^B : {Δ : Cx} → Γ ⊆ Δ → 𝓔^B Δ σ → 𝓜^B Δ τ} → (f^r :  {Δ : Cx} (inc : Γ ⊆ Δ) {u^A : 𝓔^A Δ σ} {u^B : 𝓔^B Δ σ} (u^R : 𝓔^R u^A u^B) → 𝓜^R  (f^A inc u^A) (f^B inc u^B)) →
                  𝓜^R (𝓢^A.⟦λ⟧ f^A) (𝓢^B.⟦λ⟧ f^B)
 \end{code}
 
@@ -1530,14 +1531,14 @@ used are synchronised), one can combine them to obtain a proof
 about the evaluation of an application-headed term.
 
 \begin{code}
-    R⟦$⟧      :  {Γ : Con} {σ τ : ty} {f^A : 𝓜^A Γ $ σ `→ τ} {f^B : 𝓜^B Γ $ σ `→ τ} {u^A : 𝓜^A Γ σ} {u^B : 𝓜^B Γ σ} → 𝓜^R f^A f^B → 𝓜^R u^A u^B → 𝓜^R (f^A 𝓢^A.⟦$⟧ u^A) (f^B 𝓢^B.⟦$⟧ u^B)
+    R⟦$⟧      :  {Γ : Cx} {σ τ : Ty} {f^A : 𝓜^A Γ $ σ `→ τ} {f^B : 𝓜^B Γ $ σ `→ τ} {u^A : 𝓜^A Γ σ} {u^B : 𝓜^B Γ σ} → 𝓜^R f^A f^B → 𝓜^R u^A u^B → 𝓜^R (f^A 𝓢^A.⟦$⟧ u^A) (f^B 𝓢^B.⟦$⟧ u^B)
 \end{code}
 \AgdaHide{
 \begin{code}
-    R⟦⟨⟩⟧     :  {Γ : Con} → 𝓜^R {Γ} 𝓢^A.⟦⟨⟩⟧ 𝓢^B.⟦⟨⟩⟧
-    R⟦tt⟧     :  {Γ : Con} → 𝓜^R {Γ} 𝓢^A.⟦tt⟧ 𝓢^B.⟦tt⟧
-    R⟦ff⟧     :  {Γ : Con} → 𝓜^R {Γ} 𝓢^A.⟦ff⟧ 𝓢^B.⟦ff⟧
-    R⟦ifte⟧   :  {Γ : Con} {σ : ty} {b^A : _} {b^B : _} {l^A r^A : _} {l^B r^B : _} (b^R : 𝓜^R {Γ} {`Bool} b^A b^B)
+    R⟦⟨⟩⟧     :  {Γ : Cx} → 𝓜^R {Γ} 𝓢^A.⟦⟨⟩⟧ 𝓢^B.⟦⟨⟩⟧
+    R⟦tt⟧     :  {Γ : Cx} → 𝓜^R {Γ} 𝓢^A.⟦tt⟧ 𝓢^B.⟦tt⟧
+    R⟦ff⟧     :  {Γ : Cx} → 𝓜^R {Γ} 𝓢^A.⟦ff⟧ 𝓢^B.⟦ff⟧
+    R⟦ifte⟧   :  {Γ : Cx} {σ : Ty} {b^A : _} {b^B : _} {l^A r^A : _} {l^B r^B : _} (b^R : 𝓜^R {Γ} {`Bool} b^A b^B)
                  (l^R : 𝓜^R l^A l^B) (r^R : 𝓜^R {Γ} {σ} r^A r^B) →
                  𝓜^R (𝓢^A.⟦ifte⟧ b^A l^A r^A) (𝓢^B.⟦ifte⟧ b^B l^B r^B)
 infixl 10 _∙^R_
@@ -1560,16 +1561,16 @@ We use \AF{[\_,\_,\_]\_∙^R\_} as a way to circumvent Agda's inhability to
 infer \AR{𝓔^A}, \AR{𝓔^B} and \AR{𝓔^R}.
 
 \begin{code}
-_∙^R_ :  {ℓ^EA ℓ^EB ℓ^ER : Level} {𝓔^A : Model ℓ^EA} {𝓔^B : Model ℓ^EB} {𝓔^R : {Γ : Con} {σ : ty} → 𝓔^A Γ σ → 𝓔^B Γ σ → Set ℓ^ER} {Δ Γ : Con} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Γ ⇒[ 𝓔^B ] Δ} {σ : ty} {u^A : 𝓔^A Δ σ} {u^B : 𝓔^B Δ σ} → `∀[ 𝓔^R ] ρ^A ρ^B → 𝓔^R u^A u^B → `∀[ 𝓔^R ] (ρ^A `∙ u^A) (ρ^B `∙ u^B)
+_∙^R_ :  {ℓ^EA ℓ^EB ℓ^ER : Level} {𝓔^A : Model ℓ^EA} {𝓔^B : Model ℓ^EB} {𝓔^R : {Γ : Cx} {σ : Ty} → 𝓔^A Γ σ → 𝓔^B Γ σ → Set ℓ^ER} {Δ Γ : Cx} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Γ ⇒[ 𝓔^B ] Δ} {σ : Ty} {u^A : 𝓔^A Δ σ} {u^B : 𝓔^B Δ σ} → `∀[ 𝓔^R ] ρ^A ρ^B → 𝓔^R u^A u^B → `∀[ 𝓔^R ] (ρ^A `∙ u^A) (ρ^B `∙ u^B)
 lookup^R (ρ^R ∙^R u^R) zero    = u^R
 lookup^R (ρ^R ∙^R u^R) (1+ v)  = lookup^R ρ^R v
 
-module Synchronised {ℓ^EA ℓ^MA ℓ^EB ℓ^MB : Level} {𝓔^A : (Γ : Con) (σ : ty) → Set ℓ^EA} {𝓜^A : (Γ : Con) (σ : ty) → Set ℓ^MA} {𝓢^A : Semantics 𝓔^A 𝓜^A} {𝓔^B : (Γ : Con) (σ : ty) → Set ℓ^EB} {𝓜^B : (Γ : Con) (σ : ty) → Set ℓ^MB} {𝓢^B : Semantics 𝓔^B 𝓜^B} {ℓ^RE ℓ^RM : Level} {𝓔^R : {Γ : Con} {σ : ty} (u^A : 𝓔^A Γ σ) (u^B : 𝓔^B Γ σ) → Set ℓ^RE} {𝓜^R : {Γ : Con} {σ : ty} (mA : 𝓜^A Γ σ) (mB : 𝓜^B Γ σ) → Set ℓ^RM} (𝓡 : Synchronisable 𝓢^A 𝓢^B 𝓔^R 𝓜^R) where
+module Synchronised {ℓ^EA ℓ^MA ℓ^EB ℓ^MB : Level} {𝓔^A : (Γ : Cx) (σ : Ty) → Set ℓ^EA} {𝓜^A : (Γ : Cx) (σ : Ty) → Set ℓ^MA} {𝓢^A : Semantics 𝓔^A 𝓜^A} {𝓔^B : (Γ : Cx) (σ : Ty) → Set ℓ^EB} {𝓜^B : (Γ : Cx) (σ : Ty) → Set ℓ^MB} {𝓢^B : Semantics 𝓔^B 𝓜^B} {ℓ^RE ℓ^RM : Level} {𝓔^R : {Γ : Cx} {σ : Ty} (u^A : 𝓔^A Γ σ) (u^B : 𝓔^B Γ σ) → Set ℓ^RE} {𝓜^R : {Γ : Cx} {σ : Ty} (mA : 𝓜^A Γ σ) (mB : 𝓜^B Γ σ) → Set ℓ^RM} (𝓡 : Synchronisable 𝓢^A 𝓢^B 𝓔^R 𝓜^R) where
   open Synchronisable 𝓡
 \end{code}\vspace{ -2.5em}
 %<*relational>
 \begin{code}
-  lemma :  {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Γ ⇒[ 𝓔^B ] Δ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
+  lemma :  {Γ Δ : Cx} {σ : Ty} (t : Γ ⊢ σ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Γ ⇒[ 𝓔^B ] Δ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
            𝓜^R (𝓢^A ⊨⟦ t ⟧ ρ^A) (𝓢^B ⊨⟦ t ⟧ ρ^B)
   lemma (`var v)       ρ^R = R⟦var⟧ v ρ^R
   lemma (f `$ t)       ρ^R = R⟦$⟧ (lemma f ρ^R) (lemma t ρ^R)
@@ -1614,7 +1615,7 @@ we meant to prove is derived directly from the fundamental lemma of
 \AR{Synchronisable} semantics:
 
 \begin{code}
-RenamingIsASubstitution : {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) (ρ : Γ ⊆ Δ) →
+RenamingIsASubstitution : {Γ Δ : Cx} {σ : Ty} (t : Γ ⊢ σ) (ρ : Γ ⊆ Δ) →
   Renaming ⊨⟦ t ⟧ ρ ≡ Substitution ⊨⟦ t ⟧ trans ρ (pack `var)
 RenamingIsASubstitution t ρ = lemma t (pack^R $ λ _ → PEq.refl)
   where open Synchronised SynchronisableRenamingSubstitution
@@ -1641,10 +1642,10 @@ finally functions are equal whenever given equal inputs they yield equal
 outputs.
 
 \begin{code}
-EQREL : (Γ : Con) (σ : ty) (T U : Γ ⊨^βιξη σ) → Set
+EQREL : (Γ : Cx) (σ : Ty) (T U : Γ ⊨^βιξη σ) → Set
 EQREL Γ `Unit     T U = ⊤
 EQREL Γ `Bool     T U = T ≡ U
-EQREL Γ (σ `→ τ)  T U =  {Δ : Con} (inc : Γ ⊆ Δ) {V W : Δ ⊨^βιξη σ} (eqVW : EQREL Δ σ V W) →
+EQREL Γ (σ `→ τ)  T U =  {Δ : Cx} (inc : Γ ⊆ Δ) {V W : Δ ⊨^βιξη σ} (eqVW : EQREL Δ σ V W) →
                          EQREL Δ τ (T inc V) (U inc W)
 \end{code}
 
@@ -1652,7 +1653,7 @@ It is indeed a PER as witnessed by the (omitted here) \AF{symEQREL} and
 \AF{transEQREL} functions and it respects weakening as \AF{wk^{EQREL}} shows.
 
 \begin{code}
-symEQREL : {Γ : Con} (σ : ty) {S T : Γ ⊨^βιξη σ} → EQREL Γ σ S T → EQREL Γ σ T S
+symEQREL : {Γ : Cx} (σ : Ty) {S T : Γ ⊨^βιξη σ} → EQREL Γ σ S T → EQREL Γ σ T S
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -1661,13 +1662,13 @@ symEQREL `Bool     eq = PEq.sym eq
 symEQREL (σ `→ τ)  eq = λ inc eqVW → symEQREL τ (eq inc (symEQREL σ eqVW))
 \end{code}}\vspace{ -2.5em}%ugly but it works!
 \begin{code}
-transEQREL : {Γ : Con} (σ : ty) {S T U : Γ ⊨^βιξη σ} → EQREL Γ σ S T → EQREL Γ σ T U → EQREL Γ σ S U
+transEQREL : {Γ : Cx} (σ : Ty) {S T U : Γ ⊨^βιξη σ} → EQREL Γ σ S T → EQREL Γ σ T U → EQREL Γ σ S U
 \end{code}
 \AgdaHide{
 \begin{code}
   -- We are in PER so reflEQREL is not provable
   -- but as soon as EQREL σ V W then EQREL σ V V
-reflEQREL : {Γ : Con} (σ : ty) {S T : Γ ⊨^βιξη σ} → EQREL Γ σ S T → EQREL Γ σ S S
+reflEQREL : {Γ : Cx} (σ : Ty) {S T : Γ ⊨^βιξη σ} → EQREL Γ σ S T → EQREL Γ σ S S
 
 transEQREL `Unit     eq₁ eq₂ = ⟨⟩
 transEQREL `Bool     eq₁ eq₂ = PEq.trans eq₁ eq₂
@@ -1677,7 +1678,7 @@ transEQREL (σ `→ τ)  eq₁ eq₂ =
 reflEQREL σ eq = transEQREL σ eq (symEQREL σ eq)
 \end{code}}\vspace{ -2.5em}%ugly but it works!
 \begin{code}
-wk^EQREL :  {Δ Γ : Con} (σ : ty) (inc : Γ ⊆ Δ) {T U : Γ ⊨^βιξη σ} → EQREL Γ σ T U → EQREL Δ σ (wk^βιξη σ inc T) (wk^βιξη σ inc U)
+wk^EQREL :  {Δ Γ : Cx} (σ : Ty) (inc : Γ ⊆ Δ) {T U : Γ ⊨^βιξη σ} → EQREL Γ σ T U → EQREL Δ σ (wk^βιξη σ inc T) (wk^βιξη σ inc U)
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -1694,8 +1695,8 @@ propositionally equal normal forms whilst propositionally equal neutral
 terms are reflected to values related by \AF{EQREL}.
 
 \begin{code}
-reify^EQREL    :  {Γ : Con} (σ : ty) {T U : Γ ⊨^βιξη σ} → EQREL Γ σ T U → reify^βιξη σ T ≡ reify^βιξη σ U
-reflect^EQREL  :  {Γ : Con} (σ : ty) {t u : Γ ⊢[ R^βιξη ]^ne σ} → t ≡ u → EQREL Γ σ (reflect^βιξη σ t) (reflect^βιξη σ u)
+reify^EQREL    :  {Γ : Cx} (σ : Ty) {T U : Γ ⊨^βιξη σ} → EQREL Γ σ T U → reify^βιξη σ T ≡ reify^βιξη σ U
+reflect^EQREL  :  {Γ : Cx} (σ : Ty) {t u : Γ ⊢[ R^βιξη ]^ne σ} → t ≡ u → EQREL Γ σ (reflect^βιξη σ t) (reflect^βιξη σ u)
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -1709,7 +1710,7 @@ reflect^EQREL (σ `→ τ)  eq = λ inc rel → reflect^EQREL τ $ PEq.cong₂ _
 
 ifteRelNorm :
       let open Semantics Normalise^βιξη in
-      {Γ : Con} {σ : ty} {b^A b^B : Γ ⊨^βιξη `Bool} {l^A l^B r^A r^B : Γ ⊨^βιξη σ} →
+      {Γ : Cx} {σ : Ty} {b^A b^B : Γ ⊨^βιξη `Bool} {l^A l^B r^A r^B : Γ ⊨^βιξη σ} →
       EQREL Γ `Bool b^A b^B → EQREL Γ σ l^A l^B → EQREL Γ σ r^A r^B →
       EQREL Γ σ (⟦ifte⟧ b^A l^A r^A) (⟦ifte⟧ b^B l^B r^B)
 ifteRelNorm {b^A = `tt}         PEq.refl l^R r^R = l^R
@@ -1748,7 +1749,7 @@ case:
 
 %<*synchroexample2>
 \begin{code}
-refl^βιξη :  {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) {ρ^A ρ^B : Var Γ ⇒[ _⊨^βιξη_ ] Δ} (ρ^R : `∀[ EQREL _ _ ] ρ^A ρ^B) →
+refl^βιξη :  {Γ Δ : Cx} {σ : Ty} (t : Γ ⊢ σ) {ρ^A ρ^B : Var Γ ⇒[ _⊨^βιξη_ ] Δ} (ρ^R : `∀[ EQREL _ _ ] ρ^A ρ^B) →
              EQREL Δ σ (Normalise^βιξη ⊨⟦ t ⟧ ρ^A) (Normalise^βιξη ⊨⟦ t ⟧ ρ^B)
 refl^βιξη t ρ^R = lemma t ρ^R where open Synchronised SynchronisableNormalise
 \end{code}
@@ -1784,10 +1785,10 @@ in \AB{𝓢^B} and \AB{𝓢^C}'s respective models.
 
 \begin{code}
 record Fusable
-  {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REBC ℓ^RM : Level} {𝓔^A : (Γ : Con) (σ : ty) → Set ℓ^EA} {𝓔^B : (Γ : Con) (σ : ty) → Set ℓ^EB} {𝓔^C : (Γ : Con) (σ : ty) → Set ℓ^EC} {𝓜^A : (Γ : Con) (σ : ty) → Set ℓ^MA} {𝓜^B : (Γ : Con) (σ : ty) → Set ℓ^MB} {𝓜^C : (Γ : Con) (σ : ty) → Set ℓ^MC} (𝓢^A : Semantics 𝓔^A 𝓜^A) (𝓢^B : Semantics 𝓔^B 𝓜^B) (𝓢^C : Semantics 𝓔^C 𝓜^C)
-  (𝓔^R‿BC : {Γ : Con} {σ : ty} (e^B : 𝓔^B Γ σ) (e^C : 𝓔^C Γ σ) → Set ℓ^REBC)
-  (𝓔^R :  {Θ Δ Γ : Con} (ρ^A : Var Γ ⇒[ 𝓔^A ] Δ) (ρ^B : Var Δ ⇒[ 𝓔^B ] Θ) (ρ^C : Var Γ ⇒[ 𝓔^C ] Θ) → Set ℓ^RE)
-  (𝓜^R : {Γ : Con} {σ : ty} (m^B : 𝓜^B Γ σ) (m^C : 𝓜^C Γ σ) → Set ℓ^RM)
+  {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REBC ℓ^RM : Level} {𝓔^A : (Γ : Cx) (σ : Ty) → Set ℓ^EA} {𝓔^B : (Γ : Cx) (σ : Ty) → Set ℓ^EB} {𝓔^C : (Γ : Cx) (σ : Ty) → Set ℓ^EC} {𝓜^A : (Γ : Cx) (σ : Ty) → Set ℓ^MA} {𝓜^B : (Γ : Cx) (σ : Ty) → Set ℓ^MB} {𝓜^C : (Γ : Cx) (σ : Ty) → Set ℓ^MC} (𝓢^A : Semantics 𝓔^A 𝓜^A) (𝓢^B : Semantics 𝓔^B 𝓜^B) (𝓢^C : Semantics 𝓔^C 𝓜^C)
+  (𝓔^R‿BC : {Γ : Cx} {σ : Ty} (e^B : 𝓔^B Γ σ) (e^C : 𝓔^C Γ σ) → Set ℓ^REBC)
+  (𝓔^R :  {Θ Δ Γ : Cx} (ρ^A : Var Γ ⇒[ 𝓔^A ] Δ) (ρ^B : Var Δ ⇒[ 𝓔^B ] Θ) (ρ^C : Var Γ ⇒[ 𝓔^C ] Θ) → Set ℓ^RE)
+  (𝓜^R : {Γ : Cx} {σ : Ty} (m^B : 𝓜^B Γ σ) (m^C : 𝓜^C Γ σ) → Set ℓ^RM)
   : Set (ℓ^RM ⊔ ℓ^RE ⊔ ℓ^EC ⊔ ℓ^EB ⊔ ℓ^EA ⊔ ℓ^MA ⊔ ℓ^REBC) where
 \end{code}
 \AgdaHide{
@@ -1807,7 +1808,7 @@ element of \AB{𝓢^A}'s model. Our first field is therefore
 \ARF{reify^A}:
 
 \begin{code}
-    reify^A    : {Γ : Con} {σ : ty} (m : 𝓜^A Γ σ) → Γ ⊢ σ
+    reify^A    : {Γ : Cx} {σ : Ty} (m : 𝓜^A Γ σ) → Γ ⊢ σ
 \end{code}
 
 Then come two constraints dealing with the relations talking
@@ -1822,11 +1823,11 @@ the environments for \AB{𝓢^B} and \AB{𝓢^C} in a \AB{𝓔^R}
 preserving manner.
 
 \begin{code}
-    𝓔^R‿∙   :  {Γ Δ Θ : Con} {σ : ty} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} {u^B : 𝓔^B Θ σ} {u^C : 𝓔^C Θ σ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) (u^R : 𝓔^R‿BC u^B u^C) →
+    𝓔^R‿∙   :  {Γ Δ Θ : Cx} {σ : Ty} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} {u^B : 𝓔^B Θ σ} {u^C : 𝓔^C Θ σ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) (u^R : 𝓔^R‿BC u^B u^C) →
                𝓔^R  (wk[ 𝓢^A.wk ] (step refl) ρ^A `∙ 𝓢^A.embed zero)
                     (ρ^B `∙ u^B) (ρ^C `∙ u^C)
 
-    𝓔^R‿wk  :  {Γ Δ Θ E : Con} (inc : Θ ⊆ E) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
+    𝓔^R‿wk  :  {Γ Δ Θ E : Cx} (inc : Θ ⊆ E) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
                𝓔^R ρ^A (wk[ 𝓢^B.wk ] inc ρ^B) (wk[ 𝓢^C.wk ] inc ρ^C)
 \end{code}
 
@@ -1837,7 +1838,7 @@ case. It states that fusion indeed happens when evaluating a
 variable using related environments.
 
 \begin{code}
-    R⟦var⟧  :  {Γ Δ Θ : Con} {σ : ty} (v : σ ∈ Γ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
+    R⟦var⟧  :  {Γ Δ Θ : Cx} {σ : Ty} (v : σ ∈ Γ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
                𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A.⟦var⟧ (lookup ρ^A v)) ⟧ ρ^B) (𝓢^C.⟦var⟧ (lookup ρ^C v))
 \end{code}
 
@@ -1855,8 +1856,8 @@ related values to be substituted for the variable bound by the \AIC{`λ}.
 
 \begin{code}
     R⟦λ⟧    :
-      {Γ Δ Θ : Con} {σ τ : ty} (t : Γ ∙ σ ⊢ τ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
-      (r :  {E : Con} (inc : Θ ⊆ E) {u^B : 𝓔^B E σ} {u^C : 𝓔^C E σ} (u^R : 𝓔^R‿BC u^B u^C) →
+      {Γ Δ Θ : Cx} {σ τ : Ty} (t : Γ ∙ σ ⊢ τ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
+      (r :  {E : Cx} (inc : Θ ⊆ E) {u^B : 𝓔^B E σ} {u^C : 𝓔^C E σ} (u^R : 𝓔^R‿BC u^B u^C) →
             let  ρ^A′ =  wk[ 𝓢^A.wk ] (step refl) ρ^A `∙ 𝓢^A.embed zero
                  ρ^B′ =  wk[ 𝓢^B.wk ] inc ρ^B `∙ u^B
                  ρ^C′ =  wk[ 𝓢^C.wk ] inc ρ^C `∙ u^C
@@ -1870,7 +1871,7 @@ fusion can happen on the compound expression.
 
 \AgdaHide{
 \begin{code}
-    R⟦$⟧    : {Γ Δ Θ : Con} {σ τ : ty} (f : Γ ⊢ σ `→ τ) (t : Γ ⊢ σ)
+    R⟦$⟧    : {Γ Δ Θ : Cx} {σ τ : Ty} (f : Γ ⊢ σ `→ τ) (t : Γ ⊢ σ)
             {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} →
              (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
             𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ f ⟧ ρ^A) ⟧ ρ^B)
@@ -1878,16 +1879,16 @@ fusion can happen on the compound expression.
             𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ t ⟧ ρ^A) ⟧ ρ^B) (𝓢^C ⊨⟦ t ⟧ ρ^C) →
             𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ f `$ t ⟧ ρ^A) ⟧ ρ^B) (𝓢^C ⊨⟦ f `$ t ⟧ ρ^C)
 
-    R⟦⟨⟩⟧   : {Γ Δ Θ : Con} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} →
+    R⟦⟨⟩⟧   : {Γ Δ Θ : Cx} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} →
              (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
             𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ `⟨⟩ ⟧ ρ^A) ⟧ ρ^B) (𝓢^C ⊨⟦ `⟨⟩ ⟧ ρ^C)
-    R⟦tt⟧   : {Γ Δ Θ : Con} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} →
+    R⟦tt⟧   : {Γ Δ Θ : Cx} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} →
              (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
             𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ `tt ⟧ ρ^A) ⟧ ρ^B) (𝓢^C ⊨⟦ `tt ⟧ ρ^C)
-    R⟦ff⟧   : {Γ Δ Θ : Con} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} →
+    R⟦ff⟧   : {Γ Δ Θ : Cx} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} →
              (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
             𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ `ff ⟧ ρ^A) ⟧ ρ^B) (𝓢^C ⊨⟦ `ff ⟧ ρ^C)
-    R⟦ifte⟧ : {Γ Δ Θ : Con} {σ : ty} (b : Γ ⊢ `Bool) (l r : Γ ⊢ σ)
+    R⟦ifte⟧ : {Γ Δ Θ : Cx} {σ : Ty} (b : Γ ⊢ `Bool) (l r : Γ ⊢ σ)
             {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} →
              (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
             𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ b ⟧ ρ^A) ⟧ ρ^B) (𝓢^C ⊨⟦ b ⟧ ρ^C) →
@@ -1905,10 +1906,10 @@ identified what the constraints should be, proving the fundamental
 lemma turns out to amount to a simple traversal we choose to omit here.
 
 \begin{code}
-module Fusion {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REB ℓ^RM : Level} {𝓔^A : (Γ : Con) (σ : ty) → Set ℓ^EA} {𝓔^B : (Γ : Con) (σ : ty) → Set ℓ^EB} {𝓔^C : (Γ : Con) (σ : ty) → Set ℓ^EC} {𝓜^A : (Γ : Con) (σ : ty) → Set ℓ^MA} {𝓜^B : (Γ : Con) (σ : ty) → Set ℓ^MB} {𝓜^C : (Γ : Con) (σ : ty) → Set ℓ^MC} {𝓢^A : Semantics 𝓔^A 𝓜^A} {𝓢^B : Semantics 𝓔^B 𝓜^B} {𝓢^C : Semantics 𝓔^C 𝓜^C} {𝓔^R‿BC : {Γ : Con} {σ : ty} (e^B : 𝓔^B Γ σ) (e^C : 𝓔^C Γ σ) → Set ℓ^REB} {𝓔^R : {Θ Δ Γ : Con} (ρ^A : Var Γ ⇒[ 𝓔^A ] Δ) (ρ^B : Var Δ ⇒[ 𝓔^B ] Θ) (ρ^C : Var Γ ⇒[ 𝓔^C ] Θ) → Set ℓ^RE} {𝓜^R : {Γ : Con} {σ : ty} (mB : 𝓜^B Γ σ) (mC : 𝓜^C Γ σ) → Set ℓ^RM} (fusable : Fusable 𝓢^A 𝓢^B 𝓢^C 𝓔^R‿BC 𝓔^R 𝓜^R) where
+module Fusion {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REB ℓ^RM : Level} {𝓔^A : (Γ : Cx) (σ : Ty) → Set ℓ^EA} {𝓔^B : (Γ : Cx) (σ : Ty) → Set ℓ^EB} {𝓔^C : (Γ : Cx) (σ : Ty) → Set ℓ^EC} {𝓜^A : (Γ : Cx) (σ : Ty) → Set ℓ^MA} {𝓜^B : (Γ : Cx) (σ : Ty) → Set ℓ^MB} {𝓜^C : (Γ : Cx) (σ : Ty) → Set ℓ^MC} {𝓢^A : Semantics 𝓔^A 𝓜^A} {𝓢^B : Semantics 𝓔^B 𝓜^B} {𝓢^C : Semantics 𝓔^C 𝓜^C} {𝓔^R‿BC : {Γ : Cx} {σ : Ty} (e^B : 𝓔^B Γ σ) (e^C : 𝓔^C Γ σ) → Set ℓ^REB} {𝓔^R : {Θ Δ Γ : Cx} (ρ^A : Var Γ ⇒[ 𝓔^A ] Δ) (ρ^B : Var Δ ⇒[ 𝓔^B ] Θ) (ρ^C : Var Γ ⇒[ 𝓔^C ] Θ) → Set ℓ^RE} {𝓜^R : {Γ : Cx} {σ : Ty} (mB : 𝓜^B Γ σ) (mC : 𝓜^C Γ σ) → Set ℓ^RM} (fusable : Fusable 𝓢^A 𝓢^B 𝓢^C 𝓔^R‿BC 𝓔^R 𝓜^R) where
   open Fusable fusable
 
-  lemma :  {Γ Δ Θ : Con} {σ : ty} (t : Γ ⊢ σ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
+  lemma :  {Γ Δ Θ : Cx} {σ : Ty} (t : Γ ⊢ σ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
            𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ t ⟧ ρ^A) ⟧ ρ^B) (𝓢^C ⊨⟦ t ⟧ ρ^C)
 \end{code}
 \AgdaHide{
@@ -1944,31 +1945,31 @@ producing related values.
 \AgdaHide{
 \begin{code}
 record SyntacticFusable
-  {ℓ^EA ℓ^EB ℓ^EC ℓ^REBC ℓ^RE : Level} {𝓔^A : (Γ : Con) (σ : ty) → Set ℓ^EA} {𝓔^B : (Γ : Con) (σ : ty) → Set ℓ^EB} {𝓔^C : (Γ : Con) (σ : ty) → Set ℓ^EC} (synA : Syntactic 𝓔^A)
+  {ℓ^EA ℓ^EB ℓ^EC ℓ^REBC ℓ^RE : Level} {𝓔^A : (Γ : Cx) (σ : Ty) → Set ℓ^EA} {𝓔^B : (Γ : Cx) (σ : Ty) → Set ℓ^EB} {𝓔^C : (Γ : Cx) (σ : Ty) → Set ℓ^EC} (synA : Syntactic 𝓔^A)
   (synB : Syntactic 𝓔^B)
   (synC : Syntactic 𝓔^C)
-  (𝓔^R‿BC : {Γ : Con} {σ : ty} (e^B : 𝓔^B Γ σ) (e^C : 𝓔^C Γ σ) → Set ℓ^REBC)
-  (𝓔^R : {Θ Δ Γ : Con} (ρ^A : Var Γ ⇒[ 𝓔^A ] Δ) (ρ^B : Var Δ ⇒[ 𝓔^B ] Θ) (ρ^C : Var Γ ⇒[ 𝓔^C ] Θ) → Set ℓ^RE)
+  (𝓔^R‿BC : {Γ : Cx} {σ : Ty} (e^B : 𝓔^B Γ σ) (e^C : 𝓔^C Γ σ) → Set ℓ^REBC)
+  (𝓔^R : {Θ Δ Γ : Cx} (ρ^A : Var Γ ⇒[ 𝓔^A ] Δ) (ρ^B : Var Δ ⇒[ 𝓔^B ] Θ) (ρ^C : Var Γ ⇒[ 𝓔^C ] Θ) → Set ℓ^RE)
   : Set (ℓ^RE ⊔ ℓ^REBC ⊔ ℓ^EC ⊔ ℓ^EB ⊔ ℓ^EA)
   where
   module Syn^A = Syntactic synA
   module Syn^B = Syntactic synB
   module Syn^C = Syntactic synC
   field
-    𝓔^R‿∙ : ({Γ Δ Θ : Con} {σ : ty} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ}
+    𝓔^R‿∙ : ({Γ Δ Θ : Cx} {σ : Ty} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ}
                {u^B : 𝓔^B Θ σ} {u^C : 𝓔^C Θ σ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) (u^R : 𝓔^R‿BC u^B u^C) →
                𝓔^R (wk[ Syn^A.wk ] (step refl) ρ^A `∙ Syn^A.embed zero)
                       (ρ^B `∙ u^B)
                       (ρ^C `∙ u^C))
-    𝓔^R‿wk : {Γ Δ Θ E : Con} (inc : Θ ⊆ E)
+    𝓔^R‿wk : {Γ Δ Θ E : Cx} (inc : Θ ⊆ E)
                {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
                𝓔^R ρ^A(wk[ Syn^B.wk ] inc ρ^B) (wk[ Syn^C.wk ] inc ρ^C)
-    R⟦var⟧  : {Γ Δ Θ : Con} {σ : ty} (v : σ ∈ Γ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ}
+    R⟦var⟧  : {Γ Δ Θ : Cx} {σ : Ty} (v : σ ∈ Γ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ}
               (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
               syntactic synB ⊨⟦ syntactic synA ⊨⟦ `var v ⟧ ρ^A ⟧ ρ^B ≡ syntactic synC ⊨⟦ `var v ⟧ ρ^C
 \end{code}}
 \begin{code}
-    embed^BC : {Γ : Con} {σ : ty} → 𝓔^R‿BC  {Γ ∙ σ} (Syn^B.embed zero) (Syn^C.embed zero)
+    embed^BC : {Γ : Cx} {σ : Ty} → 𝓔^R‿BC  {Γ ∙ σ} (Syn^B.embed zero) (Syn^C.embed zero)
 \end{code}
 
 The important result is that given a \AR{SyntacticFusable} relating
@@ -1977,7 +1978,7 @@ the corresponding \AR{Semantics} where \AB{𝓜^R} is the propositional
 equality.
 
 \begin{code}
-syntacticFusable :  {ℓ^EA ℓ^EB ℓ^EC ℓ^RE ℓ^REBC : Level} {𝓔^A : (Γ : Con) (σ : ty) → Set ℓ^EA} {𝓔^B : (Γ : Con) (σ : ty) → Set ℓ^EB} {𝓔^C : (Γ : Con) (σ : ty) → Set ℓ^EC} {syn^A : Syntactic 𝓔^A} {syn^B : Syntactic 𝓔^B} {syn^C : Syntactic 𝓔^C} {𝓔^R‿BC : {Γ : Con} {σ : ty} (e^B : 𝓔^B Γ σ) (e^C : 𝓔^C Γ σ) → Set ℓ^REBC} {𝓔^R : {Θ Δ Γ : Con} (ρ^A : Var Γ ⇒[ 𝓔^A ] Δ) (ρ^B : Var Δ ⇒[ 𝓔^B ] Θ) (ρ^C : Var Γ ⇒[ 𝓔^C ] Θ) → Set ℓ^RE} (syn^R : SyntacticFusable syn^A syn^B syn^C 𝓔^R‿BC 𝓔^R) →
+syntacticFusable :  {ℓ^EA ℓ^EB ℓ^EC ℓ^RE ℓ^REBC : Level} {𝓔^A : (Γ : Cx) (σ : Ty) → Set ℓ^EA} {𝓔^B : (Γ : Cx) (σ : Ty) → Set ℓ^EB} {𝓔^C : (Γ : Cx) (σ : Ty) → Set ℓ^EC} {syn^A : Syntactic 𝓔^A} {syn^B : Syntactic 𝓔^B} {syn^C : Syntactic 𝓔^C} {𝓔^R‿BC : {Γ : Cx} {σ : Ty} (e^B : 𝓔^B Γ σ) (e^C : 𝓔^C Γ σ) → Set ℓ^REBC} {𝓔^R : {Θ Δ Γ : Cx} (ρ^A : Var Γ ⇒[ 𝓔^A ] Δ) (ρ^B : Var Δ ⇒[ 𝓔^B ] Θ) (ρ^C : Var Γ ⇒[ 𝓔^C ] Θ) → Set ℓ^RE} (syn^R : SyntacticFusable syn^A syn^B syn^C 𝓔^R‿BC 𝓔^R) →
   Fusable (syntactic syn^A) (syntactic syn^B) (syntactic syn^C) 𝓔^R‿BC 𝓔^R _≡_
 \end{code}
 \AgdaHide{
@@ -1997,7 +1998,7 @@ syntacticFusable synF =
     ; R⟦ifte⟧   = λ b l r ρ^R eqb eql → PEq.cong₂ (uncurry `ifte) (PEq.cong₂ _,_ eqb eql)
     }
 
-`var-inj : {Γ : Con} {σ : ty} {pr₁ pr₂ : σ ∈ Γ} (eq : (Γ ⊢ σ ∋ `var pr₁) ≡ `var pr₂) → pr₁ ≡ pr₂
+`var-inj : {Γ : Cx} {σ : Ty} {pr₁ pr₂ : σ ∈ Γ} (eq : (Γ ⊢ σ ∋ `var pr₁) ≡ `var pr₂) → pr₁ ≡ pr₂
 `var-inj PEq.refl = PEq.refl
 \end{code}}
 
@@ -2089,10 +2090,10 @@ SubstitutionFusable =
          ; embed^BC   = PEq.refl }
 
 ifteRenNorm :
-      {Γ Δ Θ : Con} {σ : ty} (b : Γ ⊢ `Bool) (l r : Γ ⊢ σ)
+      {Γ Δ Θ : Cx} {σ : Ty} (b : Γ ⊢ `Bool) (l r : Γ ⊢ σ)
       {ρ^A : Γ ⊆ Δ} {ρ^B : Var Δ ⇒[ _⊨^βιξη_ ] Θ}
       {ρ^C : Var Γ ⇒[ _⊨^βιξη_ ] Θ} →
-      (ρ^R : (σ : ty) (pr : σ ∈ Γ) → EQREL Θ σ (lookup ρ^B (lookup ρ^A pr)) (lookup ρ^C pr)) →
+      (ρ^R : (σ : Ty) (pr : σ ∈ Γ) → EQREL Θ σ (lookup ρ^B (lookup ρ^A pr)) (lookup ρ^C pr)) →
       Normalise^βιξη ⊨⟦ id (Renaming ⊨⟦ b ⟧ ρ^A) ⟧ ρ^B ≡
       Normalise^βιξη ⊨⟦ b ⟧ ρ^C →
       EQREL Θ σ (Normalise^βιξη ⊨⟦ id (Renaming ⊨⟦ l ⟧ ρ^A) ⟧ ρ^B)
@@ -2152,17 +2153,17 @@ RenamingNormaliseFusable =
 
 
 ifteSubstNorm :
-     {Γ Δ Θ : Con} {σ : ty} (b : Γ ⊢ `Bool) (l r : Γ ⊢ σ)
+     {Γ Δ Θ : Cx} {σ : Ty} (b : Γ ⊢ `Bool) (l r : Γ ⊢ σ)
       {ρ^A : Var Γ ⇒[ _⊢_ ] Δ} {ρ^B : Var Δ ⇒[ _⊨^βιξη_ ] Θ}
       {ρ^C : Var Γ ⇒[ _⊨^βιξη_ ] Θ} →
       (`∀[ EQREL _ _ ] ρ^B ρ^B) ×
-      ((σ₁ : ty) (pr : σ₁ ∈ Γ) {Θ₁ : Con} (inc : Θ ⊆ Θ₁) →
+      ((σ₁ : Ty) (pr : σ₁ ∈ Γ) {Θ₁ : Cx} (inc : Θ ⊆ Θ₁) →
        EQREL Θ₁ σ₁
        (Normalise^βιξη ⊨⟦ lookup ρ^A pr ⟧
         (pack $ λ pr₁ → wk^βιξη _ inc $ lookup ρ^B pr₁))
        (wk^βιξη σ₁ inc $ lookup ρ^C pr))
       ×
-      ((σ₁ : ty) (pr : σ₁ ∈ Γ) →
+      ((σ₁ : Ty) (pr : σ₁ ∈ Γ) →
        EQREL Θ σ₁ (Normalise^βιξη ⊨⟦ lookup ρ^A  pr ⟧ ρ^B) (lookup ρ^C pr)) →
       Normalise^βιξη ⊨⟦ id (Substitution ⊨⟦ b ⟧ ρ^A) ⟧ ρ^B ≡
       Normalise^βιξη ⊨⟦ b ⟧ ρ^C →
@@ -2187,13 +2188,13 @@ ifteSubstNorm b l r ρ^R () eql eqr | `ff | `embed _ t
 ifteSubstNorm b l r ρ^R () eql eqr | `ff | `tt
 ifteSubstNorm b l r ρ^R PEq.refl eql eqr | `ff | `ff = eqr
 
-wk-refl : {Γ : Con} (σ : ty) {T U : Γ ⊨^βιξη σ} →
+wk-refl : {Γ : Cx} (σ : Ty) {T U : Γ ⊨^βιξη σ} →
           EQREL Γ σ T U → EQREL Γ σ (wk^βιξη σ refl T) U
 wk-refl `Unit     eq = ⟨⟩
 wk-refl `Bool     eq = PEq.trans (wk^nf-refl _) eq
 wk-refl (σ `→ τ)  eq = eq
 
-wk^2 : {Θ Δ Γ : Con} (σ : ty) (inc₁ : Γ ⊆ Δ) (inc₂ : Δ ⊆ Θ) {T U : Γ ⊨^βιξη σ} →
+wk^2 : {Θ Δ Γ : Cx} (σ : Ty) (inc₁ : Γ ⊆ Δ) (inc₂ : Δ ⊆ Θ) {T U : Γ ⊨^βιξη σ} →
        EQREL Γ σ T U → EQREL Θ σ (wk^βιξη σ inc₂ $ wk^βιξη σ inc₁ T) (wk^βιξη σ (trans inc₁ inc₂) U)
 wk^2 `Unit     inc₁ inc₂ eq = ⟨⟩
 wk^2 `Bool     inc₁ inc₂ eq = PEq.trans (wk^nf-trans inc₁ inc₂ _) (PEq.cong (wk^nf (trans inc₁ inc₂)) eq)
@@ -2213,10 +2214,10 @@ in her detailed account of Normalisation by Evaluation for a simply-typed
 SubstitutionNormaliseFusable : Fusable  Substitution Normalise^βιξη Normalise^βιξη
   (EQREL _ _)
   (λ ρ^A ρ^B ρ^C → `∀[ EQREL _ _ ] ρ^B ρ^B
-                 × ((σ : ty) (pr : σ ∈ _) {Θ : Con} (inc : _ ⊆ Θ) →
+                 × ((σ : Ty) (pr : σ ∈ _) {Θ : Cx} (inc : _ ⊆ Θ) →
                          EQREL Θ σ (Normalise^βιξη ⊨⟦ lookup ρ^A pr ⟧ (pack $ λ pr → wk^βιξη _ inc $ lookup ρ^B pr))
                                    (wk^βιξη σ inc $ lookup ρ^C pr))
-                 × ((σ : ty) (pr : σ ∈ _) → EQREL _ σ (Normalise^βιξη ⊨⟦ lookup ρ^A pr ⟧ ρ^B) (lookup ρ^C pr)))
+                 × ((σ : Ty) (pr : σ ∈ _) → EQREL _ σ (Normalise^βιξη ⊨⟦ lookup ρ^A pr ⟧ ρ^B) (lookup ρ^C pr)))
   (EQREL _ _)
 \end{code}
 \AgdaHide{
@@ -2298,20 +2299,20 @@ RenamingPrettyPrintingFusable = record
                                         ihstrb (PEq.cong₂ (λ strl strr → strl ++ ") else (" ++ strr ++ ")")
                                         ihstrl ihstrr)) eq₃ }
 
-tailComm : (Δ Γ : Con) {names : Stream String} →
+tailComm : (Δ Γ : Cx) {names : Stream String} →
            tail (proj₂ (nameContext Δ Γ names)) ≡ proj₂ (nameContext Δ Γ (tail names))
 tailComm Δ ε        = PEq.refl
 tailComm Δ (Γ ∙ _)  = PEq.cong tail (tailComm Δ Γ)
 
-proof : (Δ Γ : Con) {names : Stream String} → proj₂ (nameContext Δ Γ names) ≡ Stream.drop (size Γ) names
-proof Δ ε       = PEq.refl
-proof Δ (Γ ∙ _) = λ { {_ ∷ names} → PEq.trans (tailComm Δ Γ) (proof Δ Γ) }
+proof : (Δ Γ : Cx) {names : Stream String} → proj₂ (nameContext Δ Γ names) ≡ Stream.drop (size Γ) names
+proof Δ ε                = PEq.refl
+proof Δ (Γ ∙ x) {n ∷ ns} = PEq.trans (tailComm Δ Γ) (proof Δ Γ)
 \end{code}}
 A direct corollary is that pretty printing a weakened closed term
 amounts to pretty printing the term itself in a dummy environment.
 
 \begin{code}
-PrettyRenaming : {Γ : Con} {σ : ty} (t : ε ⊢ σ) (inc : ε ⊆ Γ) →
+PrettyRenaming : {Γ : Cx} {σ : Ty} (t : ε ⊢ σ) (inc : ε ⊆ Γ) →
   print (wk^⊢ inc t) ≡ proj₁ (runPrinter (Printing ⊨⟦ t ⟧ `ε) $ Stream.drop (size Γ) names)
 PrettyRenaming {Γ} t inc = PEq.cong proj₁ $ lemma t (pack^R $ λ ()) $ proof Γ Γ
   where open Fusion RenamingPrettyPrintingFusable

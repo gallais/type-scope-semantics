@@ -11,6 +11,7 @@ prepare:
 	mkdir -p latex/ && rm -f latex/$(SLIDES).* && cp *.tex *.pdf *.cls *.bib *.sed *.config latex/
 
 paper: prepare
+	agda --latex motivation.lagda && \
 	agda -i . -i $(STDLIB) --latex $(PAPER).lagda && \
 	cd latex && sed -f rules.sed -i $(PAPER).tex && \
 	latexmk -bibtex -pdf -e '$$pdflatex=q/xelatex %O %S/' $(PAPER).tex && cd ..

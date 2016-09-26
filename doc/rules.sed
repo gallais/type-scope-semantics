@@ -9,7 +9,7 @@ s/{\([^{.]*\)\({\^\\AgdaFontStyle{\\scriptscriptstyle{}[^\]*}\)/\{\{\1\}\2/g
 s/‿\([^\}]*\)/\_\\AgdaFontStyle\{\\scriptscriptstyle \1\}/g
 
 s/₀/\_\{\\scriptscriptstyle\{\}0\}/g
-
+s/\^//g
 # Operators
 s/>>=/\\mathbin\{>\\!\\!>\\mkern-6.7mu=\}/g
 s/>>/\\mathbin\{>\\!\\!>}/g

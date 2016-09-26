@@ -1,25 +1,41 @@
-\documentclass{llncs}
-\usepackage{amstext}
+\documentclass[preprint]{sigplanconf}
+
+\usepackage{amsmath,amstext,amsthm}
 \usepackage[english]{babel}
 \usepackage[references]{agda}
-\usepackage{hyperref}
+\usepackage{hyperref,cleveref}
+\usepackage{catchfilebetweentags}
 
 \setlength\mathindent{0em}
 
 \setmainfont[Ligatures=TeX]{XITS}
 \setmathfont{XITS Math}
-\special{papersize=8.5in,11in}
 
-\author{Guillaume Allais \and James Chapman \and Conor McBride}
-\institute{University of Strathclyde}
-
-\bibliographystyle{plain}
 \usepackage{mathpartir}
 \include{commands}
 
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+
 \begin{document}
-\title{Type and Scope Preserving Semantics}
-\maketitle{}
+
+\special{papersize=8.5in,11in}
+\setlength{\pdfpageheight}{\paperheight}
+\setlength{\pdfpagewidth}{\paperwidth}
+
+\conferenceinfo{CONF 'yy}{Month d--d, 20yy, City, ST, Country}
+\copyrightyear{20yy}
+\copyrightdata{978-1-nnnn-nnnn-n/yy/mm}
+\copyrightdoi{nnnnnnn.nnnnnnn}
+
+\title{Type and Scope Preserving Semantics and their Properties}
+% \subtitle{Subtitle Text, if any}
+
+\authorinfo{}
+           {}
+           {}
+\maketitle
 
 \begin{abstract}
 We introduce a notion of type and scope preserving semantics
@@ -42,53 +58,76 @@ lemma. All of this work has been formalised in Agda.
 
 \section*{Introduction}
 
-In order to implement an embedded Domain Specific Language (eDSL)~\cite{hudak1996building},
-a developer can opt for either a shallow or a deep
-embedding~\cite{svenningsson2013combining,gill2014domain}. In the shallow approach, she
-will use the host language's own types and term constructs to model the domain
-specific language's building blocks. This will allow her to rely on any and all
-of the host's libraries when writing programs in the eDSL. Should she decide
-to use a deep embedding, representing expressions directly as their abstract
-syntax tree will allow her to inspect, optimise, and compile terms as she sees
-fit. This ability to inspect the tree comes at the cost of having to reimplement
-basic notions such as renaming or substitution with the risk of introducing
-bugs. Trying to get the compiler to detect these bugs leads to a further
-distinction between different kinds of deep embeddings: she may either prove type
-and scope safety on paper and use an inductive \emph{type} to describe an \emph{untyped}
-syntax, follow Carette, Kiselyov, and Shan~\cite{carette2009finally} and rely on
-parametric polymorphism to guarantee the existence of an underlying type and scope
-safe term, or use an inductive \emph{family} to represent the term itself whilst
-enforcing these invariants in its indices.
+A programmer implementing an embedded language with bindings has a
+wealth of possibilities. However, should she want to be able to inspect
+the terms produced by her users in order to optimise or even compile
+them, she will have to work with a deep embedding. Which means that she
+will have to (re)implement a great number of traversals doing such
+mundane things as renaming, substitution, or partial evaluation.
+Should she want to get help from the typechecker in order to fend
+off common bugs, she can opt for inductive families~\cite{dybjer1991inductive}
+to enforce precise invariants. But the traversals now have to be
+invariant preserving too!
 
-Goguen and McKinna's Candidates for Substitution~\cite{goguen1997candidates}
-begot work by McBride~\cite{mcbride2005type} in Epigram~\cite{mcbride2004view}
-and Benton, Hur, Kennedy and McBride~\cite{benton2012strongly} in Coq~\cite{Coq:manual}
-showing how to alleviate the programmer's burden when she opts for the strongly-typed
-approach based on inductive families. They both define a traversal generic enough to
-be instantiated to renaming first and then substitution. In Benton et al., the bulk
-of the work has to be repeated when defining Normalisation by Evaluation. Reasoning
-about these definitions is still mostly done in an ad-hoc manner: Coq's tactics
-do help them to discharge the four fusion lemmas involving renaming and substitution,
-but the same work has to be repeated when studying the evaluation function. They
-choose to prove the evaluation function correct by using propositional equality and
-assuming function extensionality rather than resorting to the traditional Partial
-Equivalence Relation approach we use.
+In his unpublished manuscript, McBride~\cite{mcbride2005type}
+highlights the similitudes between the type signatures and
+implementations of renaming and substitution for the (well-scoped
+and well-typed) simply-typed λ-calculus in a dependently-typed
+programming language. We can, even without understanding \emph{yet}
+what all the symbols mean, repeat this observation by comparing the
+two traversals (\cref{ren,sub}) and remarking that despite a few
+variations they are eerily similar.
 
-We build on these insights and define an abstract notion of \AR{Semantics}
-encompassing these two important operations as well as others Carette et al.
-could represent (e.g. measuring the size of a term) and even Normalisation
-by Evaluation~\cite{berger1991inverse}. By highlighting the common structure
-of all of these algorithms, we get the opportunity to not only implement
-them but also prove their properties generically.
+\begin{figure}[h]
+\ExecuteMetaData[motivation.tex]{ren}
+\caption{Renaming for the STLC\label{ren}}
+\end{figure}
+
+\begin{figure}[h]
+\ExecuteMetaData[motivation.tex]{sub}
+\caption{Substitution for the STLC\label{sub}}
+\end{figure}
+
+McBride then carves out an abstract notion of ``Kit'' which
+makes it possible to derive the two as \emph{instances} of the
+more general evaluation function for kits. The key parts making
+this traversal more general are highlighted in pink in \cref{kit}.
+Intuitively: if there are ◆-elements of the appropriate scope and
+type in the environment, they may be turned into terms (which is
+what is needed in the variable case), new ones may be manufactured
+and old ones weakened (precisely what going under a binder entails)
+then they give rise to a type and scope preserving traversal.
+
+\begin{figure}[h]
+\ExecuteMetaData[motivation.tex]{kit}
+\caption{Kit traversal for the STLC\label{kit}}
+\end{figure}
+
+The purpose of the present paper is twofold: first, we remark
+that this common framework can be extended to encompass other
+functions which have a similar structures. Normalisation by
+Evaluation is such a traversal as witnessed by \cref{nbe} but
+more exotic instances ─such as a monadic printer equipped with
+a name supply─ do exist. Second, we take advantage of the fact
+that all of these traversals are now defined in a uniform manner
+to also prove their properties generically. For instance, the
+circumstances under which two traversals can be fused together
+is made perfectly formal and we only need to prove one fusion
+theorem, all of the usual result then becoming corollaries.
+
+\begin{figure}[h]
+\ExecuteMetaData[motivation.tex]{nbe}
+\caption{Normalisation by Evaluation for the STLC\label{nbe}}
+\end{figure}
 
 \paragraph{Outline} We shall start by defining the simple calculus we will use
 as a running example. We will then introduce a notion of environments as well
 as one well-known instance: the preorder of renamings. This will lead
-us to defining a generic notion of type and scope-preserving \AR{Semantics}
+us to defining a generic notion of type and scope-preserving Semantics
 together with a generic evaluation function. We will then showcase the
-ground covered by these \AR{Semantics}: from the syntactic ones corresponding
+ground covered by these Semantics: from the syntactic ones corresponding
 to renaming and substitution to printing with names or some variations on Normalisation
-by Evaluation. Finally, we will demonstrate how, the definition of \AR{Semantics}
+by Evaluation. Finally, we will demonstrate how, the definition of Semantics
 being generic enough, we can prove fundamental lemmas about these evaluation
 functions: we characterise the semantics which are synchronisable and give an
 abstract treatment of composition yielding compaction and reuse of proofs
@@ -175,7 +214,6 @@ context \AB{Γ} extended with a fresh variable of type \AB{σ}. Variables
 are then positions in such a context represented as typed de Bruijn
 indices~\cite{de1972lambda}.
 
-\begin{minipage}[t]{0.5\textwidth}
 %<*context>
 \begin{code}
 data Con : Set where
@@ -183,8 +221,7 @@ data Con : Set where
   _∙_  : Con → ty → Con
 \end{code}
 %</context>
-\end{minipage}
-\begin{minipage}[t]{0.5\textwidth}
+
 %<*var>
 \begin{code}
 data _∈_ (σ : ty) : Con → Set where
@@ -192,7 +229,6 @@ data _∈_ (σ : ty) : Con → Set where
   1+_   : {Γ : Con} {τ : ty} → σ ∈ Γ → σ ∈ (Γ ∙ τ)
 \end{code}
 %</var>
-\end{minipage}
 
 The syntax for this calculus is designed to guarantee that terms are
 well-scoped and well-typed by construction. This presentation due to
@@ -253,14 +289,17 @@ defined later on is vastly simplified by this rather simple decision.
 
 \AgdaHide{
 \begin{code}
-infix 5 _[_]_
+infix 5 Var_⇒[_]_
 \end{code}}
 %<*environment>
 \begin{code}
-record _[_]_ {ℓ : Level} (Δ : Con) (𝓔 : Con → ty → Set ℓ) (Γ : Con) : Set ℓ where
+Model : (ℓ : Level) → Set (Level.suc ℓ)
+Model ℓ = Con → ty → Set ℓ
+
+record Var_⇒[_]_ {ℓ : Level} (Γ : Con) (𝓔 : Model ℓ) (Δ : Con) : Set ℓ where
   constructor pack
   field lookup : {σ : ty} (v : σ ∈ Γ) → 𝓔 Δ σ
-open _[_]_ public
+open Var_⇒[_]_ public
 \end{code}
 %</environment>
 
@@ -277,19 +316,14 @@ will be no sensible way to infer \AB{𝓔} when using the second combinator
 hence our decision to make it possible to tell Agda which relation we are
 working with.
 
-\noindent\begin{minipage}[t]{0.25\textwidth}
 \begin{code}
-`ε : {ℓ : Level} {Δ : Con} {𝓔 : (Δ : Con) (σ : ty) → Set ℓ} → Δ [ 𝓔 ] ε
-`ε = pack $ λ ()
-\end{code}
-\end{minipage}
-\begin{minipage}[t]{0.75\textwidth}
-\begin{code}
-_`∙_ :  {ℓ : Level} {Γ Δ : Con} {𝓔 : Con → ty → Set ℓ} {σ : ty} → Δ [ 𝓔 ] Γ → 𝓔 Δ σ → Δ [ 𝓔 ] (Γ ∙ σ)
+`ε : {ℓ : Level} {Δ : Con} {𝓔 : Model ℓ} → Var ε ⇒[ 𝓔 ] Δ
+lookup `ε ()
+
+_`∙_ :  {ℓ : Level} {Γ Δ : Con} {𝓔 : Model ℓ} {σ : ty} → Var Γ ⇒[ 𝓔 ] Δ → 𝓔 Δ σ → Var (Γ ∙ σ) ⇒[ 𝓔 ] Δ
 lookup (ρ `∙ s) zero    = s
 lookup (ρ `∙ s) (1+ n)  = lookup ρ n
 \end{code}
-\end{minipage}
 
 \paragraph{The Preorder of Renamings}\label{preorder}
 A key instance of environments playing a predominant role in this paper
@@ -311,7 +345,7 @@ infix 5 _⊆_
 \end{code}}
 \begin{code}
 _⊆_ : (Γ Δ : Con) → Set
-Γ ⊆ Δ = Δ [ flip _∈_ ] Γ
+Γ ⊆ Δ = Var Γ ⇒[ flip _∈_ ] Δ
 \end{code}
 
 Context inclusions allow for the formulation of weakening principles
@@ -323,50 +357,36 @@ renaming function in order to obtain a new variable. The environments'
 case is also quite simple: being a pointwise lifting of a relation \AB{𝓔}
 between contexts and types, they enjoy weakening if \AB{𝓔} does.
 
-\noindent\begin{minipage}[t]{0.4\textwidth}
 \begin{code}
-wk^∈ : {Δ Γ : Con} {σ : ty} → Γ ⊆ Δ → σ ∈ Γ → σ ∈ Δ
+Weakening : {ℓ : Level} → Model ℓ → Set _
+Weakening 𝓔 = ∀ {Γ Δ σ} → Γ ⊆ Δ → 𝓔 Γ σ → 𝓔 Δ σ
+
+wk^∈ : Weakening (flip _∈_)
 wk^∈ inc v = lookup inc v
+
+wk[_] :  {ℓ : Level} {Δ : Con} {𝓔 : Model ℓ} → Weakening 𝓔 →
+         {Γ Θ : Con} → Δ ⊆ Θ → Var Γ ⇒[ 𝓔 ] Δ  →  Var Γ ⇒[ 𝓔 ] Θ
+lookup (wk[ wk ] inc ρ) = wk inc ∘ lookup ρ
 \end{code}
-\end{minipage}
-\begin{minipage}[t]{0.60\textwidth}
-\begin{code}
-wk[_] :  {ℓ : Level} {Δ : Con} {𝓔 : (Δ : Con) (σ : ty) → Set ℓ} (wk : {Θ : Con} {σ : ty} (inc : Δ ⊆ Θ) → 𝓔 Δ σ → 𝓔 Θ σ)
-         {Γ Θ : Con} → Δ ⊆ Θ → Δ [ 𝓔 ] Γ →  Θ [ 𝓔 ] Γ
-wk[ wk ] inc ρ = pack $ wk inc ∘ lookup ρ
-\end{code}
-\end{minipage}
 
 These simple observations allow us to prove that context inclusions
 form a preorder which, in turn, lets us provide the user with the
 constructors Altenkirch, Hofmann and Streicher's ``Category of
 Weakenings"~\cite{altenkirch1995categorical} is based on.
 
-\noindent\begin{minipage}[t]{0.3\textwidth}
 \begin{code}
 refl : {Γ : Con} → Γ ⊆ Γ
 refl = pack id
-\end{code}
-\end{minipage}
-\begin{minipage}[t]{0.7\textwidth}
-\begin{code}
-trans : {ℓ : Level} {Γ Δ Θ : Con} {𝓔 : Con → ty → Set ℓ} (inc₁ : Γ ⊆ Δ) (inc₂ : Θ [ 𝓔 ] Δ) → Θ [ 𝓔 ] Γ
-lookup (trans inc₁ inc₂) = lookup inc₂ ∘ lookup inc₁
-\end{code}
-\end{minipage}
 
-\noindent\begin{minipage}[t]{0.5\textwidth}
-\begin{code}
-step : {Δ Γ : Con} {σ : ty} (inc : Γ ⊆ Δ) → Γ ⊆ (Δ ∙ σ)
+trans : {ℓ : Level} {Γ Δ Θ : Con} {𝓔 : Model ℓ} → Γ ⊆ Δ → Var Δ ⇒[ 𝓔 ] Θ → Var Γ ⇒[ 𝓔 ] Θ
+lookup (trans inc ρ) = lookup ρ ∘ lookup inc
+
+step : {Δ Γ : Con} {σ : ty} → Γ ⊆ Δ → Γ ⊆ (Δ ∙ σ)
 step inc = trans inc $ pack 1+_
-\end{code}
-\end{minipage}
-\begin{minipage}[t]{0.5\textwidth}
-\begin{code}
-pop! : {Δ Γ : Con} {σ : ty} (inc : Γ ⊆ Δ) → (Γ ∙ σ) ⊆ (Δ ∙ σ)
+
+pop! : {Δ Γ : Con} {σ : ty} → Γ ⊆ Δ → (Γ ∙ σ) ⊆ (Δ ∙ σ)
 pop! inc = step inc `∙ zero
 \end{code}
-\end{minipage}
 
 Now that we are equipped with the notion of inclusion, we have all
 the pieces necessary to describe the Kripke structure of our models
@@ -393,7 +413,7 @@ The record packs the properties of these relations necessary to
 define the evaluation function.
 
 \begin{code}
-record Semantics {ℓ^E ℓ^M : Level} (𝓔 : Con → ty → Set ℓ^E) (𝓜 : Con → ty → Set ℓ^M) : Set (ℓ^E ⊔ ℓ^M) where
+record Semantics {ℓ^E ℓ^M : Level} (𝓔 : Model ℓ^E) (𝓜 : Model ℓ^M) : Set (ℓ^E ⊔ ℓ^M) where
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -410,8 +430,8 @@ in order to be able to craft a diagonal environment to evaluate an open
 term.
 
 \begin{code}
-    wk      :  {Γ Δ : Con} {σ : ty} (inc : Γ ⊆ Δ) (r : 𝓔 Γ σ) → 𝓔 Δ σ
-    embed   :  {Γ : Con} {σ : ty} (v : σ ∈ Γ) → 𝓔 Γ σ
+    wk      :  Weakening 𝓔
+    embed   :  {Γ : Con} {σ : ty} → σ ∈ Γ → 𝓔 Γ σ
 \end{code}
 
 The structure of the model is quite constrained: each constructor
@@ -424,7 +444,7 @@ will therefore be able to, when hitting a variable, lookup the
 corresponding value in the environment and return it.
 
 \begin{code}
-    ⟦var⟧   :  {Γ : Con} {σ : ty} (v : 𝓔 Γ σ) → 𝓜 Γ σ
+    ⟦var⟧   :  {Γ : Con} {σ : ty} → 𝓔 Γ σ → 𝓜 Γ σ
 \end{code}
 
 The semantic λ-abstraction is notable for two reasons: first, following
@@ -438,7 +458,15 @@ value. This slight variation in the type of semantic λ-abstraction
 guarantees that such an argument will be provided to us.
 
 \begin{code}
-    ⟦λ⟧     :  {Γ : Con} {σ τ : ty} (t : {Δ : Con} (pr : Γ ⊆ Δ) (u : 𝓔 Δ σ) → 𝓜 Δ τ) → 𝓜 Γ (σ `→ τ)
+  Kripke : {ℓ^E ℓ^M : Level} → Model ℓ^E → Model ℓ^M → Con → ty → ty → Set (ℓ^E ⊔ ℓ^M)
+  Kripke 𝓔 𝓜 Γ σ τ = {Δ : Con} → Γ ⊆ Δ → 𝓔 Δ σ → 𝓜 Δ τ
+\end{code}
+\AgdaHide{
+\begin{code}
+  field
+\end{code}}
+\begin{code}
+    ⟦λ⟧     :  {Γ : Con} {σ τ : ty} → Kripke 𝓔 𝓜 Γ σ τ → 𝓜 Γ (σ `→ τ)
 \end{code}
 
 The remaining fields' types are a direct translation of the types
@@ -447,11 +475,19 @@ characterising typing derivations (\AD{\_⊢\_}) has been replaced
 with the one corresponding to model values (\AB{𝓜}).
 
 \begin{code}
-    _⟦$⟧_   :  {Γ : Con} {σ τ : ty} → 𝓜 Γ (σ `→ τ) → 𝓜 Γ σ → 𝓜 Γ τ
+  Applicative : {ℓ : Level} → Model ℓ → Set ℓ
+  Applicative 𝓜 = {Γ : Con} {σ τ : ty} → 𝓜 Γ (σ `→ τ) → 𝓜 Γ σ → 𝓜 Γ τ
+\end{code}
+\AgdaHide{
+\begin{code}
+  field
+\end{code}}
+\begin{code}
+    _⟦$⟧_   :  Applicative 𝓜
     ⟦⟨⟩⟧    :  {Γ : Con} → 𝓜 Γ `Unit
     ⟦tt⟧    :  {Γ : Con} → 𝓜 Γ `Bool
     ⟦ff⟧    :  {Γ : Con} → 𝓜 Γ `Bool
-    ⟦ifte⟧  :  {Γ : Con} {σ : ty} (b : 𝓜 Γ `Bool) (l r : 𝓜 Γ σ) → 𝓜 Γ σ
+    ⟦ifte⟧  :  {Γ : Con} {σ : ty} → 𝓜 Γ `Bool → 𝓜 Γ σ → 𝓜 Γ σ → 𝓜 Γ σ
 \end{code}
 
 The fundamental lemma of semantics is then proven in a module indexed by
@@ -473,7 +509,7 @@ module Eval {ℓ^E ℓ^M : Level} {𝓔 : (Γ : Con) (σ : ty) → Set ℓ^E} {�
 \end{code}}
 %<*evaluation>
 \begin{code}
-  lemma : {Δ Γ : Con} {σ : ty} (t : Γ ⊢ σ) (ρ : Δ [ 𝓔 ] Γ) → 𝓜 Δ σ
+  lemma : {Δ Γ : Con} {σ : ty} → Γ ⊢ σ → Var Γ ⇒[ 𝓔 ] Δ → 𝓜 Δ σ
   lemma (`var v)       ρ = ⟦var⟧ $ lookup ρ v
   lemma (t `$ u)       ρ = lemma t ρ ⟦$⟧ lemma u ρ
   lemma (`λ t)         ρ = ⟦λ⟧ λ inc u → lemma t $ wk[ wk ] inc ρ `∙ u
@@ -496,14 +532,10 @@ the term \AB{t} in the environment \AB{ρ}. Similarly, \AB{𝓢} \AF{⊨eval}
 \AB{t} is meant to denote the evaluation of the term \AB{t} in the semantics
 \AB{𝓢} (using a diagonal environment).
 
-\noindent\begin{minipage}[t]{0.55\textwidth}
 \begin{code}
-  _⊨⟦_⟧_ : {Δ Γ : Con} {σ : ty} → Γ ⊢ σ → Δ [ 𝓔 ] Γ → 𝓜 Δ σ
+  _⊨⟦_⟧_ : {Δ Γ : Con} {σ : ty} → Γ ⊢ σ → Var Γ ⇒[ 𝓔 ] Δ → 𝓜 Δ σ
   _⊨⟦_⟧_ = lemma
-\end{code}
-\end{minipage}
-\begin{minipage}[t]{0.45\textwidth}
-\begin{code}
+
   _⊨eval_ : {Γ : Con} {σ : ty} → Γ ⊢ σ → 𝓜 Γ σ
   _⊨eval_ t = _⊨⟦_⟧_ t (pack embed)
 \end{code}
@@ -511,7 +543,6 @@ the term \AB{t} in the environment \AB{ρ}. Similarly, \AB{𝓢} \AF{⊨eval}
 \begin{code}
 open Eval hiding (lemma) public
 \end{code}}
-\end{minipage}
 
 The diagonal environment generated using \ARF{embed} when defining the
 \AF{\_⊨eval\_} function lets us kickstart the evaluation of arbitrary
@@ -538,7 +569,7 @@ the \AF{syntactic} function turning its inhabitants into associated
 \begin{code}
 record Syntactic {ℓ : Level} (𝓔 : (Γ : Con) (σ : ty) → Set ℓ) : Set ℓ where
   field  embed  : {Γ : Con} {σ : ty} → σ ∈ Γ → 𝓔 Γ σ
-         wk     : {Γ Δ : Con} {σ : ty} → Γ ⊆ Δ → 𝓔 Γ σ → 𝓔 Δ σ
+         wk     : Weakening 𝓔
          ⟦var⟧  : {Γ : Con} {σ : ty} → 𝓔 Γ σ → Γ ⊢ σ
 \end{code}\vspace{ -1.5em}%ugly but it works!
 %</syntactic>
@@ -567,9 +598,11 @@ a variable into a term by using the \AIC{`var} constructor.
 \begin{code}
 syntacticRenaming : Syntactic (flip _∈_)
 syntacticRenaming = record { embed = id; wk = wk^∈; ⟦var⟧ = `var }
-
-Renaming : Semantics (flip _∈_) _⊢_; Renaming = syntactic syntacticRenaming
 \end{code}
+\AgdaHide{
+\begin{code}
+Renaming : Semantics (flip _∈_) _⊢_; Renaming = syntactic syntacticRenaming
+\end{code}}
 
 We obtain a rather involved definition of the identity of type \AB{Γ}
 \AD{⊢} \AB{σ} \AS{→} \AB{Γ} \AD{⊢} \AB{σ} as \AF{Renaming} \AF{⊨eval\_}.
@@ -580,7 +613,7 @@ precisely the notion of weakening for terms we need once its arguments
 have been flipped.
 
 \begin{code}
-wk^⊢ : {Δ Γ : Con} {σ : ty} (inc : Γ ⊆ Δ) (t : Γ ⊢ σ) → Δ ⊢ σ
+wk^⊢ : Weakening _⊢_
 wk^⊢ inc t = Renaming ⊨⟦ t ⟧ inc
 \end{code}
 
@@ -593,9 +626,12 @@ from the previous example.
 \begin{code}
 syntacticSubstitution : Syntactic _⊢_
 syntacticSubstitution = record { embed = `var; wk = wk^⊢; ⟦var⟧ = id }
-
-Substitution : Semantics _⊢_ _⊢_; Substitution = syntactic syntacticSubstitution
 \end{code}
+
+\AgdaHide{
+\begin{code}
+Substitution : Semantics _⊢_ _⊢_; Substitution = syntactic syntacticSubstitution
+\end{code}}
 
 Because the diagonal environment used by \AF{Substitution} \AF{⊨eval\_}
 is obtained by \ARF{embed}ding membership proofs into terms using the
@@ -605,7 +641,7 @@ is once again more interesting: it is an implementation of simultaneous
 substitution.
 
 \begin{code}
-subst : {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) (ρ : Δ [ _⊢_ ] Γ) → Δ ⊢ σ
+subst : {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) (ρ : Var Γ ⇒[ _⊢_ ] Δ) → Δ ⊢ σ
 subst t ρ = Substitution ⊨⟦ t ⟧ ρ
 \end{code}
 
@@ -686,17 +722,20 @@ Printing = record
   { embed   = mkName ∘ show ∘ deBruijn
   ; wk      = λ _ → mkName ∘ runName
   ; ⟦var⟧   = mkPrinter ∘ return ∘ runName
-  ; _⟦$⟧_   =  λ mf mt → mkPrinter $ format$ <$> runPrinter mf ⊛ runPrinter mt
+  ; _⟦$⟧_   =  λ mf mt → mkPrinter $
+               format$ <$> runPrinter mf ⊛ runPrinter mt
   ; ⟦λ⟧     =  λ {_} {σ} mb →
-               mkPrinter $ get >>= λ names → let `x` = head names in
-               put (tail names)                                  >>= λ _ →
+               mkPrinter $ get >>= λ ns → let `x` = head ns in
+               put (tail ns)                               >>= λ _ →
                runPrinter (mb (step {σ = σ} refl) (mkName `x`))  >>= λ `b` →
                return $ formatλ `x` `b`
   ; ⟦⟨⟩⟧    = mkPrinter $ return "⟨⟩"
   ; ⟦tt⟧    = mkPrinter $ return "tt"
   ; ⟦ff⟧    = mkPrinter $ return "ff"
   ; ⟦ifte⟧  =  λ mb ml mr → mkPrinter $
-               formatIf <$> runPrinter mb ⊛ runPrinter ml ⊛ runPrinter mr }
+               formatIf  <$> runPrinter mb
+                         ⊛ runPrinter ml
+                         ⊛ runPrinter mr }
 \end{code}
 
 Our definition of \ARF{embed} erases the membership proofs to
@@ -749,26 +788,32 @@ names = flatten $ zipWith cons letters $ "" ∷ ♯ Stream.map show (allNatsFrom
     allNatsFrom k = k ∷ ♯ allNatsFrom (1 + k)
 \end{code}}
 
-Before defining \AF{print}, we introduce \AF{nameContext} (implementation
+Before defining \AF{print}, we introduce \AF{init} (implementation
 omitted here) which is a function delivering a stateful computation using
 the provided stream of fresh names to generate an environment of names
 for a given context. This means that we are now able to define a printing
 function using names rather than numbers for the variables appearing free
 in a term.
 
+\AgdaHide{
 \begin{code}
-nameContext : (Δ : Con) (Γ : Con) → State (Stream String) (Δ [ Name ] Γ)
+nameContext : ∀ Δ Γ → State (Stream String) (Var Γ ⇒[ Name ] Δ)
+nameContext Δ ε        =  return `ε
+nameContext Δ (Γ ∙ σ)  =  nameContext Δ Γ >>= λ g →
+                          get >>= λ names → put (tail names) >>
+                          return (g `∙ mkName (head names))
+\end{code}}
+\begin{code}
+init : ∀ Γ → State (Stream String) (Var Γ ⇒[ Name ] Γ)
 \end{code}
 \AgdaHide{
 \begin{code}
-nameContext Δ ε        =  return `ε
-nameContext Δ (Γ ∙ σ)  =  nameContext Δ Γ >>= λ g →
-                        get >>= λ names → put (tail names) >>
-                        return (g `∙ mkName (head names))
+init Γ = nameContext Γ Γ
 \end{code}}\vspace{ -2em}%ugly but it works!
 \begin{code}
-print : {Γ : Con} {σ : ty} (t : Γ ⊢ σ) → String
-print {Γ} t = proj₁ $ (nameContext Γ Γ >>= runPrinter ∘ λ ρ → Printing ⊨⟦ t ⟧ ρ) names
+print : {Γ : Con} {σ : ty} → Γ ⊢ σ → String
+print {Γ} t = proj₁ $  (init Γ >>= λ ρ →
+                       runPrinter (Printing ⊨⟦ t ⟧ ρ)) names
 \end{code}
 
 We can observe \AF{print}'s behaviour by writing a test.
@@ -806,17 +851,15 @@ terms have a canonical form: functions will all be λ-headed whilst record will
 be a collection of fields which translates here to all the elements of the
 \AIC{`Unit} type being equal to \AIC{`⟨⟩}.
 
-\noindent\begin{minipage}[t]{0.50\textwidth}
 \AgdaHide{
 \begin{code}
 infixl 10 _⟨_/var₀⟩
 \end{code}}
 \begin{code}
-eta : {Γ : Con} {σ τ : ty} (t : Γ ⊢ σ `→ τ) → Γ ⊢ σ `→ τ
+eta : {Γ : Con} {σ τ : ty} → Γ ⊢ (σ `→ τ) → Γ ⊢ (σ `→ τ)
 eta t = `λ $ wk^⊢ (step refl) t `$ `var zero
 \end{code}
-\end{minipage}
-\begin{minipage}[t]{0.50\textwidth}
+
 \begin{mathpar}
 \inferrule{
   }{\text{\AB{t} ↝ \AF{eta} \AB{t}}
@@ -825,21 +868,17 @@ eta t = `λ $ wk^⊢ (step refl) t `$ `var zero
   }{\text{\AB{t} ↝ \AIC{`⟨⟩}}
   }{η_2}
 \end{mathpar}
-\end{minipage}
 
-\noindent\begin{minipage}[t]{0.55\textwidth}
 \begin{code}
 _⟨_/var₀⟩ : {Γ : Con} {σ τ : ty} (t : Γ ∙ σ ⊢ τ) (u : Γ ⊢ σ) → Γ ⊢ τ
 t ⟨ u /var₀⟩ = subst t $ pack `var `∙ u
 \end{code}
-\end{minipage}
-\begin{minipage}[t]{0.45\textwidth}
+
 \begin{mathpar}
 \inferrule{
   }{\text{(\AIC{`λ} \AB{t}) \AIC{`\$} \AB{u} ↝ \AB{t} \AF{⟨} \AB{u} \AF{/var₀⟩}}
   }{β}
 \end{mathpar}
-\end{minipage}
 
 The β-rule is the main driving force when it comes to actually computing
 but the presence of an inductive data type (\AIC{`Bool}) and its eliminator
@@ -869,7 +908,7 @@ by Evaluation which goes under λs and produces η-long βι-short normal
 forms.
 
 \subsection{Normalisation by Evaluation for βιξη}
-\label{nbe}
+\label{normbye}
 
 In the case of Normalisation by Evaluation, the elements of the model
 and the ones carried by the environment will both have the same type:
@@ -1003,14 +1042,12 @@ induction on the type and make sure that η-expansion is applied eagerly: all
 inhabitants of \AB{Γ} \AF{⊨^{βιξη}} \AIC{`Unit} are indeed equal and all elements
 of \AB{Γ} \AF{⊨^{βιξη}} (\AB{σ} \AIC{`→} \AB{τ}) are functions in Agda.
 
-\begin{minipage}[t]{0.3\textwidth}
 \begin{code}
 R^βιξη : ty → Set
 R^βιξη `Bool  = ⊤
 R^βιξη _      = ⊥
 \end{code}
-\end{minipage}
-\begin{minipage}[t]{0.7\textwidth}
+
 \AgdaHide{
 \begin{code}
 infix 5 _⊨^βιξη_
@@ -1023,7 +1060,6 @@ _⊨^βιξη_ : (Γ : Con) (σ : ty) → Set
 Γ ⊨^βιξη (σ `→ τ)  = {Δ : Con} → Γ ⊆ Δ → Δ ⊨^βιξη σ → Δ ⊨^βιξη τ
 \end{code}
 %</sem>
-\end{minipage}
 
 Normal forms may be weakened, and context inclusions may be composed hence
 the rather simple definition of weakening for inhabitants of the model.
@@ -1173,7 +1209,7 @@ or the body may or may not be stuck.
 
 Weakening for these structures is rather straightforward
 albeit slightly more complex than for the usual definition of Normalisation
-by Evaluation seen in Section ~\ref{nbe}.
+by Evaluation seen in Section ~\ref{normbye}.
 
 \begin{code}
 wk^βιξ⋆ : {Δ Γ : Con} (inc : Γ ⊆ Δ) {σ : ty} (T : Γ ⊨^βιξ⋆ σ) → Δ ⊨^βιξ⋆ σ
@@ -1434,15 +1470,16 @@ using the \AF{`∀[\_,\_]} predicate transformer omitted here.
 
 \AgdaHide{
 \begin{code}
-record `∀[_] {ℓ^A ℓ^B ℓ^R : Level} {𝓔^A : Con → ty → Set ℓ^A} {𝓔^B : Con → ty → Set ℓ^B}
+record `∀[_] {ℓ^A ℓ^B ℓ^R : Level} {𝓔^A : Model ℓ^A} {𝓔^B : Model ℓ^B}
              (𝓔^R : {Γ : Con} {σ : ty} (u^A : 𝓔^A Γ σ) (u^B : 𝓔^B Γ σ) → Set ℓ^R)
-             {Γ Δ : Con} (ρ^A : Δ [ 𝓔^A ] Γ) (ρ^B : Δ [ 𝓔^B ] Γ) : Set ℓ^R where
+             {Γ Δ : Con} (ρ^A : Var Γ ⇒[ 𝓔^A ] Δ) (ρ^B : Var Γ ⇒[ 𝓔^B ] Δ) : Set ℓ^R where
   constructor pack^R
   field lookup^R : {σ : ty} (v : σ ∈ Γ) → 𝓔^R (lookup ρ^A v) (lookup ρ^B v)
 open `∀[_]
 \end{code}}
 \begin{code}
-record Synchronisable {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^RE ℓ^RM : Level} {𝓔^A : (Γ : Con) (σ : ty) → Set ℓ^EA} {𝓜^A : (Γ : Con) (σ : ty) → Set ℓ^MA} {𝓔^B : (Γ : Con) (σ : ty) → Set ℓ^EB} {𝓜^B : (Γ : Con) (σ : ty) → Set ℓ^MB} (𝓢^A : Semantics 𝓔^A 𝓜^A) (𝓢^B : Semantics 𝓔^B 𝓜^B)
+record Synchronisable {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^RE ℓ^RM : Level} {𝓔^A : (Γ : Con) (σ : ty) → Set ℓ^EA} {𝓜^A : (Γ : Con) (σ : ty) → Set ℓ^MA} {𝓔^B : (Γ : Con) (σ : ty) → Set ℓ^EB} {𝓜^B : (Γ : Con) (σ : ty) → Set ℓ^MB}
+  (𝓢^A : Semantics 𝓔^A 𝓜^A) (𝓢^B : Semantics 𝓔^B 𝓜^B)
   (𝓔^R  : {Γ : Con} {σ : ty} → 𝓔^A Γ σ → 𝓔^B Γ σ → Set ℓ^RE)
   (𝓜^R  : {Γ : Con} {σ : ty} → 𝓜^A Γ σ → 𝓜^B Γ σ → Set ℓ^RM) : Set (ℓ^RE ⊔ ℓ^RM ⊔ ℓ^EA ⊔ ℓ^EB ⊔ ℓ^MA ⊔ ℓ^MB) where
 \end{code}
@@ -1458,7 +1495,7 @@ need to have. \ARF{𝓔^R‿wk} states that two synchronised environments
 can be weakened whilst staying synchronised.
 
 \begin{code}
-    𝓔^R‿wk  :  {Γ Δ Θ : Con} (inc : Δ ⊆ Θ) {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Δ [ 𝓔^B ] Γ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
+    𝓔^R‿wk  :  {Γ Δ Θ : Con} (inc : Δ ⊆ Θ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Γ ⇒[ 𝓔^B ] Δ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
                `∀[ 𝓔^R ] (wk[ 𝓢^A.wk ] inc ρ^A) (wk[ 𝓢^B.wk ] inc ρ^B)
 \end{code}
 
@@ -1471,7 +1508,7 @@ indeed get synchronised values in the model by applying \ARF{⟦var⟧}
 to the looked up values.
 
 \begin{code}
-    R⟦var⟧    :  {Γ Δ : Con} {σ : ty} (v : σ ∈ Γ) {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Δ [ 𝓔^B ] Γ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
+    R⟦var⟧    :  {Γ Δ : Con} {σ : ty} (v : σ ∈ Γ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Γ ⇒[ 𝓔^B ] Δ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
                  𝓜^R (𝓢^A.⟦var⟧ (lookup ρ^A v)) (𝓢^B.⟦var⟧ (lookup ρ^B v))
 \end{code}
 
@@ -1523,7 +1560,7 @@ We use \AF{[\_,\_,\_]\_∙^R\_} as a way to circumvent Agda's inhability to
 infer \AR{𝓔^A}, \AR{𝓔^B} and \AR{𝓔^R}.
 
 \begin{code}
-_∙^R_ :  {ℓ^EA ℓ^EB ℓ^ER : Level} {𝓔^A : Con → ty → Set ℓ^EA} {𝓔^B : Con → ty → Set ℓ^EB} {𝓔^R : {Γ : Con} {σ : ty} → 𝓔^A Γ σ → 𝓔^B Γ σ → Set ℓ^ER} {Δ Γ : Con} {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Δ [ 𝓔^B ] Γ} {σ : ty} {u^A : 𝓔^A Δ σ} {u^B : 𝓔^B Δ σ} → `∀[ 𝓔^R ] ρ^A ρ^B → 𝓔^R u^A u^B → `∀[ 𝓔^R ] (ρ^A `∙ u^A) (ρ^B `∙ u^B)
+_∙^R_ :  {ℓ^EA ℓ^EB ℓ^ER : Level} {𝓔^A : Model ℓ^EA} {𝓔^B : Model ℓ^EB} {𝓔^R : {Γ : Con} {σ : ty} → 𝓔^A Γ σ → 𝓔^B Γ σ → Set ℓ^ER} {Δ Γ : Con} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Γ ⇒[ 𝓔^B ] Δ} {σ : ty} {u^A : 𝓔^A Δ σ} {u^B : 𝓔^B Δ σ} → `∀[ 𝓔^R ] ρ^A ρ^B → 𝓔^R u^A u^B → `∀[ 𝓔^R ] (ρ^A `∙ u^A) (ρ^B `∙ u^B)
 lookup^R (ρ^R ∙^R u^R) zero    = u^R
 lookup^R (ρ^R ∙^R u^R) (1+ v)  = lookup^R ρ^R v
 
@@ -1532,7 +1569,7 @@ module Synchronised {ℓ^EA ℓ^MA ℓ^EB ℓ^MB : Level} {𝓔^A : (Γ : Con) (
 \end{code}\vspace{ -2.5em}
 %<*relational>
 \begin{code}
-  lemma :  {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Δ [ 𝓔^B ] Γ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
+  lemma :  {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Γ ⇒[ 𝓔^B ] Δ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
            𝓜^R (𝓢^A ⊨⟦ t ⟧ ρ^A) (𝓢^B ⊨⟦ t ⟧ ρ^B)
   lemma (`var v)       ρ^R = R⟦var⟧ v ρ^R
   lemma (f `$ t)       ρ^R = R⟦$⟧ (lemma f ρ^R) (lemma t ρ^R)
@@ -1711,7 +1748,7 @@ case:
 
 %<*synchroexample2>
 \begin{code}
-refl^βιξη :  {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) {ρ^A ρ^B : Δ [ _⊨^βιξη_ ] Γ} (ρ^R : `∀[ EQREL _ _ ] ρ^A ρ^B) →
+refl^βιξη :  {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) {ρ^A ρ^B : Var Γ ⇒[ _⊨^βιξη_ ] Δ} (ρ^R : `∀[ EQREL _ _ ] ρ^A ρ^B) →
              EQREL Δ σ (Normalise^βιξη ⊨⟦ t ⟧ ρ^A) (Normalise^βιξη ⊨⟦ t ⟧ ρ^B)
 refl^βιξη t ρ^R = lemma t ρ^R where open Synchronised SynchronisableNormalise
 \end{code}
@@ -1749,7 +1786,7 @@ in \AB{𝓢^B} and \AB{𝓢^C}'s respective models.
 record Fusable
   {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REBC ℓ^RM : Level} {𝓔^A : (Γ : Con) (σ : ty) → Set ℓ^EA} {𝓔^B : (Γ : Con) (σ : ty) → Set ℓ^EB} {𝓔^C : (Γ : Con) (σ : ty) → Set ℓ^EC} {𝓜^A : (Γ : Con) (σ : ty) → Set ℓ^MA} {𝓜^B : (Γ : Con) (σ : ty) → Set ℓ^MB} {𝓜^C : (Γ : Con) (σ : ty) → Set ℓ^MC} (𝓢^A : Semantics 𝓔^A 𝓜^A) (𝓢^B : Semantics 𝓔^B 𝓜^B) (𝓢^C : Semantics 𝓔^C 𝓜^C)
   (𝓔^R‿BC : {Γ : Con} {σ : ty} (e^B : 𝓔^B Γ σ) (e^C : 𝓔^C Γ σ) → Set ℓ^REBC)
-  (𝓔^R :  {Θ Δ Γ : Con} (ρ^A : Δ [ 𝓔^A ] Γ) (ρ^B : Θ [ 𝓔^B ] Δ) (ρ^C : Θ [ 𝓔^C ] Γ) → Set ℓ^RE)
+  (𝓔^R :  {Θ Δ Γ : Con} (ρ^A : Var Γ ⇒[ 𝓔^A ] Δ) (ρ^B : Var Δ ⇒[ 𝓔^B ] Θ) (ρ^C : Var Γ ⇒[ 𝓔^C ] Θ) → Set ℓ^RE)
   (𝓜^R : {Γ : Con} {σ : ty} (m^B : 𝓜^B Γ σ) (m^C : 𝓜^C Γ σ) → Set ℓ^RM)
   : Set (ℓ^RM ⊔ ℓ^RE ⊔ ℓ^EC ⊔ ℓ^EB ⊔ ℓ^EA ⊔ ℓ^MA ⊔ ℓ^REBC) where
 \end{code}
@@ -1785,11 +1822,11 @@ the environments for \AB{𝓢^B} and \AB{𝓢^C} in a \AB{𝓔^R}
 preserving manner.
 
 \begin{code}
-    𝓔^R‿∙   :  {Γ Δ Θ : Con} {σ : ty} {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Θ [ 𝓔^B ] Δ} {ρ^C : Θ [ 𝓔^C ] Γ} {u^B : 𝓔^B Θ σ} {u^C : 𝓔^C Θ σ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) (u^R : 𝓔^R‿BC u^B u^C) →
+    𝓔^R‿∙   :  {Γ Δ Θ : Con} {σ : ty} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} {u^B : 𝓔^B Θ σ} {u^C : 𝓔^C Θ σ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) (u^R : 𝓔^R‿BC u^B u^C) →
                𝓔^R  (wk[ 𝓢^A.wk ] (step refl) ρ^A `∙ 𝓢^A.embed zero)
                     (ρ^B `∙ u^B) (ρ^C `∙ u^C)
 
-    𝓔^R‿wk  :  {Γ Δ Θ E : Con} (inc : Θ ⊆ E) {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Θ [ 𝓔^B ] Δ} {ρ^C : Θ [ 𝓔^C ] Γ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
+    𝓔^R‿wk  :  {Γ Δ Θ E : Con} (inc : Θ ⊆ E) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
                𝓔^R ρ^A (wk[ 𝓢^B.wk ] inc ρ^B) (wk[ 𝓢^C.wk ] inc ρ^C)
 \end{code}
 
@@ -1800,7 +1837,7 @@ case. It states that fusion indeed happens when evaluating a
 variable using related environments.
 
 \begin{code}
-    R⟦var⟧  :  {Γ Δ Θ : Con} {σ : ty} (v : σ ∈ Γ) {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Θ [ 𝓔^B ] Δ} {ρ^C : Θ [ 𝓔^C ] Γ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
+    R⟦var⟧  :  {Γ Δ Θ : Con} {σ : ty} (v : σ ∈ Γ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
                𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A.⟦var⟧ (lookup ρ^A v)) ⟧ ρ^B) (𝓢^C.⟦var⟧ (lookup ρ^C v))
 \end{code}
 
@@ -1818,7 +1855,7 @@ related values to be substituted for the variable bound by the \AIC{`λ}.
 
 \begin{code}
     R⟦λ⟧    :
-      {Γ Δ Θ : Con} {σ τ : ty} (t : Γ ∙ σ ⊢ τ) {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Θ [ 𝓔^B ] Δ} {ρ^C : Θ [ 𝓔^C ] Γ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
+      {Γ Δ Θ : Con} {σ τ : ty} (t : Γ ∙ σ ⊢ τ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
       (r :  {E : Con} (inc : Θ ⊆ E) {u^B : 𝓔^B E σ} {u^C : 𝓔^C E σ} (u^R : 𝓔^R‿BC u^B u^C) →
             let  ρ^A′ =  wk[ 𝓢^A.wk ] (step refl) ρ^A `∙ 𝓢^A.embed zero
                  ρ^B′ =  wk[ 𝓢^B.wk ] inc ρ^B `∙ u^B
@@ -1834,24 +1871,24 @@ fusion can happen on the compound expression.
 \AgdaHide{
 \begin{code}
     R⟦$⟧    : {Γ Δ Θ : Con} {σ τ : ty} (f : Γ ⊢ σ `→ τ) (t : Γ ⊢ σ)
-            {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Θ [ 𝓔^B ] Δ} {ρ^C : Θ [ 𝓔^C ] Γ} →
+            {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} →
              (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
             𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ f ⟧ ρ^A) ⟧ ρ^B)
                    (𝓢^C ⊨⟦ f ⟧ ρ^C) →
             𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ t ⟧ ρ^A) ⟧ ρ^B) (𝓢^C ⊨⟦ t ⟧ ρ^C) →
             𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ f `$ t ⟧ ρ^A) ⟧ ρ^B) (𝓢^C ⊨⟦ f `$ t ⟧ ρ^C)
 
-    R⟦⟨⟩⟧   : {Γ Δ Θ : Con} {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Θ [ 𝓔^B ] Δ} {ρ^C : Θ [ 𝓔^C ] Γ} →
+    R⟦⟨⟩⟧   : {Γ Δ Θ : Con} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} →
              (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
             𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ `⟨⟩ ⟧ ρ^A) ⟧ ρ^B) (𝓢^C ⊨⟦ `⟨⟩ ⟧ ρ^C)
-    R⟦tt⟧   : {Γ Δ Θ : Con} {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Θ [ 𝓔^B ] Δ} {ρ^C : Θ [ 𝓔^C ] Γ} →
+    R⟦tt⟧   : {Γ Δ Θ : Con} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} →
              (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
             𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ `tt ⟧ ρ^A) ⟧ ρ^B) (𝓢^C ⊨⟦ `tt ⟧ ρ^C)
-    R⟦ff⟧   : {Γ Δ Θ : Con} {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Θ [ 𝓔^B ] Δ} {ρ^C : Θ [ 𝓔^C ] Γ} →
+    R⟦ff⟧   : {Γ Δ Θ : Con} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} →
              (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
             𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ `ff ⟧ ρ^A) ⟧ ρ^B) (𝓢^C ⊨⟦ `ff ⟧ ρ^C)
     R⟦ifte⟧ : {Γ Δ Θ : Con} {σ : ty} (b : Γ ⊢ `Bool) (l r : Γ ⊢ σ)
-            {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Θ [ 𝓔^B ] Δ} {ρ^C : Θ [ 𝓔^C ] Γ} →
+            {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} →
              (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
             𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ b ⟧ ρ^A) ⟧ ρ^B) (𝓢^C ⊨⟦ b ⟧ ρ^C) →
             𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ l ⟧ ρ^A) ⟧ ρ^B) (𝓢^C ⊨⟦ l ⟧ ρ^C) →
@@ -1868,10 +1905,10 @@ identified what the constraints should be, proving the fundamental
 lemma turns out to amount to a simple traversal we choose to omit here.
 
 \begin{code}
-module Fusion {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REB ℓ^RM : Level} {𝓔^A : (Γ : Con) (σ : ty) → Set ℓ^EA} {𝓔^B : (Γ : Con) (σ : ty) → Set ℓ^EB} {𝓔^C : (Γ : Con) (σ : ty) → Set ℓ^EC} {𝓜^A : (Γ : Con) (σ : ty) → Set ℓ^MA} {𝓜^B : (Γ : Con) (σ : ty) → Set ℓ^MB} {𝓜^C : (Γ : Con) (σ : ty) → Set ℓ^MC} {𝓢^A : Semantics 𝓔^A 𝓜^A} {𝓢^B : Semantics 𝓔^B 𝓜^B} {𝓢^C : Semantics 𝓔^C 𝓜^C} {𝓔^R‿BC : {Γ : Con} {σ : ty} (e^B : 𝓔^B Γ σ) (e^C : 𝓔^C Γ σ) → Set ℓ^REB} {𝓔^R : {Θ Δ Γ : Con} (ρ^A : Δ [ 𝓔^A ] Γ) (ρ^B : Θ [ 𝓔^B ] Δ) (ρ^C : Θ [ 𝓔^C ] Γ) → Set ℓ^RE} {𝓜^R : {Γ : Con} {σ : ty} (mB : 𝓜^B Γ σ) (mC : 𝓜^C Γ σ) → Set ℓ^RM} (fusable : Fusable 𝓢^A 𝓢^B 𝓢^C 𝓔^R‿BC 𝓔^R 𝓜^R) where
+module Fusion {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REB ℓ^RM : Level} {𝓔^A : (Γ : Con) (σ : ty) → Set ℓ^EA} {𝓔^B : (Γ : Con) (σ : ty) → Set ℓ^EB} {𝓔^C : (Γ : Con) (σ : ty) → Set ℓ^EC} {𝓜^A : (Γ : Con) (σ : ty) → Set ℓ^MA} {𝓜^B : (Γ : Con) (σ : ty) → Set ℓ^MB} {𝓜^C : (Γ : Con) (σ : ty) → Set ℓ^MC} {𝓢^A : Semantics 𝓔^A 𝓜^A} {𝓢^B : Semantics 𝓔^B 𝓜^B} {𝓢^C : Semantics 𝓔^C 𝓜^C} {𝓔^R‿BC : {Γ : Con} {σ : ty} (e^B : 𝓔^B Γ σ) (e^C : 𝓔^C Γ σ) → Set ℓ^REB} {𝓔^R : {Θ Δ Γ : Con} (ρ^A : Var Γ ⇒[ 𝓔^A ] Δ) (ρ^B : Var Δ ⇒[ 𝓔^B ] Θ) (ρ^C : Var Γ ⇒[ 𝓔^C ] Θ) → Set ℓ^RE} {𝓜^R : {Γ : Con} {σ : ty} (mB : 𝓜^B Γ σ) (mC : 𝓜^C Γ σ) → Set ℓ^RM} (fusable : Fusable 𝓢^A 𝓢^B 𝓢^C 𝓔^R‿BC 𝓔^R 𝓜^R) where
   open Fusable fusable
 
-  lemma :  {Γ Δ Θ : Con} {σ : ty} (t : Γ ⊢ σ) {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Θ [ 𝓔^B ] Δ} {ρ^C : Θ [ 𝓔^C ] Γ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
+  lemma :  {Γ Δ Θ : Con} {σ : ty} (t : Γ ⊢ σ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
            𝓜^R (𝓢^B ⊨⟦ reify^A (𝓢^A ⊨⟦ t ⟧ ρ^A) ⟧ ρ^B) (𝓢^C ⊨⟦ t ⟧ ρ^C)
 \end{code}
 \AgdaHide{
@@ -1911,22 +1948,22 @@ record SyntacticFusable
   (synB : Syntactic 𝓔^B)
   (synC : Syntactic 𝓔^C)
   (𝓔^R‿BC : {Γ : Con} {σ : ty} (e^B : 𝓔^B Γ σ) (e^C : 𝓔^C Γ σ) → Set ℓ^REBC)
-  (𝓔^R : {Θ Δ Γ : Con} (ρ^A : Δ [ 𝓔^A ] Γ) (ρ^B : Θ [ 𝓔^B ] Δ) (ρ^C : Θ [ 𝓔^C ] Γ) → Set ℓ^RE)
+  (𝓔^R : {Θ Δ Γ : Con} (ρ^A : Var Γ ⇒[ 𝓔^A ] Δ) (ρ^B : Var Δ ⇒[ 𝓔^B ] Θ) (ρ^C : Var Γ ⇒[ 𝓔^C ] Θ) → Set ℓ^RE)
   : Set (ℓ^RE ⊔ ℓ^REBC ⊔ ℓ^EC ⊔ ℓ^EB ⊔ ℓ^EA)
   where
   module Syn^A = Syntactic synA
   module Syn^B = Syntactic synB
   module Syn^C = Syntactic synC
   field
-    𝓔^R‿∙ : ({Γ Δ Θ : Con} {σ : ty} {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Θ [ 𝓔^B ] Δ} {ρ^C : Θ [ 𝓔^C ] Γ}
+    𝓔^R‿∙ : ({Γ Δ Θ : Con} {σ : ty} {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ}
                {u^B : 𝓔^B Θ σ} {u^C : 𝓔^C Θ σ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) (u^R : 𝓔^R‿BC u^B u^C) →
                𝓔^R (wk[ Syn^A.wk ] (step refl) ρ^A `∙ Syn^A.embed zero)
                       (ρ^B `∙ u^B)
                       (ρ^C `∙ u^C))
     𝓔^R‿wk : {Γ Δ Θ E : Con} (inc : Θ ⊆ E)
-               {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Θ [ 𝓔^B ] Δ} {ρ^C : Θ [ 𝓔^C ] Γ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
+               {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
                𝓔^R ρ^A(wk[ Syn^B.wk ] inc ρ^B) (wk[ Syn^C.wk ] inc ρ^C)
-    R⟦var⟧  : {Γ Δ Θ : Con} {σ : ty} (v : σ ∈ Γ) {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Θ [ 𝓔^B ] Δ} {ρ^C : Θ [ 𝓔^C ] Γ}
+    R⟦var⟧  : {Γ Δ Θ : Con} {σ : ty} (v : σ ∈ Γ) {ρ^A : Var Γ ⇒[ 𝓔^A ] Δ} {ρ^B : Var Δ ⇒[ 𝓔^B ] Θ} {ρ^C : Var Γ ⇒[ 𝓔^C ] Θ}
               (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
               syntactic synB ⊨⟦ syntactic synA ⊨⟦ `var v ⟧ ρ^A ⟧ ρ^B ≡ syntactic synC ⊨⟦ `var v ⟧ ρ^C
 \end{code}}
@@ -1940,7 +1977,7 @@ the corresponding \AR{Semantics} where \AB{𝓜^R} is the propositional
 equality.
 
 \begin{code}
-syntacticFusable :  {ℓ^EA ℓ^EB ℓ^EC ℓ^RE ℓ^REBC : Level} {𝓔^A : (Γ : Con) (σ : ty) → Set ℓ^EA} {𝓔^B : (Γ : Con) (σ : ty) → Set ℓ^EB} {𝓔^C : (Γ : Con) (σ : ty) → Set ℓ^EC} {syn^A : Syntactic 𝓔^A} {syn^B : Syntactic 𝓔^B} {syn^C : Syntactic 𝓔^C} {𝓔^R‿BC : {Γ : Con} {σ : ty} (e^B : 𝓔^B Γ σ) (e^C : 𝓔^C Γ σ) → Set ℓ^REBC} {𝓔^R : {Θ Δ Γ : Con} (ρ^A : Δ [ 𝓔^A ] Γ) (ρ^B : Θ [ 𝓔^B ] Δ) (ρ^C : Θ [ 𝓔^C ] Γ) → Set ℓ^RE} (syn^R : SyntacticFusable syn^A syn^B syn^C 𝓔^R‿BC 𝓔^R) →
+syntacticFusable :  {ℓ^EA ℓ^EB ℓ^EC ℓ^RE ℓ^REBC : Level} {𝓔^A : (Γ : Con) (σ : ty) → Set ℓ^EA} {𝓔^B : (Γ : Con) (σ : ty) → Set ℓ^EB} {𝓔^C : (Γ : Con) (σ : ty) → Set ℓ^EC} {syn^A : Syntactic 𝓔^A} {syn^B : Syntactic 𝓔^B} {syn^C : Syntactic 𝓔^C} {𝓔^R‿BC : {Γ : Con} {σ : ty} (e^B : 𝓔^B Γ σ) (e^C : 𝓔^C Γ σ) → Set ℓ^REBC} {𝓔^R : {Θ Δ Γ : Con} (ρ^A : Var Γ ⇒[ 𝓔^A ] Δ) (ρ^B : Var Δ ⇒[ 𝓔^B ] Θ) (ρ^C : Var Γ ⇒[ 𝓔^C ] Θ) → Set ℓ^RE} (syn^R : SyntacticFusable syn^A syn^B syn^C 𝓔^R‿BC 𝓔^R) →
   Fusable (syntactic syn^A) (syntactic syn^B) (syntactic syn^C) 𝓔^R‿BC 𝓔^R _≡_
 \end{code}
 \AgdaHide{
@@ -2053,8 +2090,8 @@ SubstitutionFusable =
 
 ifteRenNorm :
       {Γ Δ Θ : Con} {σ : ty} (b : Γ ⊢ `Bool) (l r : Γ ⊢ σ)
-      {ρ^A : Δ [ flip _∈_ ] Γ} {ρ^B : Θ [ _⊨^βιξη_ ] Δ}
-      {ρ^C : Θ [ _⊨^βιξη_ ] Γ} →
+      {ρ^A : Γ ⊆ Δ} {ρ^B : Var Δ ⇒[ _⊨^βιξη_ ] Θ}
+      {ρ^C : Var Γ ⇒[ _⊨^βιξη_ ] Θ} →
       (ρ^R : (σ : ty) (pr : σ ∈ Γ) → EQREL Θ σ (lookup ρ^B (lookup ρ^A pr)) (lookup ρ^C pr)) →
       Normalise^βιξη ⊨⟦ id (Renaming ⊨⟦ b ⟧ ρ^A) ⟧ ρ^B ≡
       Normalise^βιξη ⊨⟦ b ⟧ ρ^C →
@@ -2116,8 +2153,8 @@ RenamingNormaliseFusable =
 
 ifteSubstNorm :
      {Γ Δ Θ : Con} {σ : ty} (b : Γ ⊢ `Bool) (l r : Γ ⊢ σ)
-      {ρ^A : Δ [ _⊢_ ] Γ} {ρ^B : Θ [ _⊨^βιξη_ ] Δ}
-      {ρ^C : Θ [ _⊨^βιξη_ ] Γ} →
+      {ρ^A : Var Γ ⇒[ _⊢_ ] Δ} {ρ^B : Var Δ ⇒[ _⊨^βιξη_ ] Θ}
+      {ρ^C : Var Γ ⇒[ _⊨^βιξη_ ] Θ} →
       (`∀[ EQREL _ _ ] ρ^B ρ^B) ×
       ((σ₁ : ty) (pr : σ₁ ∈ Γ) {Θ₁ : Con} (inc : Θ ⊆ Θ₁) →
        EQREL Θ₁ σ₁
@@ -2280,6 +2317,59 @@ PrettyRenaming {Γ} t inc = PEq.cong proj₁ $ lemma t (pack^R $ λ ()) $ proof 
   where open Fusion RenamingPrettyPrintingFusable
 \end{code}
 
+\section{Related Work}
+
+This work is at the intersection of two traditions: the formal treatment
+of programming languages and the implementation of embedded Domain Specific
+Languages (eDSL)~\cite{hudak1996building} both require the designer to
+deal with name binding and the associated notions of renaming and substitution
+but also partial evaluation~\cite{danvy1999type}, or even printing when
+emitting code or displaying information back to the user~\cite{wiedijk2012pollack}.
+The mechanisation of a calculus in a \emph{meta language} can use either
+a shallow or a deep embedding~\cite{svenningsson2013combining,gill2014domain}.
+
+The well-scoped and well-typed final encoding described by Carette, Kiselyov,
+and Shan~\cite{carette2009finally} allows the mechanisation of a calculus in
+Haskell or OCaml by representing terms as expressions built up from the
+combinators provided by a ``Symantics''. The correctness of the encoding
+relies on parametricity~\cite{reynolds1983types} and although there exists
+an ongoing effort to internalise parametricity~\cite{bernardy2013type} in
+Type Theory, this puts a formalisation effort out of the reach of all the
+current interactive theorem provers.
+
+Because of the strong restrictions on the structure our \AF{Model}s may have,
+we cannot represent all the interesting traversals imaginable. Chapman and
+Abel's work on normalisation by evaluation~\cite{chapman2009type,abel2014normalization}
+which decouples the description of the big-step algorithm and its termination
+proof is for instance out of reach for our system. Indeed, in their development
+the application combinator may \emph{restart} the computation by calling the
+evaluator recursively whereas the \AF{Applicative} constraint we impose means
+that we may only combine induction hypotheses.
+
+McBride's original unpublished work~\cite{mcbride2005type} implemented
+in Epigram~\cite{mcbride2004view} was inspired by Goguen and McKinna's
+Candidates for Substitution~\cite{goguen1997candidates}. It focuses on
+renaming and substitution for the simply-typed λ-calculus and was later
+extended to a formalisation of System F~\cite{girard1972interpretation}
+in Coq~\cite{Coq:manual} by Benton, Hur, Kennedy and McBride~\cite{benton2012strongly}.
+Benton et al. both implement a denotational semantics for their language
+and prove the properties of their traversals. However both of these things
+are done in an ad-hoc manner: the meaning function associated to their
+denotational semantics is not defined in terms of the generic traversal
+and the proofs are manually discharged one by one. 
+
+Goguen and McKinna's Candidates for Substitution~\cite{goguen1997candidates}
+begot work by McBride~\cite{mcbride2005type} 
+and Benton, Hur, Kennedy and McBride~\cite{benton2012strongly} in Coq~\cite{Coq:manual}
+showing how to alleviate the programmer's burden when she opts for the strongly-typed
+approach based on inductive families. Reasoning
+about these definitions is still mostly done in an ad-hoc manner: Coq's tactics
+do help them to discharge the four fusion lemmas involving renaming and substitution,
+but the same work has to be repeated when studying the evaluation function. They
+choose to prove the evaluation function correct by using propositional equality and
+assuming function extensionality rather than resorting to the traditional Partial
+Equivalence Relation approach we use.
+
 \section{Conclusion}
 
 We have explained how to make using an inductive family to only represent
@@ -2304,7 +2394,9 @@ second logical relation gave us a general description of triples of
 \AR{Fusable} semantics such that composing the two first ones would
 yield an instance of the third one.
 
-\newpage{}
+
+\bibliographystyle{abbrvnat}
 \bibliography{main}
+
 
 \end{document}

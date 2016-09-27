@@ -6,11 +6,7 @@
 \usepackage{cleveref}
 \usepackage{catchfilebetweentags}
 
-\usepackage{unicode-math}
-\setmainfont{XITS}
-\setmathfont{XITS Math}
-
-%\setlength\mathindent{0em}
+\setlength\mathindent{0em}
 
 \usepackage{todonotes}
 \usepackage{mathpartir}
@@ -80,16 +76,16 @@ invariant preserving too!
 In his unpublished manuscript, McBride~\shortcites{mcbride2005type}
 highlights the similarities between the type signatures and
 implementations of renaming and substitution for the (scoped
-and typed) simply-typed λ-calculus (STλC) in a dependently-typed
+and typed) simply-typed $λ$-calculus (ST$λ$C) in a dependently-typed
 programming language.
 
 \begin{figure}[h]
 \ExecuteMetaData[motivation.tex]{ren}\vspace{-0.5cm}
 \ExecuteMetaData[motivation.tex]{sub}
-\caption{Renaming\label{ren} and Substitution\label{sub} for the STλC}
+\caption{Renaming\label{ren} and Substitution\label{sub} for the ST$λ$C}
 
 \ExecuteMetaData[motivation.tex]{kit}
-\caption{Kit traversal for the STλC\label{kit}}
+\caption{Kit traversal for the ST$λ$C\label{kit}}
 \end{figure}
 
 McBride then carves out a notion of ``Kit'' which abstracts the
@@ -109,7 +105,7 @@ given by a Kit.
 \end{itemize}
 \begin{figure}[h]
 \ExecuteMetaData[motivation.tex]{nbe}
-\caption{Normalisation by Evaluation for the STλC\label{nbe}}
+\caption{Normalisation by Evaluation for the ST$λ$C\label{nbe}}
 \end{figure}
 
 \paragraph{Outline} We shall start by defining the simple calculus we will use
@@ -175,7 +171,7 @@ open import Function as F hiding (_∋_ ; _$_)
 
 \section{The Calculus}
 
-We are going to define and study various semantics for a simply-typed λ-calculus
+We are going to define and study various semantics for a simply-typed $λ$-calculus
 with \AIC{`Bool} and \AIC{`Unit} as base types. This serves as a minimal example
 of a system with a sum type and a record type equipped with an η-rule. 
 
@@ -407,7 +403,7 @@ pop! inc = step inc `∙ zero
 
 Now that we are equipped with the notion of inclusion, we have all
 the pieces necessary to describe the Kripke structure of our models
-of the simply-typed λ-calculus.
+of the simply-typed $λ$-calculus.
 
 \section{Semantics and Generic Evaluation Functions}
 
@@ -2189,7 +2185,7 @@ term where the substitution has been evaluated first. The constraints
 imposed on the environments might seem quite restrictive but they are
 actually similar to the Uniformity condition described by C. Coquand~\cite{coquand2002formalised}
 in her detailed account of Normalisation by Evaluation for a simply-typed
-λ-calculus with explicit substitution.
+$λ$-calculus with explicit substitution.
 
 
 \begin{code}
@@ -2328,7 +2324,7 @@ that we may only combine induction hypotheses.
 McBride's original unpublished work~\cite{mcbride2005type} implemented
 in Epigram~\cite{mcbride2004view} was inspired by Goguen and McKinna's
 Candidates for Substitution~\cite{goguen1997candidates}. It focuses on
-renaming and substitution for the simply-typed λ-calculus and was later
+renaming and substitution for the simply-typed $λ$-calculus and was later
 extended to a formalisation of System F~\cite{girard1972interpretation}
 in Coq~\cite{Coq:manual} by Benton, Hur, Kennedy and McBride~\cite{benton2012strongly}.
 Benton et al. both implement a denotational semantics for their language

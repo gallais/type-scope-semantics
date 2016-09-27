@@ -1,4 +1,4 @@
-STDLIB=~/languages/agda/libs/agda-stdlib-0.11/src/
+STDLIB=~/languages/agda/libs/agda-stdlib-0.12/src/
 
 PAPER=models
 AUXILIARY=usual
@@ -8,10 +8,10 @@ SLIDES=slides
 all: finish
 
 prepare:
-	mkdir -p latex/ && rm -f latex/$(SLIDES).* && cp *.tex *.sty *.cls *.bib *.sed *.config latex/
+	mkdir -p latex/ && rm -f latex/$(SLIDES).* && cp *.tex *.cls *.bib *.sed *.config latex/
 
 paper: prepare
-	agda --latex motivation.lagda && \
+	agda -i . -i $(STDLIB) --latex motivation.lagda && \
 	agda -i . -i $(STDLIB) --latex $(PAPER).lagda && \
 	cd latex && sed -f rules.sed -f rules2.sed -i $(PAPER).tex && sed -f rules.sed -f rules2.sed -i motivation.tex && \
 	latexmk -bibtex -pdf -e '$$pdflatex=q/xelatex %O %S/' $(PAPER).tex && cd ..

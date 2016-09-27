@@ -15,6 +15,11 @@ s/>>=/\\mathbin\{>\\!\\!>\\mkern-6.7mu=\}/g
 s/>>/\\mathbin\{>\\!\\!>}/g
 s/++/+\\!+/g
 
+# Pointwise things
+s/⟶/\\,\\dot\{→\}\\,/g
+s/∙⊎/\\dot\{⊎\}/g
+s/∙×/\\dot\{×\}/g
+
 # Latex
 s/^\\begin{code}/\\begin\{code\}\n\\\\/g
 s/^\\end{code}/\\\\\\end\{code\}\n/g
@@ -24,6 +29,7 @@ s/ \\AgdaBound{ℓ}//g
 s/ \\AgdaPrimitive{⊔} //g
 s/ \?\\AgdaBound{{ℓ}{[^{]*{[^{]*{}[^}]*}}}//g
 s/\\AgdaSymbol{(}\\AgdaSymbol{)}//g
+s/ \\AgdaSymbol{(}\\AgdaSymbol{))}/\\AgdaSymbol\{)\}/g
 
 # Implicit arguments
 s/\\AgdaSymbol{\\{}.*\\AgdaSymbol{\\}}[^()→;]*\\AgdaSymbol{→} //g

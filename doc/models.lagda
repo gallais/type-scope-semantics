@@ -3,7 +3,7 @@
 \usepackage{amsmath,amstext,amsthm}
 \usepackage{agda} 
 \usepackage[english]{babel}
-\usepackage{cleveref}
+\usepackage{cleveref,hyperref}
 \usepackage{catchfilebetweentags}
 
 \setlength\mathindent{0em}
@@ -30,24 +30,24 @@
 \title{Type-and-Scope Safe Programs and their Proofs}
 % \subtitle{Subtitle Text, if any}
 
-\authorinfo{G. Allais}
+\authorinfo{Guillaume Allais}
            {gallais@cs.ru.nl}
            {Radboud University Nijmegen}
-\authorinfo{J. Chapman}
+\authorinfo{James Chapman}
            {james.chapman@strath.ac.uk}
-           {Strathclyde University}
-\authorinfo{C. McBride}
+           {University of Strathclyde}
+\authorinfo{Conor McBride}
            {conor.mcbride@strath.ac.uk}
-           {Strathclyde University}
+           {University of Strathclyde}
 \maketitle
 
 \begin{abstract}
 
-We abstract the common type-and-scope safe structure in/of/from
-computations on $λ$-terms that deliver renaming, substitution, evaluation,
+We abstract the common type-and-scope safe structure from
+computations on $λ$-terms that deliver, e.g., renaming, substitution, evaluation,
 CPS-transformation, and printing with a name supply. By
-exposing this structure, we can prove generically the inter-dependent
-correctness, simulation, and fusion lemmas.
+exposing this structure, we can prove generic simulation
+and fusion lemmas relating operations built this way.
 
 %We introduce a notion of type and scope preserving semantics
 %generalising Goguen and McKinna's ``Candidates for Substitution''
@@ -68,7 +68,7 @@ correctness, simulation, and fusion lemmas.
 
 \end{abstract}
 
-\section*{Introduction}
+\section{Introduction}
 
 A programmer implementing an embedded language with bindings has a
 wealth of possibilities. However, should she want to be able to inspect
@@ -81,44 +81,42 @@ off common bugs, she can opt for inductive families~\cite{dybjer1991inductive}
 to enforce precise invariants. But the traversals now have to be
 invariant preserving too!
 
-In his unpublished manuscript, McBride~\shortcites{mcbride2005type}
-highlights the similarities between the type signatures and
-implementations of renaming and substitution for the (scoped
-and typed) simply-typed $λ$-calculus (ST$λ$C) in a dependently-typed
-programming language.
-
-\begin{figure}[h]
-\ExecuteMetaData[motivation.tex]{ren}\vspace{-0.5cm}
-\ExecuteMetaData[motivation.tex]{sub}
-\caption{Renaming\label{ren} and Substitution\label{sub} for the ST$λ$C}
-
-\ExecuteMetaData[motivation.tex]{kit}
-\caption{Kit traversal for the ST$λ$C\label{kit}}
-\end{figure}
-
-McBride then carves out a notion of ``Kit'' which abstracts the
-difference between the two. The Kit usage making this traversal
-more general are highlighted in pink in \cref{kit}.
+In an unpublished manuscript, McBride~(\citeyear{mcbride2005type}) spots
+the similarities between the types and implementations of renaming
+and substitution for the (scoped and typed) simply typed $λ$-calculus
+(ST$λ$C) in a dependently typed language. He then carves out a notion
+of ``Kit'' abstracting the difference between the two. The
+\ARF{Kit.─} uses generalising the traversal are shown (in pink)
+in \cref{kit}.
 
 The contribution of the present paper is twofold:
 \begin{itemize}
-\item{} By broadening the notion of Kit, we generalise the approach
-from syntax to semantics bringing operations like Normalisation by
-Evaluation (cf.~\cref{nbe}) and printing with a name supply into our
-framework.
+\item{} We generalise the ``Kit'' approach from syntax to semantics
+bringing operations like normalisation (cf.~\cref{nbe}) and printing
+with a name supply into our framework.
 
 \item{} We take advantage of this newfound uniformity to prove
 generic results about simulations between and fusions of semantics
 given by a Kit.
 \end{itemize}
+
+
 \begin{figure}[h]
+\ExecuteMetaData[motivation.tex]{ren}
+
+\ExecuteMetaData[motivation.tex]{sub}
+\caption{Renaming\label{ren} and Substitution\label{sub} for the ST$λ$C}
+
+\ExecuteMetaData[motivation.tex]{kit}
+\caption{Kit traversal for the ST$λ$C\label{kit}}
+
 \ExecuteMetaData[motivation.tex]{nbe}
 \caption{Normalisation by Evaluation for the ST$λ$C\label{nbe}}
 \end{figure}
 
 \paragraph{Outline} We shall start by defining the simple calculus we will use
 as a running example. We will then introduce a notion of environments as well
-as one well-known instance: the preorder of renamings. This will lead
+as one well known instance: the preorder of renamings. This will lead
 us to defining a generic notion of type and scope-preserving Semantics
 together with a generic evaluation function. We will then showcase the
 ground covered by these Semantics: from the syntactic ones corresponding
@@ -127,9 +125,9 @@ by Evaluation. Finally, we will demonstrate how, the definition of Semantics
 being generic enough, we can prove fundamental lemmas about these evaluation
 functions: we characterise the semantics which are synchronisable and give an
 abstract treatment of composition yielding compaction and reuse of proofs
-compared to Benton et al.~\cite{benton2012strongly}
+compared to Benton et al.~(\citeyear{benton2012strongly})
 
-\paragraph{Notations} This article is a literate Agda file typeset using the
+\paragraph{Notations}\todo{revisit} This article is a literate Agda file typeset using the
 \LaTeX{} backend with as little post-processing as possible: we simply hide
 telescopes of implicit arguments as well as \APT{Set} levels and properly display (super / sub)-scripts
 as well as special operators such as \AF{>>=} or \AF{++}. As such, a lot of
@@ -143,24 +141,14 @@ application of \AF{\_+\_} corresponding to \AS{λ} \AB{x} \AS{→} \AB{x} \AF{+}
 or, to mention something that we will use later on, \AF{Renaming} \AF{⊨⟦\_⟧\_}
 for the partial application of \AF{\_⊨⟦\_⟧\_} to \AF{Renaming}.
 
-\paragraph{Formalisation} This whole development has been checked by Agda~\cite{norell2009dependently}
-which guarantees that all constructions are indeed well-typed, and all functions are
-total. Nonetheless, it should be noted that the generic model constructions and the
-various examples of \AR{Semantics} given here can be fully replicated in Haskell using
-type families, higher rank polymorphism and generalised algebraic data types to build
-singletons~\cite{eisenberg2013dependently} providing the user with the runtime descriptions
-of their types or their contexts' shapes. This yields, to the best of our knowledge, the
-first tagless and typeful implementation of Normalisation by Evaluation in Haskell. The
-subtleties of working with dependent types in Haskell~\cite{lindley2014hasochism} are
-outside the scope of this paper but we do provide a (commented) Haskell module containing
-all the translated definitions. It should be noted that Danvy, Keller and Puech have achieved
-a similar goal in OCaml~\cite{danvytagless} but their formalisation uses parametric higher
-order abstract syntax~\cite{chlipala2008parametric} which frees them from having to deal
-with variable binding, contexts and use models à la Kripke. However we consider these to be
-primordial: they can still guide the implementation of more complex type theories where,
-until now, being typeful is still out of reach. Type-level guarantees about scope preservation
-can help root out bugs related to fresh name generation, name capture or arithmetic on de
-Bruijn levels to recover de Bruijn indices.
+\paragraph{Formalisation} This whole development\footnote{\url{https://github.com/gallais/type-scope-semantics}}
+has been checked by Agda~\cite{norell2009dependently} which guarantees that all
+constructions are indeed well typed, and all functions are total. Nonetheless, it
+should be noted that the generic model constructions and the various examples of
+\AR{Semantics} given here, although not the proofs, can be fully replicated in
+Haskell using type families, higher rank polymorphism and generalised algebraic
+data types to build singletons~\cite{eisenberg2013dependently} providing the user
+with the runtime descriptions of their types or their contexts' shapes.
 
 
 \AgdaHide{
@@ -177,11 +165,18 @@ open import Data.Product hiding (map)
 open import Function as F hiding (_∋_ ; _$_)
 \end{code}}
 
-\section{The Calculus}
+\section{The Calculus and its Embedding}
 
-We are going to define and study various semantics for a simply-typed $λ$-calculus
-with \AIC{`Bool} and \AIC{`Unit} as base types. This serves as a minimal example
-of a system with a sum type and a record type equipped with an η-rule. 
+\[\begin{array}{rrl}
+σ, τ    & ∷= & \mathtt{Unit} \quad{}|\quad{} \mathtt{Bool} \quad{}|\quad{} σ → τ \\
+
+b, t, u & ∷= & x \quad{}|\quad{} t\,u \quad{}|\quad{} λx. b \quad{}|\quad{}  ⟨⟩ \\
+        & |  & \mathtt{tt} \quad{}|\quad{} \mathtt{ff} \quad{}|\quad{} \mathtt{if}~ b ~\mathtt{then}~ t ~\mathtt{else}~ u
+\end{array}\]
+
+We are going to define and study various semantics for a simply typed $λ$-calculus
+with \AIC{`Unit} and \AIC{`Bool} as base types. This serves as a minimal example
+of a system with a record type equipped with an η-rule and a sum type.
 
 \AgdaHide{
 \begin{code}
@@ -192,18 +187,15 @@ infixr 5 1+_
 %<*ty>
 \begin{code}
 data Ty : Set where
-  `Unit  : Ty
-  `Bool  : Ty
-  _`→_   : (σ τ : Ty) → Ty
+  `Unit `Bool  : Ty -- Declaring both base types
+  _`→_         : Ty → Ty → Ty
 \end{code}
 %</ty>
 
-In order to be able to talk about the types of the variables in scope, we
-need a notion of contexts. We choose to represent them as snoc lists of
-types; \AIC{ε} denotes the empty context and \AB{Γ} \AIC{∙} \AB{σ} the
-context \AB{Γ} extended with a fresh variable of type \AB{σ}. Variables
-are then positions in such a context represented as typed de Bruijn
-indices~\cite{de1972lambda}.
+To talk about the types of the variables in scope, we need \emph{contexts}.
+We choose to represent them as ``snoc'' lists of types; \AIC{ε} denotes the
+empty context and \AB{Γ} \AIC{∙} \AB{σ} the context \AB{Γ} extended with a
+fresh variable of type \AB{σ}.
 
 %<*context>
 \begin{code}
@@ -212,38 +204,53 @@ data Cx : Set where
   _∙_  : Cx → Ty → Cx
 \end{code}
 %</context>
+\todo{Fix [\_]}
+
+\begin{code}
+[_] : {ℓ^A : Level} → (Cx → Set ℓ^A) → Set ℓ^A
+[ T ] = ∀ {Γ} → T Γ
+
+_⟶_ : {ℓ^A ℓ^E : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^E) → (Cx → Set (ℓ^A ⊔ ℓ^E))
+(S ⟶ T) Γ = S Γ → T Γ
+\end{code}
+
+The \AF{\_⊢\_} gadget mechanizes the mathematical convention of only
+mentioning context \emph{extensions} when presenting judgements~\cite{martin1982constructive}.
+
+\begin{code}
+_⊢_ : {ℓ^A : Level} → Ty → (Cx → Set ℓ^A) → (Cx → Set ℓ^A)
+(σ ⊢ S) Γ = S (Γ ∙ σ)
+\end{code}
+
+\AgdaHide{
+\begin{code}
+infixr 5 _⟶_
+infixr 6 _∙⊎_
+_∙⊎_ : {ℓ^A ℓ^E : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^E) → (Cx → Set (ℓ^A ⊔ ℓ^E))
+(S ∙⊎ T) Γ = S Γ ⊎ T Γ
+
+infixr 7 _∙×_
+_∙×_ : {ℓ^A ℓ^E : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^E) → (Cx → Set (ℓ^A ⊔ ℓ^E))
+(S ∙× T) Γ = S Γ × T Γ
+
+infixr 6 _⊢_
+\end{code}}
+
+Variables are then positions in such a context represented as typed de
+Bruijn~\citeyear{de1972lambda} indices.
 
 %<*var>
 \begin{code}
-[_] : {ℓ ℓ′ : Level} {X : Set ℓ′} → (X → Set ℓ) → Set (ℓ ⊔ ℓ′)
-[ P ] = ∀ {x} → P x
-
-infixr 5 _⟶_
-_⟶_ : {ℓ ℓ′ : Level} → (Cx → Set ℓ) → (Cx → Set ℓ′) → (Cx → Set (ℓ ⊔ ℓ′))
-(S ⟶ T) Γ = S Γ → T Γ
-
-infixr 7 _∙⊎_
-_∙⊎_ : {ℓ ℓ′ : Level} → (Cx → Set ℓ) → (Cx → Set ℓ′) → (Cx → Set (ℓ ⊔ ℓ′))
-(S ∙⊎ T) Γ = S Γ ⊎ T Γ
-
-infixr 6 _∙×_
-_∙×_ : {ℓ ℓ′ : Level} → (Cx → Set ℓ) → (Cx → Set ℓ′) → (Cx → Set (ℓ ⊔ ℓ′))
-(S ∙× T) Γ = S Γ × T Γ
-
-infixr 6 _∙>_
-_∙>_ : {ℓ : Level} → Ty → (Cx → Set ℓ) → (Cx → Set ℓ)
-(σ ∙> S) Γ = S (Γ ∙ σ)
-
 data Var (τ : Ty) : Cx → Set where
-  zero  : [ τ ∙> Var τ ]
-  1+_   : {σ : Ty} → [ Var τ ⟶ σ ∙> Var τ ]
+  zero  : [ τ ⊢ Var τ ]
+  1+_   : {σ : Ty} → [ Var τ ⟶ σ ⊢ Var τ ]
 \end{code}
 %</var>
 
 The syntax for this calculus is designed to guarantee that terms are
-well-scoped and well-typed by construction. This presentation due to
-Altenkirch and Reus~\cite{altenkirch1999monadic} relies heavily on
-Dybjer's inductive families~\cite{dybjer1991inductive}. Rather than
+well-scoped and well typed by construction. This presentation due to
+Altenkirch and Reus~(\citeyear{altenkirch1999monadic}) relies heavily on
+Dybjer's inductive families~(\citeyear{dybjer1991inductive}). Rather than
 having untyped pre-terms and a typing relation assigning a type to
 them, the typing rules are here enforced in the syntax: we can see for
 example that the \AIC{`var} constructor takes a typed de Bruijn index;
@@ -252,6 +259,8 @@ coincides with the type of its argument; that the body of a λ-abstraction
 (\AIC{`λ}) is defined in a context extended with a fresh variable whose
 type corresponds to the domain of the function; or that the two branches
 of a conditional (\AIC{`ifte}) need to have the same type.
+
+\todo{Omit Γ, Dybjer or PML}
 
 \AgdaHide{
 \begin{code}
@@ -268,7 +277,7 @@ infixl 5 _`$_
 data Tm : Ty → Cx → Set where
   `var     : {σ : Ty} → [ Var σ ⟶ Tm σ ]
   _`$_     : {σ τ : Ty} → [ Tm (σ `→ τ) ⟶ Tm σ ⟶ Tm τ ]
-  `λ       : {σ τ : Ty} → [ σ ∙> Tm τ ⟶ Tm (σ `→ τ) ]
+  `λ       : {σ τ : Ty} → [ σ ⊢ Tm τ ⟶ Tm (σ `→ τ) ]
   `⟨⟩      : [ Tm `Unit ]
   `tt `ff  : [ Tm `Bool ]
   `ifte    : {σ : Ty} → [ Tm `Bool ⟶ Tm σ ⟶ Tm σ ⟶ Tm σ ]
@@ -291,34 +300,34 @@ generically. Formally, this translates to \AB{𝓔}-environments being the
 pointwise lifting of the relation \AB{𝓔} between contexts and types to a
 relation between two contexts. Rather than using a datatype to represent
 such a lifting, we choose to use a function space. This decision is based
-on Jeffrey's observation that one can obtain associativity of append for
-free by using difference lists~\cite{jeffrey2011assoc}. In our case the
+on Jeffrey's observation~(\citeyear{jeffrey2011assoc}) that one can obtain
+associativity of append for free by using difference lists. In our case the
 interplay between various combinators (e.g. \AF{refl} and \AF{trans})
 defined later on is vastly simplified by this rather simple decision.
 
 \AgdaHide{
 \begin{code}
 infix 5 _-Env
-\end{code}}
+\end{code}}\todo{Fix mangled Levels}
 %<*environment>
 \begin{code}
-Model : (ℓ : Level) → Set (L.suc ℓ)
-Model ℓ = Ty → Cx → Set ℓ
+Model : (ℓ^A : Level) → Set (L.suc ℓ^A)
+Model ℓ^A = Ty → Cx → Set ℓ^A
 
 record RModel {ℓ^E ℓ^M : Level} (𝓔 : Model ℓ^E) (𝓜 : Model ℓ^M) (ℓ^R : Level) : Set (ℓ^E ⊔ ℓ^M ⊔ L.suc ℓ^R) where
   constructor mkRModel
   field rmodel : {σ : Ty} → [ 𝓔 σ ⟶ 𝓜 σ ⟶ const (Set ℓ^R) ]
 open RModel public
 
-record _-Env {ℓ : Level} (Γ : Cx) (𝓔 : Model ℓ) (Δ : Cx) : Set ℓ where
+record _-Env {ℓ^A : Level} (Γ : Cx) (𝓔 : Model ℓ^A) (Δ : Cx) : Set ℓ^A where
   constructor pack
   field lookup : {σ : Ty} → Var σ Γ → 𝓔 σ Δ
 open _-Env public
 
-_-Eval : {ℓ : Level} → Cx → (𝓒 : Model ℓ) → Cx → Set ℓ
+_-Eval : {ℓ^A : Level} → Cx → (𝓒 : Model ℓ^A) → Cx → Set ℓ^A
 (Γ -Eval) 𝓒 Δ = {σ : Ty} → Tm σ Γ → 𝓒 σ Δ
 
-□ : {ℓ : Level} → (Cx → Set ℓ) → (Cx → Set ℓ)
+□ : {ℓ^A : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^A)
 (□ S) Γ = [ (Γ -Env) Var ⟶ S ]
 \end{code}
 %</environment>
@@ -337,8 +346,8 @@ hence our decision to make it possible to tell Agda which relation we are
 working with.\todo{explain copatterns}
 
 \begin{code}
-`ε : {ℓ : Level} {Δ : Cx} {𝓔 : Model ℓ} → (ε -Env) 𝓔 Δ
-_`∙_ :  {ℓ : Level} {Γ : Cx} {𝓔 : Model ℓ} {σ : Ty} → [ (Γ -Env) 𝓔 ⟶ 𝓔 σ ⟶ (Γ ∙ σ -Env) 𝓔 ]
+`ε : {ℓ^A : Level} {Δ : Cx} {𝓔 : Model ℓ^A} → (ε -Env) 𝓔 Δ
+_`∙_ :  {ℓ^A : Level} {Γ : Cx} {𝓔 : Model ℓ^A} {σ : Ty} → [ (Γ -Env) 𝓔 ⟶ 𝓔 σ ⟶ (Γ ∙ σ -Env) 𝓔 ]
 
 lookup `ε ()
 lookup (ρ `∙ s) zero    = s
@@ -379,13 +388,13 @@ case is also quite simple: being a pointwise lifting of a relation \AB{𝓔}
 between contexts and types, they enjoy weakening if \AB{𝓔} does.
 
 \begin{code}
-Weakening : {ℓ : Level} → Model ℓ → Set _
+Weakening : {ℓ^A : Level} → Model ℓ^A → Set _
 Weakening 𝓔 = (σ : Ty) {Γ Δ : Cx} → Γ ⊆ Δ → 𝓔 σ Γ → 𝓔 σ Δ
 
 wk^∈ : Weakening Var
 wk^∈ σ inc v = lookup inc v
 
-wk[_] :  {ℓ : Level} {Δ : Cx} {𝓔 : Model ℓ} → Weakening 𝓔 →
+wk[_] :  {ℓ^A : Level} {Δ : Cx} {𝓔 : Model ℓ^A} → Weakening 𝓔 →
          {Γ Θ : Cx} → Δ ⊆ Θ → (Γ -Env) 𝓔 Δ  → (Γ -Env) 𝓔 Θ
 lookup (wk[ wk ] inc ρ) = wk _ inc ∘ lookup ρ
 \end{code}
@@ -393,25 +402,25 @@ lookup (wk[ wk ] inc ρ) = wk _ inc ∘ lookup ρ
 These simple observations allow us to prove that context inclusions
 form a preorder which, in turn, lets us provide the user with the
 constructors Altenkirch, Hofmann and Streicher's ``Category of
-Weakenings"~\cite{altenkirch1995categorical} is based on.
+Weakenings"~(\cite{altenkirch1995categorical}) is based on.
 
 \begin{code}
 refl : {Γ : Cx} → Γ ⊆ Γ
 refl = pack id
 
-trans : {ℓ : Level} {Γ Δ Θ : Cx} {𝓔 : Model ℓ} → Γ ⊆ Δ → (Δ -Env) 𝓔 Θ → (Γ -Env) 𝓔 Θ
+trans : {ℓ^A : Level} {Γ Δ Θ : Cx} {𝓔 : Model ℓ^A} → Γ ⊆ Δ → (Δ -Env) 𝓔 Θ → (Γ -Env) 𝓔 Θ
 lookup (trans inc ρ) = lookup ρ ∘ lookup inc
 
-step : {σ : Ty} {Γ : Cx} → [ (Γ ⊆_) ⟶ σ ∙> (Γ ⊆_) ]
+step : {σ : Ty} {Γ : Cx} → [ (Γ ⊆_) ⟶ σ ⊢ (Γ ⊆_) ]
 step inc = trans inc (pack 1+_)
 
-pop! : {σ : Ty} {Γ : Cx} → [ (Γ ⊆_) ⟶ σ ∙> ((Γ ∙ σ) ⊆_) ]
+pop! : {σ : Ty} {Γ : Cx} → [ (Γ ⊆_) ⟶ σ ⊢ ((Γ ∙ σ) ⊆_) ]
 pop! inc = step inc `∙ zero
 \end{code}
 
 Now that we are equipped with the notion of inclusion, we have all
 the pieces necessary to describe the Kripke structure of our models
-of the simply-typed $λ$-calculus.
+of the simply typed $λ$-calculus.
 
 \section{Semantics and Generic Evaluation Functions}
 
@@ -434,7 +443,7 @@ The record packs the properties of these relations necessary to
 define the evaluation function.
 
 \begin{code}
-Applicative : {ℓ : Level} → Model ℓ → Set ℓ
+Applicative : {ℓ^A : Level} → Model ℓ^A → Set ℓ^A
 Applicative 𝓜 = {σ τ : Ty} → [ 𝓜 (σ `→ τ) ⟶ 𝓜 σ ⟶ 𝓜 τ ]
 
 record Semantics {ℓ^E ℓ^M : Level} (𝓔 : Model ℓ^E) (𝓜 : Model ℓ^M) : Set (ℓ^E ⊔ ℓ^M) where
@@ -573,14 +582,14 @@ the \AF{syntactic} function turning its inhabitants into associated
 
 %<*syntactic>
 \begin{code}
-record Syntactic {ℓ : Level} (𝓔 : Model ℓ) : Set ℓ where
+record Syntactic {ℓ^A : Level} (𝓔 : Model ℓ^A) : Set ℓ^A where
   field  embed  : {σ : Ty} → [ Var σ ⟶ 𝓔 σ ]
          wk     : Weakening 𝓔
          ⟦var⟧  : {σ : Ty} → [ 𝓔 σ ⟶ Tm σ ]
 \end{code}\vspace{ -1.5em}%ugly but it works!
 %</syntactic>
 \begin{code}
-syntactic : {ℓ : Level} {𝓔 : Model ℓ} (syn : Syntactic 𝓔) → Semantics 𝓔 Tm
+syntactic : {ℓ^A : Level} {𝓔 : Model ℓ^A} (syn : Syntactic 𝓔) → Semantics 𝓔 Tm
 syntactic syn = let open Syntactic syn in record
   { wk      = wk; embed   = embed; ⟦var⟧   = ⟦var⟧
   ; ⟦λ⟧     = λ t → `λ (t (step refl) (embed zero))
@@ -841,7 +850,7 @@ power of a host language in order to normalise expressions of a deeply
 embedded one. The process is based on a model construction describing a
 family of types \AB{𝓜} indexed by a context \AB{Γ} and a type \AB{σ}. Two
 procedures are then defined: the first one (\AF{eval}) constructs an element
-of \AB{𝓜} \AB{Γ} \AB{σ} provided a well-typed term of the corresponding
+of \AB{𝓜} \AB{Γ} \AB{σ} provided a well typed term of the corresponding
 \AB{Γ} \AD{⊢} \AB{σ} type whilst the second one (\AF{reify}) extracts, in
 a type-directed manner, normal forms \AB{Γ} \AD{⊢^{nf}} \AB{σ} from elements
 of the model \AB{𝓜} \AB{Γ} \AB{σ}. Normalisation is achieved by composing
@@ -875,7 +884,7 @@ eta σ τ t = `λ (wk^⊢ (σ `→ τ) (step refl) t `$ `var zero)
 \end{mathpar}
 
 \begin{code}
-_⟨_/var₀⟩ : {σ τ : Ty} → [ σ ∙> Tm τ ⟶ Tm σ ⟶ Tm τ ] 
+_⟨_/var₀⟩ : {σ τ : Ty} → [ σ ⊢ Tm τ ⟶ Tm σ ⟶ Tm τ ] 
 t ⟨ u /var₀⟩ = subst t (pack `var `∙ u)
 \end{code}
 
@@ -949,7 +958,7 @@ module NormalForms (R : Ty → Set) where
       `⟨⟩     : [ Nf `Unit ]
       `tt     : [ Nf `Bool ]
       `ff     : [ Nf `Bool ]
-      `λ      : {σ τ : Ty} → [ σ ∙> Nf τ ⟶ Nf (σ `→ τ) ]
+      `λ      : {σ τ : Ty} → [ σ ⊢ Nf τ ⟶ Nf (σ `→ τ) ]
 \end{code}
 
 Once more, context inclusions induce the expected notions of weakening \AF{wk^{ne}}
@@ -973,7 +982,7 @@ with binding.
   wk^nf (σ `→ τ)  inc (`λ nf)       = `λ (wk^nf τ (pop! inc) nf)
 
   infix 5 [_,,_]
-  [_,,_] : {ℓ : Level} {Γ : Cx} {τ : Ty} {P : (σ : Ty) (pr : Var σ (Γ ∙ τ)) → Set ℓ} →
+  [_,,_] : {ℓ^A : Level} {Γ : Cx} {τ : Ty} {P : (σ : Ty) (pr : Var σ (Γ ∙ τ)) → Set ℓ^A} →
           (p0 : P τ zero) →
           (pS : (σ : Ty) (n : Var σ Γ) → P σ (1+ n)) →
           (σ : Ty) (pr : Var σ (Γ ∙ τ)) → P σ pr
@@ -1043,7 +1052,7 @@ equal to \AIC{`⟨⟩} and a \AIC{`λ}-headed term respectively.
 The model construction then follows the usual pattern pioneered by
 Berger~\cite{berger1993program} and formally analysed and thoroughly
 explained by Catarina Coquand~\cite{coquand2002formalised} in the case
-of a simply-typed lambda calculus with explicit substitutions. We proceed by
+of a simply typed lambda calculus with explicit substitutions. We proceed by
 induction on the type and make sure that η-expansion is applied eagerly: all
 inhabitants of \AB{Γ} \AF{⊨^{βιξη}} \AIC{`Unit} are indeed equal and all elements
 of \AB{Γ} \AF{⊨^{βιξη}} (\AB{σ} \AIC{`→} \AB{τ}) are functions in Agda.
@@ -1106,7 +1115,7 @@ are turned into functions in the host language.
   mutual
 \end{code}}
 \begin{code}
-    var‿0 : (σ : Ty) → [ σ ∙> Kr σ ]
+    var‿0 : (σ : Ty) → [ σ ⊢ Kr σ ]
     var‿0 σ = reflect σ (`var zero)
 
     reflect : (σ : Ty) → [ Ne σ ⟶ Kr σ ]
@@ -1310,7 +1319,7 @@ module βι where
     `embed   : {σ : Ty} → [ Whne σ ⟶ Whnf σ ]
     `⟨⟩      : [ Whnf `Unit ]
     `tt `ff  : [ Whnf `Bool ]
-    `λ       : {σ τ : Ty} → [ σ ∙> Tm τ ⟶ Whnf (σ `→ τ) ]
+    `λ       : {σ τ : Ty} → [ σ ⊢ Tm τ ⟶ Whnf (σ `→ τ) ]
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -1368,7 +1377,7 @@ need to be evaluated.
   reflect : (σ : Ty) → [ Whne σ ⟶ Kr σ ]
   reflect σ t = erase^whne t , inj₁ t
 
-  var‿0 : {σ : Ty} → [ σ ∙> Kr σ ]
+  var‿0 : {σ : Ty} → [ σ ⊢ Kr σ ]
   var‿0 = reflect _ (`var zero)
 
   mutual
@@ -2192,7 +2201,7 @@ Evaluation after a \AR{Substitution} amounts to normalising the original
 term where the substitution has been evaluated first. The constraints
 imposed on the environments might seem quite restrictive but they are
 actually similar to the Uniformity condition described by C. Coquand~\cite{coquand2002formalised}
-in her detailed account of Normalisation by Evaluation for a simply-typed
+in her detailed account of Normalisation by Evaluation for a simply typed
 $λ$-calculus with explicit substitution.
 
 
@@ -2311,7 +2320,7 @@ emitting code or displaying information back to the user~\cite{wiedijk2012pollac
 The mechanisation of a calculus in a \emph{meta language} can use either
 a shallow or a deep embedding~\cite{svenningsson2013combining,gill2014domain}.
 
-The well-scoped and well-typed final encoding described by Carette, Kiselyov,
+The well-scoped and well typed final encoding described by Carette, Kiselyov,
 and Shan~\cite{carette2009finally} allows the mechanisation of a calculus in
 Haskell or OCaml by representing terms as expressions built up from the
 combinators provided by a ``Symantics''. The correctness of the encoding
@@ -2332,7 +2341,7 @@ that we may only combine induction hypotheses.
 McBride's original unpublished work~\cite{mcbride2005type} implemented
 in Epigram~\cite{mcbride2004view} was inspired by Goguen and McKinna's
 Candidates for Substitution~\cite{goguen1997candidates}. It focuses on
-renaming and substitution for the simply-typed $λ$-calculus and was later
+renaming and substitution for the simply typed $λ$-calculus and was later
 extended to a formalisation of System F~\cite{girard1972interpretation}
 in Coq~\cite{Coq:manual} by Benton, Hur, Kennedy and McBride~\cite{benton2012strongly}.
 Benton et al. both implement a denotational semantics for their language
@@ -2344,7 +2353,7 @@ and the proofs are manually discharged one by one.
 Goguen and McKinna's Candidates for Substitution~\cite{goguen1997candidates}
 begot work by McBride~\cite{mcbride2005type} 
 and Benton, Hur, Kennedy and McBride~\cite{benton2012strongly} in Coq~\cite{Coq:manual}
-showing how to alleviate the programmer's burden when she opts for the strongly-typed
+showing how to alleviate the programmer's burden when she opts for the strongly typed
 approach based on inductive families. Reasoning
 about these definitions is still mostly done in an ad-hoc manner: Coq's tactics
 do help them to discharge the four fusion lemmas involving renaming and substitution,
@@ -2356,7 +2365,7 @@ Equivalence Relation approach we use.
 \section{Conclusion}
 
 We have explained how to make using an inductive family to only represent
-the terms of an eDSL which are well-scoped and well-typed by construction
+the terms of an eDSL which are well-scoped and well typed by construction
 more tractable. We proceeded by factoring out a common notion of \AR{Semantics}
 encompassing a wide range of type and scope preserving traversals such as
 renaming and substitution, which were already handled by the state of the
@@ -2380,6 +2389,24 @@ yield an instance of the third one.
 
 \bibliographystyle{abbrvnat}
 \bibliography{main}
+
+\appendix{}
+
+\section{}
+
+
+This yields, to the best of our knowledge, the
+first tagless and typeful implementation of a Kripke-style Normalisation by Evaluation in Haskell. The
+subtleties of working with dependent types in Haskell~\cite{lindley2014hasochism} are
+outside the scope of this paper but we do provide a (commented) Haskell module containing
+all the translated definitions. It should be noted that Danvy, Keller and Puech have achieved~\todo{\cite{atkey2009syntax}}
+a similar goal in OCaml~\cite{danvytagless} but their formalisation uses parametric higher
+order abstract syntax~\cite{chlipala2008parametric} which frees them from having to deal
+with variable binding, contexts and use models à la Kripke. However we consider these to be
+primordial: they can still guide the implementation of more complex type theories where,
+until now, being typeful is still out of reach. Type-level guarantees about scope preservation
+can help root out bugs related to fresh name generation, name capture or arithmetic on de
+Bruijn levels to recover de Bruijn indices.
 
 
 \end{document}

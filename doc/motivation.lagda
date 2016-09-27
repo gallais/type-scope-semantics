@@ -22,7 +22,7 @@ data Tm (Γ : List Type) : Type → Set where
 \end{code}
 %<*ren>
 \begin{code}
-ren : {Γ Δ : List Type} → (Var Γ ⇒  Var Δ) → Tm Γ ⇒ Tm Δ
+ren : {Γ Δ : List Type} → (∀ {σ} → Var Γ σ → Var Δ σ) → (∀ {σ} → Tm Γ σ → Tm Δ σ)
 ren ρ (`var v)  = `var (ρ v)
 ren ρ (f `$ t)  = ren ρ f `$ ren ρ t
 ren ρ (`λ b)    = `λ (ren ((S ∘ ρ) -, Z) b)
@@ -37,7 +37,7 @@ ren ρ (`λ b)    = `λ (ren ((S ∘ ρ) -, Z) b)
 \end{code}
 %<*sub>
 \begin{code}
-sub : {Γ Δ : List Type} → (Var Γ ⇒ Tm Δ) → Tm Γ ⇒ Tm Δ
+sub : {Γ Δ : List Type} → (∀ {σ} → Var Γ σ → Tm Δ σ) → ∀ {σ} → Tm Γ σ → Tm Δ σ
 sub ρ (`var v)  = ρ v
 sub ρ (f `$ t)  = sub ρ f `$ sub ρ t
 sub ρ (`λ b)    = `λ (sub ((ren S ∘ ρ) -, `var Z) b)

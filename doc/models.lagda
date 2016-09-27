@@ -1,17 +1,18 @@
 \documentclass[preprint,10pt]{sigplanconf}
 
 \usepackage{amsmath,amstext,amsthm}
+\usepackage{agda} 
 \usepackage[english]{babel}
-\usepackage[references]{agda}
-\usepackage{hyperref,cleveref}
-\usepackage{todonotes}
+\usepackage{cleveref}
 \usepackage{catchfilebetweentags}
-\usepackage{fontspec}
-\setlength\mathindent{0em}
 
+\usepackage{unicode-math}
 \setmainfont{XITS}
 \setmathfont{XITS Math}
 
+%\setlength\mathindent{0em}
+
+\usepackage{todonotes}
 \usepackage{mathpartir}
 \include{commands}
 
@@ -300,8 +301,10 @@ infix 5 _-Env
 Model : (ℓ : Level) → Set (L.suc ℓ)
 Model ℓ = Ty → Cx → Set ℓ
 
-RModel : {ℓ^E ℓ^M : Level} (𝓔 : Model ℓ^E) (𝓜 : Model ℓ^M) (ℓ^R : Level) → Set _
-RModel 𝓔 𝓜 ℓ^R = {σ : Ty} → [ 𝓔 σ ⟶ 𝓜 σ ⟶ const (Set ℓ^R) ]
+record RModel {ℓ^E ℓ^M : Level} (𝓔 : Model ℓ^E) (𝓜 : Model ℓ^M) (ℓ^R : Level) : Set (ℓ^E ⊔ ℓ^M ⊔ L.suc ℓ^R) where
+  constructor mkRModel
+  field rmodel : {σ : Ty} → [ 𝓔 σ ⟶ 𝓜 σ ⟶ const (Set ℓ^R) ]
+open RModel public
 
 record _-Env {ℓ : Level} (Γ : Cx) (𝓔 : Model ℓ) (Δ : Cx) : Set ℓ where
   constructor pack
@@ -960,9 +963,9 @@ with binding.
   wk^ne σ inc (`ifte ne l r)  = `ifte (wk^ne `Bool inc ne) (wk^nf σ inc l) (wk^nf σ inc r)
 
   wk^nf σ         inc (`embed pr t) = `embed pr (wk^ne σ inc t)
-  wk^nf σ         inc `⟨⟩           = `⟨⟩
-  wk^nf σ         inc `tt           = `tt
-  wk^nf σ         inc `ff           = `ff
+  wk^nf `Unit     inc `⟨⟩           = `⟨⟩
+  wk^nf `Bool     inc `tt           = `tt
+  wk^nf `Bool     inc `ff           = `ff
   wk^nf (σ `→ τ)  inc (`λ nf)       = `λ (wk^nf τ (pop! inc) nf)
 
   infix 5 [_,,_]
@@ -1135,7 +1138,7 @@ the variable case is trivial.
   Normalise : Semantics Kr Kr
   Normalise = record
     { embed = reflect _ ∘ `var; wk = wk^Kr; ⟦var⟧ = id
-    ; _⟦$⟧_ = λ {σ} {τ} → _$$_ {σ} {τ}; ⟦λ⟧ = id
+    ; _⟦$⟧_ = λ {σ} {τ} → _$$_ {σ} {τ} ; ⟦λ⟧ = id
     ; ⟦⟨⟩⟧ = ⟨⟩; ⟦tt⟧ = `tt; ⟦ff⟧ = `ff; ⟦ifte⟧  = λ {σ} → ifte {σ} }
 \end{code}
 
@@ -1313,11 +1316,11 @@ module βι where
   wk^whne σ inc (ne `$ u)       = wk^whne _ inc ne `$ wk^⊢ _ inc u
   wk^whne σ inc (`ifte ne l r)  = `ifte (wk^whne `Bool inc ne) (wk^⊢ σ inc l) (wk^⊢ σ inc r)
 
-  wk^whnf σ        inc (`embed t)  = `embed (wk^whne σ inc t)
-  wk^whnf σ        inc `⟨⟩         = `⟨⟩
-  wk^whnf σ        inc `tt         = `tt
-  wk^whnf σ        inc `ff         = `ff
-  wk^whnf (σ `→ τ) inc (`λ b)      = `λ (wk^⊢ τ (pop! inc) b)
+  wk^whnf σ         inc (`embed t)  = `embed (wk^whne σ inc t)
+  wk^whnf `Unit     inc `⟨⟩         = `⟨⟩
+  wk^whnf `Bool     inc `tt         = `tt
+  wk^whnf `Bool     inc `ff         = `ff
+  wk^whnf (σ `→ τ)  inc (`λ b)      = `λ (wk^⊢ τ (pop! inc) b)
 
   erase^whne : {σ : Ty} → [ Whne σ ⟶ Tm σ ]
   erase^whne (`var v)       = `var v
@@ -1460,7 +1463,7 @@ record `∀[_] {ℓ^A ℓ^B ℓ^R : Level} {𝓔^A : Model ℓ^A} {𝓔^B : Mode
              (𝓔^R : RModel 𝓔^A 𝓔^B ℓ^R)
              {Γ Δ : Cx} (ρ^A : (Γ -Env) 𝓔^A Δ) (ρ^B : (Γ -Env) 𝓔^B Δ) : Set ℓ^R where
   constructor pack^R
-  field lookup^R : {σ : Ty} (v : Var σ Γ) → 𝓔^R (lookup ρ^A v) (lookup ρ^B v)
+  field lookup^R : {σ : Ty} (v : Var σ Γ) → rmodel 𝓔^R (lookup ρ^A v) (lookup ρ^B v)
 open `∀[_]
 \end{code}}
 \begin{code}
@@ -1494,7 +1497,7 @@ to the looked up values.
 
 \begin{code}
     R⟦var⟧    :  {Γ Δ : Cx} {σ : Ty} (v : Var σ Γ) {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Γ -Env) 𝓔^B Δ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
-                 𝓜^R (𝓢^A.⟦var⟧ (lookup ρ^A v)) (𝓢^B.⟦var⟧ (lookup ρ^B v))
+                 rmodel 𝓜^R (𝓢^A.⟦var⟧ (lookup ρ^A v)) (𝓢^B.⟦var⟧ (lookup ρ^B v))
 \end{code}
 
 The second, and probably most interesting case, is the relational counterpart
@@ -1504,8 +1507,8 @@ values is enough to guarantee that evaluating the lambdas in the original
 environments will produce synchronised values.
 
 \begin{code}
-    R⟦λ⟧      :  {Γ : Cx} {σ τ : Ty} {f^A : □ (𝓔^A σ ⟶ 𝓜^A τ) Γ} {f^B : □ (𝓔^B σ ⟶ 𝓜^B τ) Γ} → (f^r :  {Δ : Cx} (inc : Γ ⊆ Δ) {u^A : 𝓔^A σ Δ} {u^B : 𝓔^B σ Δ} (u^R : 𝓔^R u^A u^B) → 𝓜^R  (f^A inc u^A) (f^B inc u^B)) →
-                 𝓜^R (𝓢^A.⟦λ⟧ f^A) (𝓢^B.⟦λ⟧ f^B)
+    R⟦λ⟧      :  {Γ : Cx} {σ τ : Ty} {f^A : □ (𝓔^A σ ⟶ 𝓜^A τ) Γ} {f^B : □ (𝓔^B σ ⟶ 𝓜^B τ) Γ} → (f^r :  {Δ : Cx} (inc : Γ ⊆ Δ) {u^A : 𝓔^A σ Δ} {u^B : 𝓔^B σ Δ} (u^R : rmodel 𝓔^R u^A u^B) → rmodel 𝓜^R  (f^A inc u^A) (f^B inc u^B)) →
+                 rmodel 𝓜^R (𝓢^A.⟦λ⟧ f^A) (𝓢^B.⟦λ⟧ f^B)
 \end{code}
 
 All the remaining cases are similar. We show here the relational
@@ -1515,15 +1518,15 @@ used are synchronised), one can combine them to obtain a proof
 about the evaluation of an application-headed term.
 
 \begin{code}
-    R⟦$⟧      :  {Γ : Cx} {σ τ : Ty} {f^A : 𝓜^A (σ `→ τ) Γ} {f^B : 𝓜^B (σ `→ τ) Γ} {u^A : 𝓜^A σ Γ} {u^B : 𝓜^B σ Γ} → 𝓜^R f^A f^B → 𝓜^R u^A u^B → 𝓜^R (f^A 𝓢^A.⟦$⟧ u^A) (f^B 𝓢^B.⟦$⟧ u^B)
+    R⟦$⟧      :  {Γ : Cx} {σ τ : Ty} {f^A : 𝓜^A (σ `→ τ) Γ} {f^B : 𝓜^B (σ `→ τ) Γ} {u^A : 𝓜^A σ Γ} {u^B : 𝓜^B σ Γ} → rmodel 𝓜^R f^A f^B → rmodel 𝓜^R u^A u^B → rmodel 𝓜^R (f^A 𝓢^A.⟦$⟧ u^A) (f^B 𝓢^B.⟦$⟧ u^B)
 \end{code}
 \AgdaHide{
 \begin{code}
-    R⟦⟨⟩⟧     :  {Γ : Cx} → 𝓜^R {_} {Γ} 𝓢^A.⟦⟨⟩⟧ 𝓢^B.⟦⟨⟩⟧
-    R⟦tt⟧     :  {Γ : Cx} → 𝓜^R {_} {Γ} 𝓢^A.⟦tt⟧ 𝓢^B.⟦tt⟧
-    R⟦ff⟧     :  {Γ : Cx} → 𝓜^R {_} {Γ} 𝓢^A.⟦ff⟧ 𝓢^B.⟦ff⟧
-    R⟦ifte⟧   :  {Γ : Cx} {σ : Ty} {b^A : _} {b^B : _} {l^A r^A : _} {l^B r^B : _} → 𝓜^R {_} {Γ} b^A b^B → 𝓜^R l^A l^B → 𝓜^R {σ} r^A r^B →
-                 𝓜^R (𝓢^A.⟦ifte⟧ b^A l^A r^A) (𝓢^B.⟦ifte⟧ b^B l^B r^B)
+    R⟦⟨⟩⟧     :  {Γ : Cx} → rmodel 𝓜^R {_} {Γ} 𝓢^A.⟦⟨⟩⟧ 𝓢^B.⟦⟨⟩⟧
+    R⟦tt⟧     :  {Γ : Cx} → rmodel 𝓜^R {_} {Γ} 𝓢^A.⟦tt⟧ 𝓢^B.⟦tt⟧
+    R⟦ff⟧     :  {Γ : Cx} → rmodel 𝓜^R {_} {Γ} 𝓢^A.⟦ff⟧ 𝓢^B.⟦ff⟧
+    R⟦ifte⟧   :  {Γ : Cx} {σ : Ty} {b^A : _} {b^B : _} {l^A r^A : _} {l^B r^B : _} → rmodel 𝓜^R {_} {Γ} b^A b^B → rmodel 𝓜^R l^A l^B → rmodel 𝓜^R {σ} r^A r^B →
+                 rmodel 𝓜^R (𝓢^A.⟦ifte⟧ b^A l^A r^A) (𝓢^B.⟦ifte⟧ b^B l^B r^B)
 infixl 10 _∙^R_
 \end{code}}
 
@@ -1544,7 +1547,7 @@ We use \AF{[\_,\_,\_]\_∙^R\_} as a way to circumvent Agda's inhability to
 infer \AR{𝓔^A}, \AR{𝓔^B} and \AR{𝓔^R}.
 
 \begin{code}
-_∙^R_ :  {ℓ^EA ℓ^EB ℓ^ER : Level} {𝓔^A : Model ℓ^EA} {𝓔^B : Model ℓ^EB} {𝓔^R : RModel 𝓔^A 𝓔^B ℓ^ER} {Δ Γ : Cx} {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Γ -Env) 𝓔^B Δ} {σ : Ty} {u^A : 𝓔^A σ Δ} {u^B : _} → `∀[ 𝓔^R ] ρ^A ρ^B → 𝓔^R u^A u^B → `∀[ 𝓔^R ] (ρ^A `∙ u^A) (ρ^B `∙ u^B)
+_∙^R_ :  {ℓ^EA ℓ^EB ℓ^ER : Level} {𝓔^A : Model ℓ^EA} {𝓔^B : Model ℓ^EB} {𝓔^R : RModel 𝓔^A 𝓔^B ℓ^ER} {Δ Γ : Cx} {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Γ -Env) 𝓔^B Δ} {σ : Ty} {u^A : 𝓔^A σ Δ} {u^B : _} → `∀[ 𝓔^R ] ρ^A ρ^B → rmodel 𝓔^R u^A u^B → `∀[ 𝓔^R ] (ρ^A `∙ u^A) (ρ^B `∙ u^B)
 lookup^R (ρ^R ∙^R u^R) zero    = u^R
 lookup^R (ρ^R ∙^R u^R) (1+ v)  = lookup^R ρ^R v
 
@@ -1554,7 +1557,7 @@ module Synchronised {ℓ^EA ℓ^MA ℓ^EB ℓ^MB : Level} {𝓔^A : Model ℓ^EA
 %<*relational>
 \begin{code}
   lemma :  {Γ Δ : Cx} {σ : Ty} (t : Tm σ Γ) {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Γ -Env) 𝓔^B Δ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
-           𝓜^R (let open Eval 𝓢^A in lemma ρ^A t) (let open Eval 𝓢^B in lemma ρ^B t)
+           rmodel 𝓜^R (let open Eval 𝓢^A in lemma ρ^A t) (let open Eval 𝓢^B in lemma ρ^B t)
   lemma (`var v)       ρ^R = R⟦var⟧ v ρ^R
   lemma (f `$ t)       ρ^R = R⟦$⟧ (lemma f ρ^R) (lemma t ρ^R)
   lemma (`λ t)         ρ^R = R⟦λ⟧ (λ inc u^R → lemma t (𝓔^R‿wk inc ρ^R ∙^R u^R))
@@ -1576,7 +1579,7 @@ left out.
 
 \begin{code}
 SynchronisableRenamingSubstitution :  Synchronisable Renaming Substitution
-                                      (λ v t → `var v ≡ t) _≡_
+                                      (mkRModel (_≡_ ∘ `var)) (mkRModel _≡_)
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -1632,6 +1635,12 @@ EQREL `Unit     T U = ⊤
 EQREL `Bool     T U = T ≡ U
 EQREL (σ `→ τ)  T U =  {Δ : Cx} (inc : _ ⊆ Δ) {V W : Kr σ Δ} (eqVW : EQREL σ V W) →
                         EQREL τ (T inc V) (U inc W)
+
+EQREL′ : RModel Kr Kr L.zero
+EQREL′ = mkRModel (λ {σ} → EQREL σ)
+
+PropEq : {C : Ty → Cx → Set} → RModel C C L.zero
+PropEq = mkRModel _≡_
 \end{code}
 
 It is indeed a PER as witnessed by the (omitted here) \AF{symEQREL} and
@@ -1710,7 +1719,7 @@ yields two semantic objects themselves related by \AF{EQREL}.
 
 %<*synchroexample>
 \begin{code}
-SynchronisableNormalise :  Synchronisable Normalise Normalise (λ {σ} → EQREL σ) (λ {σ} → EQREL σ)
+SynchronisableNormalise :  Synchronisable Normalise Normalise EQREL′ EQREL′
 \end{code}
 %</synchroexample>
 \AgdaHide{
@@ -1733,7 +1742,7 @@ case:
 
 %<*synchroexample2>
 \begin{code}
-refl^Kr :  {Γ Δ : Cx} {σ : Ty} (t : Tm σ Γ) {ρ^A ρ^B : (Γ -Env) Kr Δ} (ρ^R : `∀[ EQREL _ ] ρ^A ρ^B) → let open Eval Normalise in EQREL σ (lemma ρ^A t) (lemma ρ^B t)
+refl^Kr :  {Γ Δ : Cx} {σ : Ty} (t : Tm σ Γ) {ρ^A ρ^B : (Γ -Env) Kr Δ} (ρ^R : `∀[ EQREL′ ] ρ^A ρ^B) → let open Eval Normalise in EQREL σ (lemma ρ^A t) (lemma ρ^B t)
 refl^Kr t ρ^R = lemma t ρ^R where open Synchronised SynchronisableNormalise
 \end{code}
 %</synchroexample2>
@@ -1799,7 +1808,7 @@ element of \AB{𝓢^A}'s model. Our first field is therefore
     let eval^A = let open Eval 𝓢^A in lemma
         eval^B = let open Eval 𝓢^B in lemma
         eval^C = let open Eval 𝓢^C in lemma
-    in 𝓜^R (eval^B ρ^B (reify^A (eval^A ρ^A t))) (eval^C ρ^C t)
+    in rmodel 𝓜^R (eval^B ρ^B (reify^A (eval^A ρ^A t))) (eval^C ρ^C t)
 
   field
 \end{code}
@@ -1816,7 +1825,7 @@ the environments for \AB{𝓢^B} and \AB{𝓢^C} in a \AB{𝓔^R}
 preserving manner.
 
 \begin{code}
-    𝓔^R‿∙   :  {Γ Δ Θ : Cx} {σ : Ty} {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ} {u^B : 𝓔^B σ Θ} {u^C : 𝓔^C σ Θ} → 𝓔^R ρ^A ρ^B ρ^C → 𝓔^R‿BC u^B u^C →
+    𝓔^R‿∙   :  {Γ Δ Θ : Cx} {σ : Ty} {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ} {u^B : 𝓔^B σ Θ} {u^C : 𝓔^C σ Θ} → 𝓔^R ρ^A ρ^B ρ^C → rmodel 𝓔^R‿BC u^B u^C →
                𝓔^R  (wk[ 𝓢^A.wk ] (step refl) ρ^A `∙ 𝓢^A.embed zero)
                     (ρ^B `∙ u^B) (ρ^C `∙ u^C)
 
@@ -1849,7 +1858,7 @@ related values to be substituted for the variable bound by the \AIC{`λ}.
 \begin{code}
     R⟦λ⟧    :
       {Γ Δ Θ : Cx} {σ τ : Ty} (t : Tm τ (Γ ∙ σ)) {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
-      (r :  {E : Cx} (inc : Θ ⊆ E) {u^B : 𝓔^B σ E} {u^C : 𝓔^C σ E} → 𝓔^R‿BC u^B u^C →
+      (r :  {E : Cx} (inc : Θ ⊆ E) {u^B : 𝓔^B σ E} {u^C : 𝓔^C σ E} → rmodel 𝓔^R‿BC u^B u^C →
             let  ρ^A′ =  wk[ 𝓢^A.wk ] (step refl) ρ^A `∙ 𝓢^A.embed zero
                  ρ^B′ =  wk[ 𝓢^B.wk ] inc ρ^B `∙ u^B
                  ρ^C′ =  wk[ 𝓢^C.wk ] inc ρ^C `∙ u^C
@@ -1940,7 +1949,7 @@ record SyntacticFusable
   module Syn^C = Syntactic synC
   field
     𝓔^R‿∙ : ({Γ Δ Θ : Cx} {σ : Ty} {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ}
-               {u^B : 𝓔^B σ Θ} {u^C : 𝓔^C σ Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) (u^R : 𝓔^R‿BC u^B u^C) →
+               {u^B : 𝓔^B σ Θ} {u^C : 𝓔^C σ Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) (u^R : rmodel 𝓔^R‿BC u^B u^C) →
                𝓔^R (wk[ Syn^A.wk ] (step refl) ρ^A `∙ Syn^A.embed zero)
                       (ρ^B `∙ u^B)
                       (ρ^C `∙ u^C))
@@ -1953,7 +1962,7 @@ record SyntacticFusable
               ≡ Eval.lemma (syntactic synC) ρ^C (`var v)
 \end{code}}
 \begin{code}
-    embed^BC : {Γ : Cx} {σ : Ty} → 𝓔^R‿BC {_} {Γ ∙ σ} (Syn^B.embed zero) (Syn^C.embed zero)
+    embed^BC : {Γ : Cx} {σ : Ty} → rmodel 𝓔^R‿BC {_} {Γ ∙ σ} (Syn^B.embed zero) (Syn^C.embed zero)
 \end{code}
 
 The important result is that given a \AR{SyntacticFusable} relating
@@ -1963,7 +1972,7 @@ equality.
 
 \begin{code}
 syntacticFusable :  {ℓ^EA ℓ^EB ℓ^EC ℓ^RE ℓ^REBC : Level} {𝓔^A : Model ℓ^EA} {𝓔^B : Model ℓ^EB} {𝓔^C : Model ℓ^EC} {syn^A : Syntactic 𝓔^A} {syn^B : Syntactic 𝓔^B} {syn^C : Syntactic 𝓔^C} {𝓔^R‿BC : RModel 𝓔^B 𝓔^C ℓ^REBC} {𝓔^R : {Θ Δ Γ : Cx} (ρ^A : (Γ -Env) 𝓔^A Δ) (ρ^B : (Δ -Env) 𝓔^B Θ) (ρ^C : (Γ -Env) 𝓔^C Θ) → Set ℓ^RE} (syn^R : SyntacticFusable syn^A syn^B syn^C 𝓔^R‿BC 𝓔^R) →
-  Fusable (syntactic syn^A) (syntactic syn^B) (syntactic syn^C) 𝓔^R‿BC 𝓔^R _≡_
+  Fusable (syntactic syn^A) (syntactic syn^B) (syntactic syn^C) 𝓔^R‿BC 𝓔^R PropEq
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -1999,7 +2008,7 @@ why \ARF{embed^{BC}} is so simple).
 \begin{code}
 RenamingFusable :
   SyntacticFusable  syntacticRenaming syntacticRenaming syntacticRenaming
-                    _≡_ (λ ρ^A ρ^B ρ^C → ∀ σ pr → lookup (trans ρ^A ρ^B) pr ≡ lookup ρ^C pr)
+                    PropEq (λ ρ^A ρ^B ρ^C → ∀ σ pr → lookup (trans ρ^A ρ^B) pr ≡ lookup ρ^C pr)
 RenamingFusable = record
   { 𝓔^R‿∙     = λ ρ^R eq → [ eq ,, ρ^R ]
   ; 𝓔^R‿wk    = λ inc ρ^R σ pr → PEq.cong (lookup inc) (ρ^R σ pr)
@@ -2014,7 +2023,7 @@ the two previous ones.
 \begin{code}
 RenamingSubstitutionFusable :
   SyntacticFusable syntacticRenaming syntacticSubstitution syntacticSubstitution
-  _≡_ (λ ρ^A ρ^B ρ^C → ∀ σ pr → lookup ρ^B (lookup ρ^A pr) ≡ lookup ρ^C pr)
+  PropEq (λ ρ^A ρ^B ρ^C → ∀ σ pr → lookup ρ^B (lookup ρ^A pr) ≡ lookup ρ^C pr)
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -2033,7 +2042,7 @@ environment have been renamed.
 \begin{code}
 SubstitutionRenamingFusable :
   SyntacticFusable syntacticSubstitution syntacticRenaming syntacticSubstitution
-  (λ v t → `var v ≡ t) (λ ρ^A ρ^B ρ^C → ∀ σ pr → wk^⊢ σ ρ^B (lookup ρ^A pr) ≡ lookup ρ^C pr)
+  (mkRModel (_≡_ ∘ `var)) (λ ρ^A ρ^B ρ^C → ∀ σ pr → wk^⊢ σ ρ^B (lookup ρ^A pr) ≡ lookup ρ^C pr)
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -2057,7 +2066,7 @@ rise to another \AR{Substitution}.
 \begin{code}
 SubstitutionFusable :
   SyntacticFusable syntacticSubstitution syntacticSubstitution syntacticSubstitution
-  _≡_ (λ ρ^A ρ^B ρ^C → ∀ σ pr → subst (lookup ρ^A pr) ρ^B ≡ lookup ρ^C pr)
+  PropEq (λ ρ^A ρ^B ρ^C → ∀ σ pr → subst (lookup ρ^A pr) ρ^B ≡ lookup ρ^C pr)
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -2111,8 +2120,8 @@ by \AR{Normalise^{βιξη}} is equivalent to Normalisation by Evaluation
 where the environment has been tweaked.
 
 \begin{code}
-RenamingNormaliseFusable : Fusable Renaming Normalise Normalise (λ {σ} → EQREL σ)
-  (λ ρ^A ρ^B ρ^C → ∀ σ pr → EQREL σ (lookup ρ^B (lookup ρ^A pr)) (lookup ρ^C pr)) (λ {σ} → EQREL σ)
+RenamingNormaliseFusable : Fusable Renaming Normalise Normalise EQREL′
+  (λ ρ^A ρ^B ρ^C → ∀ σ pr → EQREL σ (lookup ρ^B (lookup ρ^A pr)) (lookup ρ^C pr)) EQREL′
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -2135,7 +2144,7 @@ ifteSubstNorm :
      {Γ Δ Θ : Cx} {σ : Ty} (b : Tm `Bool Γ) (l r : Tm σ Γ)
       {ρ^A : (Γ -Env) Tm Δ} {ρ^B : (Δ -Env) Kr Θ}
       {ρ^C : (Γ -Env) Kr Θ} →
-      (`∀[ (λ {σ} → EQREL σ) ] ρ^B ρ^B) ×
+      (`∀[ EQREL′ ] ρ^B ρ^B) ×
       ((σ₁ : Ty) (pr : Var σ₁ Γ) {Θ₁ : Cx} (inc : Θ ⊆ Θ₁) →
        EQREL σ₁
        (Eval.lemma Normalise (pack (λ {σ} → wk^Kr σ inc ∘ lookup ρ^B)) (lookup ρ^A pr))
@@ -2185,14 +2194,12 @@ in her detailed account of Normalisation by Evaluation for a simply-typed
 
 \begin{code}
 SubstitutionNormaliseFusable : Fusable  Substitution Normalise Normalise
-  (λ {σ} → EQREL σ)
-  (λ ρ^A ρ^B ρ^C → `∀[ (λ {σ} → EQREL σ) ] ρ^B ρ^B
+  EQREL′
+  (λ ρ^A ρ^B ρ^C → `∀[ EQREL′ ] ρ^B ρ^B
                  × ((σ : Ty) (pr : Var σ _) {Θ : Cx} (inc : _ ⊆ Θ) →
-                      EQREL σ (Eval.lemma Normalise (pack (λ {σ} pr → wk^Kr σ inc (lookup ρ^B pr))) (lookup ρ^A pr)) (wk^Kr σ inc (lookup ρ^C pr)) {-
-                         EQREL Θ σ (Eval.lemma Normalise (pack (λ pr → wk^Kr _ inc (lookup ρ^B pr) (lookup ρ^A pr))))
-                                   (wk^Kr σ inc (lookup ρ^C pr)) -} )
+                      EQREL σ (Eval.lemma Normalise (pack (λ {σ} pr → wk^Kr σ inc (lookup ρ^B pr))) (lookup ρ^A pr)) (wk^Kr σ inc (lookup ρ^C pr)))
                  × ((σ : Ty) (pr : Var σ _) → EQREL σ (Eval.lemma Normalise ρ^B (lookup ρ^A pr)) (lookup ρ^C pr)))
-  (λ {σ} → EQREL σ)
+  EQREL′
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -2240,9 +2247,9 @@ are equal then the string produced, as well as the state of the
 name supply at the end of the process, are equal.
 
 \begin{code}
-RenamingPrettyPrintingFusable : Fusable Renaming Printing Printing _≡_
-  (λ ρ^A ρ^B → `∀[ _≡_ ] (trans ρ^A ρ^B))
-  (λ p q → ∀ {names₁ names₂} → names₁ ≡ names₂ → runP p names₁ ≡ runP q names₂)
+RenamingPrettyPrintingFusable : Fusable Renaming Printing Printing PropEq
+  (λ ρ^A ρ^B → `∀[ PropEq ] (trans ρ^A ρ^B))
+  (mkRModel (λ p q → ∀ {names₁ names₂} → names₁ ≡ names₂ → runP p names₁ ≡ runP q names₂))
 \end{code}
 \AgdaHide{
 \begin{code}

@@ -35,3 +35,8 @@ s/ \\AgdaSymbol{(}\\AgdaSymbol{))}/\\AgdaSymbol\{)\}/g
 s/\\AgdaSymbol{\\{}.*\\AgdaSymbol{\\}}[^()→;]*\\AgdaSymbol{→} //g
 s/\\AgdaSymbol{\\{}[^();]*\\AgdaSymbol{\\}}//g
 s/\\AgdaSymbol{\\{}[^;]*\\AgdaSymbol{\\}}//g
+
+# Hacks
+s/`→/`\\!\\!→/g
+s/`1/`\\!1/g
+s/`2/`\\!2/g

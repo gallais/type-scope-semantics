@@ -190,19 +190,17 @@ distinguish with a prefix backtick \AIC{`}.
 infixr 20 _`→_
 infixl 10 _∙_
 \end{code}}
+\noindent\begin{tabular}{lr}
+\begin{minipage}{0.20\textwidth}
 %<*ty>
 \begin{code}
 data Ty : Set where
-  `1 `2  : Ty       -- Both base types
-  _`→_   : Ty → Ty  → Ty
+  `1 `2  : Ty
+  _`→_   : Ty → Ty → Ty
 \end{code}
 %</ty>
-
-To talk about the types of the variables in scope, we need \emph{contexts}.
-We choose to represent them as ``snoc'' lists of types; \AIC{ε} denotes the
-empty context and \AB{Γ} \AIC{∙} \AB{σ} the context \AB{Γ} extended with a
-fresh variable of type \AB{σ}.
-
+\end{minipage}
+&\begin{minipage}{0.20\textwidth}
 %<*context>
 \begin{code}
 data Cx : Set where
@@ -210,6 +208,15 @@ data Cx : Set where
   _∙_  : Cx → Ty → Cx
 \end{code}
 %</context>
+\end{minipage}
+\end{tabular}
+
+
+To talk about the types of the variables in scope, we need \emph{contexts}.
+We choose to represent them as ``snoc'' lists of types; \AIC{ε} denotes the
+empty context and \AB{Γ} \AIC{∙} \AB{σ} the context \AB{Γ} extended with a
+fresh variable of type \AB{σ}.
+
 
 To make type signatures more readabale, we introduce combinators acting on
 context-indexed types. The most straightforward ones are pointwise lifting

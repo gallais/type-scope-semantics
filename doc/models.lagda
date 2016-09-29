@@ -297,7 +297,7 @@ data Tm : Ty → (Cx → Set) where
 \section{A Generic Notion of Environment}
 
 \todo{Rename Cx -> Ty -> Set}
-\todo{$𝓔 -> 𝓥$; $𝓒 -> 𝓒$; -Eval -> -Comp}
+\todo{-Eval -> -Comp}
 \todo{call lemma comp and show its type early}
 
 All the semantics we are interested in defining associate to a term \AB{t}
@@ -329,11 +329,6 @@ infix 5 _-Env
 Model : (ℓ^A : Level) → Set (L.suc ℓ^A)
 Model ℓ^A = Ty → Cx → Set ℓ^A
 
-record RModel {ℓ^E ℓ^M : Level} (𝓥 : Model ℓ^E) (𝓒 : Model ℓ^M) (ℓ^R : Level) : Set (ℓ^E ⊔ ℓ^M ⊔ L.suc ℓ^R) where
-  constructor mkRModel
-  field rmodel : {σ : Ty} → [ 𝓥 σ ⟶ 𝓒 σ ⟶ const (Set ℓ^R) ]
-open RModel public
-
 record _-Env {ℓ^A : Level} (Γ : Cx) (𝓥 : Model ℓ^A) (Δ : Cx) : Set ℓ^A where
   constructor pack
   field lookup : {σ : Ty} → Var σ Γ → 𝓥 σ Δ
@@ -347,11 +342,6 @@ _-Comp : {ℓ^A : Level} → Cx → (𝓒 : Model ℓ^A) → Cx → Set ℓ^A
 
 \todo{Insert here type of lemma we want to prove}
 \todo{Expand the definition of box}
-\todo{Move after Thinnable}
-\begin{code}
-□ : {ℓ^A : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^A)
-(□ S) Γ = [ (Γ -Env) Var ⟶ S ]
-\end{code}
 %</environment>
 
 \AgdaHide{
@@ -387,10 +377,8 @@ we use do guarantee that all the renamings we generate are context inclusions.
 As a consequence, we will use the two expressions interchangeably from now
 on.
 
-\todo{Rename context inclusion to thinning}
-
-A context inclusion \AB{Γ} \AF{⊆} \AB{Δ} is an environment pairing each
-variable of type \AB{σ} in \AB{Γ} to one of the same type in \AB{Δ}.
+A thinning \AB{Γ} \AF{⊆} \AB{Δ} is an environment pairing each variable of
+type \AB{σ} in \AB{Γ} to one of the same type in \AB{Δ}.
 
 \AgdaHide{
 \begin{code}
@@ -426,7 +414,7 @@ lookup (wk[ wk ] inc ρ) = wk _ inc ∘ lookup ρ
 These simple observations allow us to prove that context inclusions
 form a preorder which, in turn, lets us provide the user with the
 constructors Altenkirch, Hofmann and Streicher's ``Category of
-(σ : Ty) → Thinnables"~(\cite{altenkirch1995categorical}) is based on.
+Weakening"~(\cite{altenkirch1995categorical}) is based on.
 
 \todo{Rename trans to select?}
 \todo{Expand type step and pop!}
@@ -435,18 +423,25 @@ constructors Altenkirch, Hofmann and Streicher's ``Category of
 refl : {Γ : Cx} → Γ ⊆ Γ
 refl = pack id
 
-trans : {ℓ^A : Level} {Γ Δ Θ : Cx} {𝓥 : Model ℓ^A} → Γ ⊆ Δ → (Δ -Env) 𝓥 Θ → (Γ -Env) 𝓥 Θ
-lookup (trans inc ρ) = lookup ρ ∘ lookup inc
+select : {ℓ^A : Level} {Γ Δ Θ : Cx} {𝓥 : Model ℓ^A} → Γ ⊆ Δ → (Δ -Env) 𝓥 Θ → (Γ -Env) 𝓥 Θ
+lookup (select inc ρ) = lookup ρ ∘ lookup inc
 
 step : {σ : Ty} {Γ : Cx} → [ (Γ ⊆_) ⟶ σ ⊢ (Γ ⊆_) ]
-step inc = trans inc (pack su)
+step inc = select inc (pack su)
 
 pop! : {σ : Ty} {Γ : Cx} → [ (Γ ⊆_) ⟶ σ ⊢ ((Γ ∙ σ) ⊆_) ]
 pop! inc = step inc `∙ ze
+\end{code}
 
+The modal operator \AF{□} stating that a given predicate holds for
+all extensions of a context is a closure operator for \AF{Thinnable}.
+
+\begin{code}
+□ : {ℓ^A : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^A)
+(□ S) Γ = {Δ : Cx} → Γ ⊆ Δ → S Δ
 
 th^□ : {ℓ^A : Level} {S : Cx → Set ℓ^A} → Thinnable (□ S)
-th^□ inc s = s ∘ trans inc
+th^□ inc s = s ∘ select inc
 \end{code}
 
 Now that we are equipped with the notion of inclusion, we have all
@@ -1047,7 +1042,7 @@ with binding.
   mutual
 
     wk^nf-trans′ : {Θ Δ Γ : Cx} {σ : Ty} {inc₁ : Γ ⊆ Δ} {inc₂ : Δ ⊆ Θ}
-                   {f : Γ ⊆ Θ} (prf : (σ : Ty) (pr : Var σ Γ) → lookup (trans inc₁ inc₂) pr ≡ lookup f pr)
+                   {f : Γ ⊆ Θ} (prf : (σ : Ty) (pr : Var σ Γ) → lookup (select inc₁ inc₂) pr ≡ lookup f pr)
                    (t : Nf σ Γ) →  wk^nf σ inc₂ (wk^nf σ inc₁ t) ≡ wk^nf σ f t
     wk^nf-trans′ prf (`ne pr t)  = PEq.cong (`ne pr) (wk^ne-trans′ prf t)
     wk^nf-trans′ prf `⟨⟩            = PEq.refl 
@@ -1056,7 +1051,7 @@ with binding.
     wk^nf-trans′ prf (`λ t)         = PEq.cong `λ (wk^nf-trans′ ([ PEq.refl ,, (λ σ → PEq.cong su ∘ prf σ) ]) t)
 
     wk^ne-trans′ : {Θ Δ Γ : Cx} {σ : Ty} {inc₁ : Γ ⊆ Δ} {inc₂ : Δ ⊆ Θ}
-                   {f : Γ ⊆ Θ} (prf : (σ : Ty) (pr : Var σ Γ) → lookup (trans inc₁ inc₂) pr ≡ lookup f pr)
+                   {f : Γ ⊆ Θ} (prf : (σ : Ty) (pr : Var σ Γ) → lookup (select inc₁ inc₂) pr ≡ lookup f pr)
                    (t : Ne σ Γ) →  wk^ne σ inc₂ (wk^ne σ inc₁ t) ≡ wk^ne σ f t
     wk^ne-trans′ prf (`var v)       = PEq.cong `var (prf _ v)
     wk^ne-trans′ prf (t `$ u)       = PEq.cong₂ _`$_ (wk^ne-trans′ prf t) (wk^nf-trans′ prf u)
@@ -1069,11 +1064,11 @@ with binding.
   wk^ne-refl = wk^ne-refl′ (λ _ _ → PEq.refl)
 
   wk^nf-trans : {Θ Δ Γ : Cx} {σ : Ty} (inc₁ : Γ ⊆ Δ) (inc₂ : Δ ⊆ Θ)
-               (t : Nf σ Γ) →  wk^nf σ inc₂ (wk^nf σ inc₁ t) ≡ wk^nf σ (trans inc₁ inc₂) t
+               (t : Nf σ Γ) →  wk^nf σ inc₂ (wk^nf σ inc₁ t) ≡ wk^nf σ (select inc₁ inc₂) t
   wk^nf-trans inc₁ inc₂ = wk^nf-trans′ (λ _ _ → PEq.refl)
 
   wk^ne-trans : {Θ Δ Γ : Cx} {σ : Ty} (inc₁ : Γ ⊆ Δ) (inc₂ : Δ ⊆ Θ)
-               (t : Ne σ Γ) →  wk^ne σ inc₂ (wk^ne σ inc₁ t) ≡ wk^ne σ (trans inc₁ inc₂) t
+               (t : Ne σ Γ) →  wk^ne σ inc₂ (wk^ne σ inc₁ t) ≡ wk^ne σ (select inc₁ inc₂) t
   wk^ne-trans inc₁ inc₂ = wk^ne-trans′ (λ _ _ → PEq.refl)
 \end{code}}
 
@@ -1407,7 +1402,7 @@ need to be evaluated.
   wk^Go : (σ : Ty) → Thinnable (Go σ)
   wk^Go `1        inc T = T
   wk^Go `2        inc T = T
-  wk^Go (σ `→ τ)  inc T = λ inc′ → T (trans inc inc′)
+  wk^Go (σ `→ τ)  inc T = λ inc′ → T (select inc inc′)
 
   wk^Kr : (σ : Ty) → Thinnable (Kr σ)
   wk^Kr σ inc (t , inj₁ ne)  = wk^⊢ σ inc t , inj₁ (wk^whne σ inc ne)
@@ -1507,10 +1502,16 @@ characterises the elements of the (respective) environment types
 which are to be considered synchronised, and the second one (\AB{𝓒^R})
 describes what synchronisation means in the model. We can lift
 \AB{𝓥^R} in a pointwise manner to talk about entire environments
-using the \AF{`∀[\_,\_]} predicate transformer omitted here.
+using the \AF{`∀[\_,\_]} predicate selectformer omitted here.
 
 \AgdaHide{
 \begin{code}
+record RModel {ℓ^E ℓ^M : Level} (𝓥 : Model ℓ^E) (𝓒 : Model ℓ^M) (ℓ^R : Level) : Set (ℓ^E ⊔ ℓ^M ⊔ L.suc ℓ^R) where
+  constructor mkRModel
+  field rmodel : {σ : Ty} → [ 𝓥 σ ⟶ 𝓒 σ ⟶ const (Set ℓ^R) ]
+open RModel public
+
+
 record `∀[_] {ℓ^A ℓ^B ℓ^R : Level} {𝓥^A : Model ℓ^A} {𝓥^B : Model ℓ^B}
              (𝓥^R : RModel 𝓥^A 𝓥^B ℓ^R)
              {Γ Δ : Cx} (ρ^A : (Γ -Env) 𝓥^A Δ) (ρ^B : (Γ -Env) 𝓥^B Δ) : Set ℓ^R where
@@ -1654,7 +1655,7 @@ we meant to prove is derived directly from the fundamental lemma of
 
 \begin{code}
 RenamingIsASubstitution : {Γ Δ : Cx} {σ : Ty} (t : Tm σ Γ) (ρ : Γ ⊆ Δ) →
-  wk^⊢ σ ρ t ≡ subst t (trans ρ (pack `var))
+  wk^⊢ σ ρ t ≡ subst t (select ρ (pack `var))
 RenamingIsASubstitution t ρ = lemma t (pack^R (λ _ → PEq.refl))
   where open Synchronised SynchronisableRenamingSubstitution
 \end{code}
@@ -1682,102 +1683,102 @@ outputs.
 \begin{code}
 open βιξη
 
-EQREL : (σ : Ty) → [ Kr σ ⟶ Kr σ ⟶ const Set ]
-EQREL `1     T U = ⊤
-EQREL `2     T U = T ≡ U
-EQREL (σ `→ τ)  T U =  {Δ : Cx} (inc : _ ⊆ Δ) {V W : Kr σ Δ} (eqVW : EQREL σ V W) →
-                        EQREL τ (T inc V) (U inc W)
+PER : (σ : Ty) → [ Kr σ ⟶ Kr σ ⟶ const Set ]
+PER `1     T U = ⊤
+PER `2     T U = T ≡ U
+PER (σ `→ τ)  T U =  {Δ : Cx} (inc : _ ⊆ Δ) {V W : Kr σ Δ} (eqVW : PER σ V W) →
+                        PER τ (T inc V) (U inc W)
 
-EQREL′ : RModel Kr Kr L.zero
-EQREL′ = mkRModel (λ {σ} → EQREL σ)
+PER′ : RModel Kr Kr L.zero
+PER′ = mkRModel (λ {σ} → PER σ)
 
 PropEq : {C : Ty → Cx → Set} → RModel C C L.zero
 PropEq = mkRModel _≡_
 \end{code}
 
-It is indeed a PER as witnessed by the (omitted here) \AF{symEQREL} and
-\AF{transEQREL} functions and it respects weakening as \AF{wk^{EQREL}} shows.
+It is indeed a PER as witnessed by the (omitted here) \AF{sym^PER} and
+\AF{trans^PER} functions and it respects weakening as \AF{wk^{PER}} shows.
 
 \begin{code}
-symEQREL : {Γ : Cx} (σ : Ty) {S T : Kr σ Γ} → EQREL σ S T → EQREL σ T S
+sym^PER : {Γ : Cx} (σ : Ty) {S T : Kr σ Γ} → PER σ S T → PER σ T S
 \end{code}
 \AgdaHide{
 \begin{code}
-symEQREL `1     eq = ⟨⟩
-symEQREL `2     eq = PEq.sym eq
-symEQREL (σ `→ τ)  eq = λ inc eqVW → symEQREL τ (eq inc (symEQREL σ eqVW))
+sym^PER `1     eq = ⟨⟩
+sym^PER `2     eq = PEq.sym eq
+sym^PER (σ `→ τ)  eq = λ inc eqVW → sym^PER τ (eq inc (sym^PER σ eqVW))
 \end{code}}\vspace{ -2.5em}%ugly but it works!
 \begin{code}
-transEQREL : {Γ : Cx} (σ : Ty) {S T U : Kr σ Γ} → EQREL σ S T → EQREL σ T U → EQREL σ S U
+trans^PER : {Γ : Cx} (σ : Ty) {S T U : Kr σ Γ} → PER σ S T → PER σ T U → PER σ S U
 \end{code}
 \AgdaHide{
 \begin{code}
-  -- We are in PER so reflEQREL is not provable
-  -- but as soon as EQREL σ V W then EQREL σ V V
-reflEQREL : {Γ : Cx} (σ : Ty) {S T : Kr σ Γ} → EQREL σ S T → EQREL σ S S
+  -- We are in PER so refl^PER is not provable
+  -- but as soon as PER σ V W then PER σ V V
+refl^PER : {Γ : Cx} (σ : Ty) {S T : Kr σ Γ} → PER σ S T → PER σ S S
 
-transEQREL `1     eq₁ eq₂ = ⟨⟩
-transEQREL `2     eq₁ eq₂ = PEq.trans eq₁ eq₂
-transEQREL (σ `→ τ)  eq₁ eq₂ =
-  λ inc eqVW → transEQREL τ (eq₁ inc (reflEQREL σ eqVW)) (eq₂ inc eqVW)
+trans^PER `1     eq₁ eq₂ = ⟨⟩
+trans^PER `2     eq₁ eq₂ = PEq.trans eq₁ eq₂
+trans^PER (σ `→ τ)  eq₁ eq₂ =
+  λ inc eqVW → trans^PER τ (eq₁ inc (refl^PER σ eqVW)) (eq₂ inc eqVW)
 
-reflEQREL σ eq = transEQREL σ eq (symEQREL σ eq)
+refl^PER σ eq = trans^PER σ eq (sym^PER σ eq)
 \end{code}}\vspace{ -2.5em}%ugly but it works!
 \begin{code}
-wk^EQREL :  {Δ Γ : Cx} (σ : Ty) (inc : Γ ⊆ Δ) {T U : Kr σ Γ} → EQREL σ T U → EQREL σ (wk^Kr σ inc T) (wk^Kr σ inc U)
+wk^PER :  {Δ Γ : Cx} (σ : Ty) (inc : Γ ⊆ Δ) {T U : Kr σ Γ} → PER σ T U → PER σ (wk^Kr σ inc T) (wk^Kr σ inc U)
 \end{code}
 \AgdaHide{
 \begin{code}
-wk^EQREL `1     inc eq = ⟨⟩
-wk^EQREL `2     inc eq = PEq.cong (wk^nf `2 inc) eq
-wk^EQREL (σ `→ τ)  inc eq = λ inc′ eqVW → eq (trans inc inc′) eqVW
+wk^PER `1     inc eq = ⟨⟩
+wk^PER `2     inc eq = PEq.cong (wk^nf `2 inc) eq
+wk^PER (σ `→ τ)  inc eq = λ inc′ eqVW → eq (select inc inc′) eqVW
 \end{code}}
 
 The interplay of reflect and reify with this notion of equality has
 to be described in one go because of their being mutually defined.
-It confirms our claim that \AF{EQREL} is indeed an appropriate notion
-of semantic equality: values related by \AF{EQREL} are reified to
+It confirms our claim that \AF{PER} is indeed an appropriate notion
+of semantic equality: values related by \AF{PER} are reified to
 propositionally equal normal forms whilst propositionally equal neutral
-terms are reflected to values related by \AF{EQREL}.
+terms are reflected to values related by \AF{PER}.
 
 \begin{code}
-reify^EQREL    :  {Γ : Cx} (σ : Ty) {T U : Kr σ Γ} → EQREL σ T U → reify σ T ≡ reify σ U
-reflect^EQREL  :  {Γ : Cx} (σ : Ty) {t u : Ne σ Γ} → t ≡ u → EQREL σ (reflect σ t) (reflect σ u)
+reify^PER    :  {Γ : Cx} (σ : Ty) {T U : Kr σ Γ} → PER σ T U → reify σ T ≡ reify σ U
+reflect^PER  :  {Γ : Cx} (σ : Ty) {t u : Ne σ Γ} → t ≡ u → PER σ (reflect σ t) (reflect σ u)
 \end{code}
 \AgdaHide{
 \begin{code}
-reify^EQREL `1     EQTU = PEq.refl
-reify^EQREL `2     EQTU = EQTU
-reify^EQREL (σ `→ τ)  EQTU = PEq.cong `λ (reify^EQREL τ (EQTU (step refl) (reflect^EQREL σ PEq.refl)))
+reify^PER `1     EQTU = PEq.refl
+reify^PER `2     EQTU = EQTU
+reify^PER (σ `→ τ)  EQTU = PEq.cong `λ (reify^PER τ (EQTU (step refl) (reflect^PER σ PEq.refl)))
 
-reflect^EQREL `1     eq = ⟨⟩
-reflect^EQREL `2     eq = PEq.cong (`ne _) eq
-reflect^EQREL (σ `→ τ)  eq = λ inc rel → reflect^EQREL τ (PEq.cong₂ _`$_ (PEq.cong (wk^ne (σ `→ τ) inc) eq) (reify^EQREL σ rel))
+reflect^PER `1     eq = ⟨⟩
+reflect^PER `2     eq = PEq.cong (`ne _) eq
+reflect^PER (σ `→ τ)  eq = λ inc rel → reflect^PER τ (PEq.cong₂ _`$_ (PEq.cong (wk^ne (σ `→ τ) inc) eq) (reify^PER σ rel))
 
 ifRelNorm :
       let open Semantics Normalise in
       {σ : Ty} {Γ : Cx} {b^A b^B : Kr `2 Γ} {l^A l^B r^A r^B : Kr σ Γ} →
-      EQREL `2 b^A b^B → EQREL σ l^A l^B → EQREL σ r^A r^B →
-      EQREL σ {Γ} (⟦if⟧ {σ} b^A l^A r^A) (⟦if⟧ {σ} b^B l^B r^B)
+      PER `2 b^A b^B → PER σ l^A l^B → PER σ r^A r^B →
+      PER σ {Γ} (⟦if⟧ {σ} b^A l^A r^A) (⟦if⟧ {σ} b^B l^B r^B)
 ifRelNorm {b^A = `tt}             PEq.refl l^R r^R = l^R
 ifRelNorm {b^A = `ff}             PEq.refl l^R r^R = r^R
 ifRelNorm {σ} {b^A = `ne _ ne} PEq.refl l^R r^R =
-  reflect^EQREL σ (PEq.cong₂ (`if ne) (reify^EQREL σ l^R) (reify^EQREL σ r^R))
+  reflect^PER σ (PEq.cong₂ (`if ne) (reify^PER σ l^R) (reify^PER σ r^R))
 \end{code}}
 
 And that's enough to prove that evaluating a term in two
-environments related in a pointwise manner by \AF{EQREL}
-yields two semantic objects themselves related by \AF{EQREL}.
+environments related in a pointwise manner by \AF{PER}
+yields two semantic objects themselves related by \AF{PER}.
 
 %<*synchroexample>
 \begin{code}
-SynchronisableNormalise :  Synchronisable Normalise Normalise EQREL′ EQREL′
+SynchronisableNormalise :  Synchronisable Normalise Normalise PER′ PER′
 \end{code}
 %</synchroexample>
 \AgdaHide{
 \begin{code}
 SynchronisableNormalise =
-  record  { 𝓥^R‿wk  = λ inc ρ^R → pack^R (wk^EQREL _ inc ∘ lookup^R ρ^R)
+  record  { 𝓥^R‿wk  = λ inc ρ^R → pack^R (wk^PER _ inc ∘ lookup^R ρ^R)
           ; R⟦var⟧   = λ v ρ^R → lookup^R ρ^R v
           ; R⟦$⟧     = λ f → f refl
           ; R⟦λ⟧     = λ r → r
@@ -1794,7 +1795,7 @@ case:
 
 %<*synchroexample2>
 \begin{code}
-refl^Kr :  {Γ Δ : Cx} {σ : Ty} (t : Tm σ Γ) {ρ^A ρ^B : (Γ -Env) Kr Δ} (ρ^R : `∀[ EQREL′ ] ρ^A ρ^B) → let open Eval Normalise in EQREL σ (sem ρ^A t) (sem ρ^B t)
+refl^Kr :  {Γ Δ : Cx} {σ : Ty} (t : Tm σ Γ) {ρ^A ρ^B : (Γ -Env) Kr Δ} (ρ^R : `∀[ PER′ ] ρ^A ρ^B) → let open Eval Normalise in PER σ (sem ρ^A t) (sem ρ^B t)
 refl^Kr t ρ^R = lemma t ρ^R where open Synchronised SynchronisableNormalise
 \end{code}
 %</synchroexample2>
@@ -2060,7 +2061,7 @@ why \ARF{embed^{BC}} is so simple).
 \begin{code}
 RenamingFusable :
   SyntacticFusable  syntacticRenaming syntacticRenaming syntacticRenaming
-                    PropEq (λ ρ^A ρ^B ρ^C → ∀ σ pr → lookup (trans ρ^A ρ^B) pr ≡ lookup ρ^C pr)
+                    PropEq (λ ρ^A ρ^B ρ^C → ∀ σ pr → lookup (select ρ^A ρ^B) pr ≡ lookup ρ^C pr)
 RenamingFusable = record
   { 𝓥^R‿∙     = λ ρ^R eq → [ eq ,, ρ^R ]
   ; 𝓥^R‿wk    = λ inc ρ^R σ pr → PEq.cong (lookup inc) (ρ^R σ pr)
@@ -2138,16 +2139,16 @@ ifRenNorm :
       {Γ Δ Θ : Cx} {σ : Ty} (b : Tm `2 Γ) (l r : Tm σ Γ)
       {ρ^A : Γ ⊆ Δ} {ρ^B : (Δ -Env) Kr Θ}
       {ρ^C : (Γ -Env) Kr Θ} →
-      (ρ^R : (σ : Ty) (pr : Var σ Γ) → EQREL σ (lookup ρ^B (lookup ρ^A pr)) (lookup ρ^C pr)) →
+      (ρ^R : (σ : Ty) (pr : Var σ Γ) → PER σ (lookup ρ^B (lookup ρ^A pr)) (lookup ρ^C pr)) →
       Eval.sem Normalise ρ^B (wk^⊢ `2 ρ^A b) ≡ Eval.sem Normalise ρ^C b →
-      EQREL σ (Eval.sem Normalise ρ^B (wk^⊢ σ ρ^A l)) (Eval.sem Normalise ρ^C l) →
-      EQREL σ (Eval.sem Normalise ρ^B (wk^⊢ σ ρ^A r)) (Eval.sem Normalise ρ^C r) →
-      EQREL σ (Eval.sem Normalise ρ^B (wk^⊢ σ ρ^A (`if b l r))) (Eval.sem Normalise ρ^C (`if b l r))
+      PER σ (Eval.sem Normalise ρ^B (wk^⊢ σ ρ^A l)) (Eval.sem Normalise ρ^C l) →
+      PER σ (Eval.sem Normalise ρ^B (wk^⊢ σ ρ^A r)) (Eval.sem Normalise ρ^C r) →
+      PER σ (Eval.sem Normalise ρ^B (wk^⊢ σ ρ^A (`if b l r))) (Eval.sem Normalise ρ^C (`if b l r))
 ifRenNorm b l r {ρ^A} {ρ^B} {ρ^C} ρ^R eqb eql eqr
   with Eval.sem Normalise  ρ^B (wk^⊢ _ ρ^A b)
      | Eval.sem Normalise ρ^C b
 ifRenNorm b l r ρ^R PEq.refl eql eqr | `ne _ t | `ne _ .t =
-  reflect^EQREL _ (PEq.cong₂ (uncurry `if) (PEq.cong₂ _,_ PEq.refl (reify^EQREL _ eql)) (reify^EQREL _ eqr))
+  reflect^PER _ (PEq.cong₂ (uncurry `if) (PEq.cong₂ _,_ PEq.refl (reify^PER _ eql)) (reify^PER _ eqr))
 ifRenNorm b l r ρ^R () eql eqr | `ne _ t | `tt
 ifRenNorm b l r ρ^R () eql eqr | `ne _ t | `ff
 ifRenNorm b l r ρ^R () eql eqr | `tt | `ne _ t
@@ -2172,8 +2173,8 @@ by \AR{Normalise^{βιξη}} is equivalent to Normalisation by Evaluation
 where the environment has been tweaked.
 
 \begin{code}
-RenamingNormaliseFusable : Fusable Renaming Normalise Normalise EQREL′
-  (λ ρ^A ρ^B ρ^C → ∀ σ pr → EQREL σ (lookup ρ^B (lookup ρ^A pr)) (lookup ρ^C pr)) EQREL′
+RenamingNormaliseFusable : Fusable Renaming Normalise Normalise PER′
+  (λ ρ^A ρ^B ρ^C → ∀ σ pr → PER σ (lookup ρ^B (lookup ρ^A pr)) (lookup ρ^C pr)) PER′
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -2181,7 +2182,7 @@ RenamingNormaliseFusable =
   record
     { reify^A   = id
     ; 𝓥^R‿∙  = λ ρ^R u^R → [ u^R ,, ρ^R ]
-    ; 𝓥^R‿wk = λ inc ρ^R → λ σ pr → wk^EQREL σ inc (ρ^R σ pr)
+    ; 𝓥^R‿wk = λ inc ρ^R → λ σ pr → wk^PER σ inc (ρ^R σ pr)
     ; R⟦var⟧   = λ v ρ^R → ρ^R _ v
     ; R⟦$⟧     = λ _ _ _ r → r refl
     ; R⟦λ⟧     = λ _ _ r → r
@@ -2196,23 +2197,23 @@ ifSubstNorm :
      {Γ Δ Θ : Cx} {σ : Ty} (b : Tm `2 Γ) (l r : Tm σ Γ)
       {ρ^A : (Γ -Env) Tm Δ} {ρ^B : (Δ -Env) Kr Θ}
       {ρ^C : (Γ -Env) Kr Θ} →
-      (`∀[ EQREL′ ] ρ^B ρ^B) ×
+      (`∀[ PER′ ] ρ^B ρ^B) ×
       ((σ₁ : Ty) (pr : Var σ₁ Γ) {Θ₁ : Cx} (inc : Θ ⊆ Θ₁) →
-       EQREL σ₁
+       PER σ₁
        (Eval.sem Normalise (pack (λ {σ} → wk^Kr σ inc ∘ lookup ρ^B)) (lookup ρ^A pr))
        (wk^Kr σ₁ inc (lookup ρ^C pr)))
       ×
       ((σ₁ : Ty) (pr : Var σ₁ Γ) →
-       EQREL σ₁ (Eval.sem Normalise ρ^B (lookup ρ^A  pr)) (lookup ρ^C pr)) →
+       PER σ₁ (Eval.sem Normalise ρ^B (lookup ρ^A  pr)) (lookup ρ^C pr)) →
       Eval.sem Normalise ρ^B (subst b ρ^A) ≡ Eval.sem Normalise ρ^C b →
-      EQREL σ (Eval.sem Normalise ρ^B (subst l ρ^A)) (Eval.sem Normalise ρ^C l) →
-      EQREL σ (Eval.sem Normalise ρ^B (subst r ρ^A)) (Eval.sem Normalise ρ^C r) →
-      EQREL σ (Eval.sem Normalise ρ^B (subst (`if b l r) ρ^A)) (Eval.sem Normalise ρ^C (`if b l r))
+      PER σ (Eval.sem Normalise ρ^B (subst l ρ^A)) (Eval.sem Normalise ρ^C l) →
+      PER σ (Eval.sem Normalise ρ^B (subst r ρ^A)) (Eval.sem Normalise ρ^C r) →
+      PER σ (Eval.sem Normalise ρ^B (subst (`if b l r) ρ^A)) (Eval.sem Normalise ρ^C (`if b l r))
 ifSubstNorm b l r {ρ^A} {ρ^B} {ρ^C} ρ^R eqb eql eqr
   with Eval.sem Normalise ρ^B (subst b ρ^A)
      | Eval.sem Normalise ρ^C b
 ifSubstNorm b l r ρ^R PEq.refl eql eqr | `ne _ t | `ne _ .t =
-  reflect^EQREL _ (PEq.cong₂ (uncurry `if) (PEq.cong₂ _,_ PEq.refl (reify^EQREL _ eql)) (reify^EQREL _ eqr))
+  reflect^PER _ (PEq.cong₂ (uncurry `if) (PEq.cong₂ _,_ PEq.refl (reify^PER _ eql)) (reify^PER _ eqr))
 ifSubstNorm b l r ρ^R () eql eqr | `ne _ t | `tt
 ifSubstNorm b l r ρ^R () eql eqr | `ne _ t | `ff
 ifSubstNorm b l r ρ^R () eql eqr | `tt | `ne _ t
@@ -2223,16 +2224,16 @@ ifSubstNorm b l r ρ^R () eql eqr | `ff | `tt
 ifSubstNorm b l r ρ^R PEq.refl eql eqr | `ff | `ff = eqr
 
 wk-refl : {Γ : Cx} (σ : Ty) {T U : Kr σ Γ} →
-          EQREL σ T U → EQREL σ (wk^Kr σ refl T) U
+          PER σ T U → PER σ (wk^Kr σ refl T) U
 wk-refl `1     eq = ⟨⟩
 wk-refl `2     eq = PEq.trans (wk^nf-refl _) eq
 wk-refl (σ `→ τ)  eq = eq
 
 wk^2 : {Θ Δ Γ : Cx} (σ : Ty) (inc₁ : Γ ⊆ Δ) (inc₂ : Δ ⊆ Θ) {T U : Kr σ Γ} →
-       EQREL σ T U → EQREL σ (wk^Kr σ inc₂ (wk^Kr σ inc₁ T)) (wk^Kr σ (trans inc₁ inc₂) U)
+       PER σ T U → PER σ (wk^Kr σ inc₂ (wk^Kr σ inc₁ T)) (wk^Kr σ (select inc₁ inc₂) U)
 wk^2 `1     inc₁ inc₂ eq = ⟨⟩
-wk^2 `2     inc₁ inc₂ eq = PEq.trans (wk^nf-trans inc₁ inc₂ _) (PEq.cong (wk^nf `2 (trans inc₁ inc₂)) eq)
-wk^2 (σ `→ τ)  inc₁ inc₂ eq = λ inc₃ → eq (trans inc₁ (trans inc₂ inc₃))
+wk^2 `2     inc₁ inc₂ eq = PEq.trans (wk^nf-trans inc₁ inc₂ _) (PEq.cong (wk^nf `2 (select inc₁ inc₂)) eq)
+wk^2 (σ `→ τ)  inc₁ inc₂ eq = λ inc₃ → eq (select inc₁ (select inc₂ inc₃))
 \end{code}}
 
 Then, we use the framework to prove that to \AR{Normalise^{βιξη}} by
@@ -2246,12 +2247,12 @@ $λ$-calculus with explicit substitution.
 
 \begin{code}
 SubstitutionNormaliseFusable : Fusable  Substitution Normalise Normalise
-  EQREL′
-  (λ ρ^A ρ^B ρ^C → `∀[ EQREL′ ] ρ^B ρ^B
+  PER′
+  (λ ρ^A ρ^B ρ^C → `∀[ PER′ ] ρ^B ρ^B
                  × ((σ : Ty) (pr : Var σ _) {Θ : Cx} (inc : _ ⊆ Θ) →
-                      EQREL σ (Eval.sem Normalise (pack (λ {σ} pr → wk^Kr σ inc (lookup ρ^B pr))) (lookup ρ^A pr)) (wk^Kr σ inc (lookup ρ^C pr)))
-                 × ((σ : Ty) (pr : Var σ _) → EQREL σ (Eval.sem Normalise ρ^B (lookup ρ^A pr)) (lookup ρ^C pr)))
-  EQREL′
+                      PER σ (Eval.sem Normalise (pack (λ {σ} pr → wk^Kr σ inc (lookup ρ^B pr))) (lookup ρ^A pr)) (wk^Kr σ inc (lookup ρ^C pr)))
+                 × ((σ : Ty) (pr : Var σ _) → PER σ (Eval.sem Normalise ρ^B (lookup ρ^A pr)) (lookup ρ^C pr)))
+  PER′
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -2261,19 +2262,19 @@ SubstitutionNormaliseFusable =
   record
     { reify^A   = id
     ; 𝓥^R‿∙  = λ {_} {_} {_} {_} {ρ^A} {ρ^B} {ρ^C} ρ^R u^R →
-                     (proj₁ ρ^R ∙^R reflEQREL _ u^R)
-                   , [ (λ {Θ} inc → wk^EQREL _ inc u^R)
+                     (proj₁ ρ^R ∙^R refl^PER _ u^R)
+                   , [ (λ {Θ} inc → wk^PER _ inc u^R)
                      ,, (λ σ pr {Θ} inc →
-                       transEQREL σ (RenNorm.lemma (lookup ρ^A pr)
-                                                    (λ σ pr → wk^EQREL σ inc (lookup^R (proj₁ ρ^R) pr)))
+                       trans^PER σ (RenNorm.lemma (lookup ρ^A pr)
+                                                    (λ σ pr → wk^PER σ inc (lookup^R (proj₁ ρ^R) pr)))
                                     ((proj₁ ∘ proj₂) ρ^R σ pr inc)) ]
-                     , [ u^R ,, (λ σ pr → transEQREL σ (RenNorm.lemma (lookup ρ^A pr) (λ _ → lookup^R (proj₁ ρ^R)))
+                     , [ u^R ,, (λ σ pr → trans^PER σ (RenNorm.lemma (lookup ρ^A pr) (λ _ → lookup^R (proj₁ ρ^R)))
                                           ((proj₂ ∘ proj₂) ρ^R σ pr)) ]
-    ; 𝓥^R‿wk = λ inc {ρ^A} ρ^R → pack^R (λ pr → wk^EQREL _ inc (lookup^R (proj₁ ρ^R) pr))
+    ; 𝓥^R‿wk = λ inc {ρ^A} ρ^R → pack^R (λ pr → wk^PER _ inc (lookup^R (proj₁ ρ^R) pr))
                           , (λ σ pr inc′ →
-       transEQREL σ (EqNorm.lemma (lookup ρ^A pr) (pack^R (λ {τ} v → transEQREL τ (wk^2 τ inc inc′ (lookup^R (proj₁ ρ^R) v)) (wk^EQREL τ (trans inc inc′) (lookup^R (proj₁ ρ^R) v)))))
-       (transEQREL σ ((proj₁ (proj₂ ρ^R)) σ pr (trans inc inc′))
-       (symEQREL σ (wk^2 σ inc inc′ (reflEQREL σ (symEQREL σ (proj₂ (proj₂ ρ^R) σ pr)))))))
+       trans^PER σ (EqNorm.lemma (lookup ρ^A pr) (pack^R (λ {τ} v → trans^PER τ (wk^2 τ inc inc′ (lookup^R (proj₁ ρ^R) v)) (wk^PER τ (select inc inc′) (lookup^R (proj₁ ρ^R) v)))))
+       (trans^PER σ ((proj₁ (proj₂ ρ^R)) σ pr (select inc inc′))
+       (sym^PER σ (wk^2 σ inc inc′ (refl^PER σ (sym^PER σ (proj₂ (proj₂ ρ^R) σ pr)))))))
                           , (λ σ pr → (proj₁ ∘ proj₂) ρ^R σ pr inc)
     ; R⟦var⟧   = λ v ρ^R → (proj₂ ∘ proj₂) ρ^R _ v
     ; R⟦$⟧     = λ _ _ _ r → r refl
@@ -2300,14 +2301,14 @@ name supply at the end of the process, are equal.
 
 \begin{code}
 RenamingPrettyPrintingFusable : Fusable Renaming Printing Printing PropEq
-  (λ ρ^A ρ^B → `∀[ PropEq ] (trans ρ^A ρ^B))
+  (λ ρ^A ρ^B → `∀[ PropEq ] (select ρ^A ρ^B))
   (mkRModel (λ p q → ∀ {names₁ names₂} → names₁ ≡ names₂ → runP p names₁ ≡ runP q names₂))
 \end{code}
 \AgdaHide{
 \begin{code}
 RenamingPrettyPrintingFusable = record
   { reify^A   = id
-  ; 𝓥^R‿∙   = λ {Γ} {Δ} {Θ} {σ} {ρ^A} {ρ^B} {ρ^C} {u^B} {u^C} ρ^R eq → pack^R ((λ {σ} v → [_,,_] {P = λ σ v → lookup (trans (step ρ^A `∙ ze) (ρ^B `∙ u^B)) v ≡ lookup (ρ^C `∙ u^C) v} eq (λ σ v → lookup^R ρ^R v) σ v))
+  ; 𝓥^R‿∙   = λ {Γ} {Δ} {Θ} {σ} {ρ^A} {ρ^B} {ρ^C} {u^B} {u^C} ρ^R eq → pack^R ((λ {σ} v → [_,,_] {P = λ σ v → lookup (select (step ρ^A `∙ ze) (ρ^B `∙ u^B)) v ≡ lookup (ρ^C `∙ u^C) v} eq (λ σ v → lookup^R ρ^R v) σ v))
   ; 𝓥^R‿wk  = λ _ ρ^R → pack^R (PEq.cong (mkN ∘ getN) ∘ lookup^R ρ^R)
   ; R⟦var⟧   = λ v ρ^R → PEq.cong₂ (λ n ns → getN n , ns) (lookup^R ρ^R v)
   ; R⟦λ⟧     = λ t ρ^R r → λ { {n₁ ∷ n₁s} {n₂ ∷ n₂s} eq →
@@ -2438,7 +2439,7 @@ This yields, to the best of our knowledge, the
 first tagless and typeful implementation of a Kripke-style Normalisation by Evaluation in Haskell. The
 subtleties of working with dependent types in Haskell~\cite{lindley2014hasochism} are
 outside the scope of this paper but we do provide a (commented) Haskell module containing
-all the translated definitions. It should be noted that Danvy, Keller and Puech have achieved~\todo{\cite{atkey2009syntax}}
+all the selectlated definitions. It should be noted that Danvy, Keller and Puech have achieved~\todo{\cite{atkey2009syntax}}
 a similar goal in OCaml~\cite{danvytagless} but their formalisation uses parametric higher
 order abstract syntax~\cite{chlipala2008parametric} which frees them from having to deal
 with variable binding, contexts and use models à la Kripke. However we consider these to be

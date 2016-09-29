@@ -120,7 +120,7 @@ given by a Kit.
 
 \paragraph{Outline} We shall start by defining the simple calculus we will use
 as a running example. We will then introduce a notion of environments as well
-as one well known instance: the preorder of renamings. This will lead
+as one well known instance: the category of renamings. This will lead
 us to defining a generic notion of type and scope-preserving Semantics
 together with a generic evaluation function. We will then showcase the
 ground covered by these Semantics: from the syntactic ones corresponding
@@ -307,66 +307,81 @@ an interpretation \AB{𝓔} \AB{Δ} {τ} for each one of its free variables
 \AB{𝓔}-(evaluation) environment. We leave out \AB{𝓔} when it can easily
 be inferred from the context.
 
-The content of environments may vary wildly between different semantics:
-when defining renaming, the environments will carry variables whilst the
-ones used for normalisation by evaluation contain elements of the model.
-But their structure stays the same which prompts us to define the notion
-generically. Formally, this translates to \AB{𝓔}-environments being the
-pointwise lifting of the relation \AB{𝓔} between contexts and types to a
-relation between two contexts. Rather than using a datatype to represent
-such a lifting, we choose to use a function space. This decision is based
-on Jeffrey's observation~(\citeyear{jeffrey2011assoc}) that one can obtain
-associativity of append for free by using difference lists. In our case the
-interplay between various combinators (e.g. \AF{refl} and \AF{trans})
-defined later on is vastly simplified by this rather simple decision.
 
 \AgdaHide{
 \begin{code}
 infix 5 _-Env
 \end{code}}\todo{Fix mangled Levels}
-%<*environment>
+
+The content of environments may vary wildly between different semantics:
+when defining renaming, the environments will carry variables whilst the
+ones used for normalisation by evaluation contain elements of the model.
+But their structure stays the same which prompts us to define the notion
+generically.
+
 \begin{code}
 Model : (ℓ^A : Level) → Set (L.suc ℓ^A)
 Model ℓ^A = Ty → Cx → Set ℓ^A
+\end{code}
 
+Type preserving mapping of variables to models in a possibly different
+context.
+
+Formally, this translates to \AB{𝓔}-environments being the
+pointwise lifting of the relation \AB{𝓔} between contexts and types to a
+relation between two contexts. Rather than using a datatype to represent
+such a lifting, we choose to use a function space. This decision is based
+on Jeffrey's observation~(\citeyear{jeffrey2011assoc}) that one can obtain
+associativity of append for free by using difference lists. In our case the
+interplay between various combinators (e.g. \AF{refl} and \AF{select})
+defined later on is vastly simplified by this rather simple decision.
+
+%<*environment>
+\begin{code}
 record _-Env {ℓ^A : Level} (Γ : Cx) (𝓥 : Model ℓ^A) (Δ : Cx) : Set ℓ^A where
   constructor pack
   field lookup : {σ : Ty} → Var σ Γ → 𝓥 σ Δ
 open _-Env public
+\end{code}
+%</environment>
 
+Just as an environment interprets variables in a model, a computation
+gives a meaning to terms into a model.
+
+\begin{code}
 _-Comp : {ℓ^A : Level} → Cx → (𝓒 : Model ℓ^A) → Cx → Set ℓ^A
 (Γ -Comp) 𝓒 Δ = {σ : Ty} → Tm σ Γ → 𝓒 σ Δ
 \end{code}
 
-\ExecuteMetaData[motivation.tex]{sem}
-
-\todo{Insert here type of lemma we want to prove}
-\todo{Expand the definition of box}
-%</environment>
+An appropriate notion of semantics for the calculus is one that
+will map environments to computations. In other words, a set of
+constraints on $𝓥$ and $𝓒$ guaranteeing the existence of a function
+of type: \ExecuteMetaData[motivation.tex]{sem}
 
 \AgdaHide{
 \begin{code}
 infixl 10 _`∙_
 \end{code}}
 
-For a fixed context \AB{Δ} and relation \AB{𝓥}, these environments can
-be built step by step by noticing that the environment corresponding to
-an empty context is trivial and that one may extend an already existing
-environment provided a proof of the right type. In concrete cases, there
-will be no sensible way to infer \AB{𝓥} when using the second combinator
-hence our decision to make it possible to tell Agda which relation we are
-working with.\todo{explain copatterns}
+These environments naturally behave like the contexts they are indexed by:
+there is a trivial environment for the empty context and one can easily
+extend an existing one by providing an appropriate value. The packaging of
+the function representing to the environment in a record allows for two
+things: it helps the typechecker by stating explicitly which \AF{Model}
+the values correspond to and it empowers us to define environments by
+copattern-matching~\cite{abel2013copatterns} thus defining environments
+by their use cases.
 
 \begin{code}
-`ε : {ℓ^A : Level} {Δ : Cx} {𝓥 : Model ℓ^A} → (ε -Env) 𝓥 Δ
+`ε : {ℓ^A : Level} {𝓥 : Model ℓ^A} → [ (ε -Env) 𝓥 ]
 _`∙_ :  {ℓ^A : Level} {Γ : Cx} {𝓥 : Model ℓ^A} {σ : Ty} → [ (Γ -Env) 𝓥 ⟶ 𝓥 σ ⟶ (Γ ∙ σ -Env) 𝓥 ]
 
-lookup `ε ()
-lookup (ρ `∙ s) ze    = s
-lookup (ρ `∙ s) (su n)  = lookup ρ n
+lookup `ε        ()
+lookup (ρ `∙ s)  ze      = s
+lookup (ρ `∙ s)  (su n)  = lookup ρ n
 \end{code}
 
-\paragraph{The Preorder of Renamings}\label{preorder}
+\paragraph{The Category of Renamings}\label{category}
 A key instance of environments playing a predominant role in this paper
 is the notion of renaming. The reader may be accustomed to the more
 restrictive notion of context inclusions as described by Order Preserving
@@ -412,9 +427,9 @@ lookup (wk[ wk ] inc ρ) = wk _ inc ∘ lookup ρ
 \end{code}
 
 These simple observations allow us to prove that context inclusions
-form a preorder which, in turn, lets us provide the user with the
+form a category which, in turn, lets us provide the user with the
 constructors Altenkirch, Hofmann and Streicher's ``Category of
-Weakening"~(\cite{altenkirch1995categorical}) is based on.
+Weakening"~(\citeyear{altenkirch1995categorical}) is based on.
 
 \todo{Rename trans to select?}
 \todo{Expand type step and pop!}
@@ -468,12 +483,7 @@ to go beyond these and also model renaming or printing with names.
 The record packs the properties of these relations necessary to
 define the evaluation function.
 
-\todo{INLINE Applicative}
-
 \begin{code}
-Applicative : {ℓ^A : Level} → Model ℓ^A → Set ℓ^A
-Applicative 𝓒 = {σ τ : Ty} → [ 𝓒 (σ `→ τ) ⟶ 𝓒 σ ⟶ 𝓒 τ ]
-
 record Semantics {ℓ^E ℓ^M : Level} (𝓥 : Model ℓ^E) (𝓒 : Model ℓ^M) : Set (ℓ^E ⊔ ℓ^M) where
 \end{code}
 \AgdaHide{
@@ -536,23 +546,24 @@ with the one corresponding to model values (\AB{𝓒}).
   field
 \end{code}}
 \begin{code}
-    _⟦$⟧_  :  {σ τ : Ty} →  [ 𝓒 (σ `→ τ) ⟶ 𝓒 σ ⟶   𝓒 τ   ]
-    ⟦⟨⟩⟧   :                [                         𝓒 `1  ]
-    ⟦tt⟧   :                [                         𝓒 `2  ]
-    ⟦ff⟧   :                [                         𝓒 `2  ]
-    ⟦if⟧   :  {σ : Ty} →    [ 𝓒 `2 ⟶ 𝓒 σ ⟶ 𝓒 σ ⟶  𝓒 σ   ]
+    _⟦$⟧_  : {σ τ : Ty} →  [ 𝓒 (σ `→ τ) ⟶ 𝓒 σ ⟶  𝓒 τ   ]
+    ⟦⟨⟩⟧   :               [                     𝓒 `1  ]
+    ⟦tt⟧   :               [                     𝓒 `2  ]
+    ⟦ff⟧   :               [                     𝓒 `2  ]
+    ⟦if⟧   : {σ : Ty} →    [ 𝓒 `2 ⟶ 𝓒 σ ⟶ 𝓒 σ ⟶  𝓒 σ   ]
 \end{code}
 
 
-\todo{relationship with logical relations}
-The fundamental lemma of semantics is then proven in a module indexed by
-a \AF{Semantics}, which would correspond to using a Section in Coq. It is
+The type we chose for the \ARF{⟦λ⟧} field makes the \AF{Semantics} notion
+powerful enough that even logical predicates are instances of it. And we
+indeed exploit this power later on when defining normalisation by evaluation
+as a semantics: the model construction is, after all, nothing but a logical
+predicate. As a consequence it seems rather natural to call \AF{sem}, the
+fundamental lemma of semantics. We prove it in a module parameterised by a
+\AF{Semantics}, which would correspond to using a Section in Coq. It is
 defined by structural recursion on the term. Each constructor is replaced
 by its semantic counterpart in order to combine the induction hypotheses
-for its subterms. In the λ-abstraction case, the type of \ARF{⟦λ⟧} guarantees,
-in a fashion reminiscent of Normalisation by Evaluation, that the semantic
-argument can be stored in the environment which will have been weakened
-beforehand.
+for its subterms.
 
 \begin{code}
 module Eval {ℓ^E ℓ^M : Level} {𝓥 : Model ℓ^E} {𝓒 : Model ℓ^M} (𝓢 : Semantics 𝓥 𝓒) where
@@ -572,29 +583,20 @@ module Eval {ℓ^E ℓ^M : Level} {𝓥 : Model ℓ^E} {𝓒 : Model ℓ^M} (�
 \end{code}
 %</evaluation>
 
-We introduce \AF{\_⊨⟦\_⟧\_} as an alternative name for the fundamental
-lemma and \AF{\_⊨eval\_} for the special case where we use \ARF{embed}
-to generate a diagonal environment of type \AB{Γ} \AF{[} \AB{𝓥} \AF{]}
-\AB{Γ}. We open the module \AM{Eval} unapplied thus discharging (λ-lifting)
-its members over the \AR{Semantics} parameter. This means that a partial
-application of \AF{\_⊨⟦\_⟧\_} will correspond to the specialisation of the
-fundamental lemma to a given semantics. \AB{𝓢} \AF{⊨⟦} \AB{t} \AF{⟧} \AB{ρ}
-is meant to convey the idea that the semantics \AB{𝓢} is used to evaluate
-the term \AB{t} in the environment \AB{ρ}. Similarly, \AB{𝓢} \AF{⊨eval}
-\AB{t} is meant to denote the evaluation of the term \AB{t} in the semantics
-\AB{𝓢} (using a diagonal environment).
-
+\AgdaHide{
 \begin{code}
- lemma′ : {σ : Ty} → [ Tm σ ⟶ 𝓒 σ ]
- lemma′ t = sem (pack embed) t
-\end{code}
+ diagonal : {Γ : Cx} → (Γ -Env) 𝓥 Γ
+ diagonal = pack embed
 
-The diagonal environment generated using \ARF{embed} when defining the
-\AF{\_⊨eval\_} function lets us kickstart the evaluation of arbitrary
-\emph{open} terms. In the case of printing with names, this corresponds to
-picking a naming scheme for free variables whilst in the usual model
-construction used to perform normalisation by evaluation, it corresponds
-to η-expanding the variables.
+ lemma′ : {σ : Ty} → [ Tm σ ⟶ 𝓒 σ ]
+ lemma′ t = sem diagonal t
+\end{code}}
+
+Finally, one can define a diagonal environment (\AB{Γ} \AF{-Env}) \AB{𝓥} \AB{Γ}
+by \AIC{pack}ing the \ARF{embed} field. This lets us kickstart the evaluation
+of arbitrary \emph{open} terms thus generalising the pattern commonly seen in
+normalisation by evaluation where \ARF{embed} simply $η$-expand the variables.
+
 
 \section{Syntax is the Identity Semantics}
 
@@ -637,7 +639,7 @@ framework.
 \paragraph{Functoriality, also known as Renaming}
 Our first example of a \AR{Syntactic} operation works with variables as
 environment values. As a consequence, embedding is trivial; we have already
-defined weakening earlier (see Section \ref{preorder}) and we can turn
+defined weakening earlier (see Section \ref{category}) and we can turn
 a variable into a term by using the \AIC{`var} constructor.
 
 \begin{code}
@@ -1122,7 +1124,7 @@ The semantic counterpart of application combines two elements of the model:
 a functional part of type \AB{Γ} \AF{⊨^{βιξη}} \AS{(}\AB{σ} \AIC{`→} \AB{τ}\AS{)}
 and its argument of type \AB{Γ} \AF{⊨^{βιξη}} \AB{σ} which can be fed to the
 functional given a proof that \AB{Γ} \AF{⊆} \AB{Γ}. But we already have
-proven that \AF{\_⊆\_} is a preorder (see Section ~\ref{preorder}) so this
+proven that \AF{\_⊆\_} is a category (see Section ~\ref{category}) so this
 is not at all an issue.
 
 \AgdaHide{
@@ -1130,7 +1132,7 @@ is not at all an issue.
   infixr 5 _$$_
 \end{code}}
 \begin{code}
-  _$$_ : Applicative Kr
+  _$$_ : {σ τ : Ty} → [ Kr (σ `→ τ) ⟶ Kr σ ⟶ Kr τ ]
   t $$ u = t refl u
 \end{code}
 
@@ -1304,7 +1306,7 @@ we have an Agda function ready to be applied. We proceed similarly for
 the definition of the semantical ``if then else''.
 
 \begin{code}
-  _$$_ : Applicative Kr
+  _$$_ : {σ τ : Ty} → [ Kr (σ `→ τ) ⟶ Kr σ ⟶ Kr τ ]
   (inj₁ ne)  $$ u = inj₁ (ne `$ reify _ u)
   (inj₂ F)   $$ u = F refl u
 
@@ -1436,7 +1438,7 @@ reified versions of its arguments but rather the corresponding
 reduce enough to expose either a constructor or a variable.
 
 \begin{code}
-  _$$_ : Applicative Kr
+  _$$_ :  {σ τ : Ty} → [ Kr (σ `→ τ) ⟶ Kr σ ⟶ Kr τ ]
   (t , inj₁ ne)  $$ (u , U) = t `$ u , inj₁ (ne `$ u)
   (t , inj₂ T)   $$ (u , U) = t `$ u , proj₂ (T refl (u , U))
 

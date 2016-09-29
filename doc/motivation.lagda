@@ -1,28 +1,44 @@
 \begin{code}
 module motivation where
 
-open import Data.List
+open import Data.List hiding ([_])
 open import Function
 
 data Type : Set where
   base : Type
   arr  : Type → Type → Type
 
-data Var : List Type → Type → Set where
-  ze : ∀ {Γ σ} → Var (σ ∷ Γ) σ
-  su : ∀ {Γ σ τ} → Var Γ σ → Var (τ ∷ Γ) σ
+Cx = List Type
+Model = Type → Cx → Set
 
-_⇒_ : {A : Set} → (A → Set) → (A → Set) → Set
-f ⇒ g = ∀ {a} → f a → g a
+infixr 8 _⇒_
+_⇒_ : (Cx → Set) → (Cx → Set) → Cx → Set
+(f ⇒ g) Γ = f Γ → g Γ
 
-data Tm (Γ : List Type) : Type → Set where
-  `var : ∀ {σ} → Var Γ σ → Tm Γ σ
-  _`$_ : ∀ {σ τ} → Tm Γ (arr σ τ) → Tm Γ σ → Tm Γ τ
-  `λ   : ∀ {σ τ} → Tm (σ ∷ Γ) τ → Tm Γ (arr σ τ)
+[_] : (Cx → Set) → Set
+[ P ] = ∀ {x} → P x
+
+infix 9 _⊢_
+_⊢_ : Type → (Cx → Set) → Cx → Set
+(σ ⊢ T) Γ = T (σ ∷ Γ)
+
+
+data Var : Model where
+  ze : ∀ {σ} → [ σ ⊢ Var σ ]
+  su : ∀ {σ τ} → [ Var σ ⇒ τ ⊢ Var σ ]
+
+□ : (Cx → Set) → (Cx → Set)
+□ P Γ = ∀ {Δ} → (∀ {σ} → Var σ Γ → Var σ Δ) → P Δ
+
+
+data Tm : Model where
+  `var : ∀ {σ} → [ Var σ ⇒ Tm σ ]
+  _`$_ : ∀ {σ τ} → [ Tm (arr σ τ) ⇒ Tm σ ⇒ Tm τ ]
+  `λ   : ∀ {σ τ} → [ σ ⊢ Tm τ ⇒ Tm (arr σ τ) ]
 \end{code}
 %<*ren>
 \begin{code}
-ren : {Γ Δ : List Type} → (∀ {σ} → Var Γ σ → Var Δ σ) → (∀ {σ} → Tm Γ σ → Tm Δ σ)
+ren : {Γ Δ : List Type} → (∀ {σ} → Var σ Γ → Var σ Δ) → (∀ {σ} → Tm σ Γ → Tm σ Δ)
 ren ρ (`var v)  = `var (ρ v)
 ren ρ (f `$ t)  = ren ρ f `$ ren ρ t
 ren ρ (`λ b)    = `λ (ren ((su ∘ ρ) -, ze) b)
@@ -31,13 +47,13 @@ ren ρ (`λ b)    = `λ (ren ((su ∘ ρ) -, ze) b)
 \begin{code}
   where 
 
-  _-,_ : ∀ {Γ Δ σ} → (Var Γ ⇒ Var Δ) → Var Δ σ → Var (σ ∷ Γ) ⇒ Var Δ
+  _-,_ : ∀ {Γ σ Δ} → (∀ {τ} → Var τ Γ → Var τ Δ) → Var σ Δ → ∀ {τ} → Var τ (σ ∷ Γ) → Var τ Δ
   (ρ -, v) ze     = v
   (ρ -, v) (su k) = ρ k
 \end{code}
 %<*sub>
 \begin{code}
-sub : {Γ Δ : List Type} → (∀ {σ} → Var Γ σ → Tm Δ σ) → (∀ {σ} → Tm Γ σ → Tm Δ σ)
+sub : {Γ Δ : List Type} → (∀ {σ} → Var σ Γ → Tm σ Δ) → (∀ {σ} → Tm σ Γ → Tm σ Δ)
 sub ρ (`var v)  = ρ v
 sub ρ (f `$ t)  = sub ρ f `$ sub ρ t
 sub ρ (`λ b)    = `λ (sub ((ren su ∘ ρ) -, `var ze) b)
@@ -46,21 +62,21 @@ sub ρ (`λ b)    = `λ (sub ((ren su ∘ ρ) -, `var ze) b)
 \begin{code}
   where
 
-  _-,_ :  ∀ {Γ Δ σ} → (Var Γ ⇒ Tm Δ) → Tm Δ σ → Var (σ ∷ Γ) ⇒ Tm Δ
+  _-,_ :  ∀ {Γ σ Δ} → (∀ {τ} → Var τ Γ → Tm τ Δ) → Tm σ Δ → ∀ {τ} → Var τ (σ ∷ Γ) → Tm τ Δ
   (ρ -, v) ze     = v
   (ρ -, v) (su k) = ρ k
 
-record Kit (◆ : List Type → Type → Set) : Set where
+record Kit (◆ : Model) : Set where
   field
-    var : ∀ {Γ} → ◆ Γ ⇒ Tm Γ
-    zro : ∀ {Γ σ} → ◆ (σ ∷ Γ) σ
-    wkn : ∀ {Γ σ} → ◆ Γ ⇒ ◆ (σ ∷ Γ)
+    var : ∀ {σ} → [ ◆ σ ⇒ Tm σ ]
+    zro : ∀ {σ} → [ σ ⊢ ◆ σ ]
+    wkn : ∀ {σ τ} → [ ◆ τ ⇒ σ ⊢ ◆ τ ]
 
-module kitkit {◆ : List Type → Type → Set} (κ : Kit ◆) where
+module kitkit {◆ : Model} (κ : Kit ◆) where
 \end{code}
 %<*kit>
 \begin{code}
-  kit : {Γ Δ : List Type} → (∀ {σ} → Var Γ σ → ◆ Δ σ) → (∀ {σ} → Tm Γ σ → Tm Δ σ)
+  kit : {Γ Δ : List Type} → (∀ {σ} → Var σ Γ → ◆ σ Δ) → (∀ {σ} → Tm σ Γ → Tm σ Δ)
   kit ρ (`var v)  = Kit.var κ (ρ v)
   kit ρ (f `$ t)  = kit ρ f `$ kit ρ t
   kit ρ (`λ b)    = `λ (kit ((Kit.wkn κ ∘ ρ) -, Kit.zro κ) b)
@@ -69,27 +85,27 @@ module kitkit {◆ : List Type → Type → Set} (κ : Kit ◆) where
 \begin{code}
     where
 
-    _-,_ :  ∀ {Γ Δ σ} → (Var Γ ⇒ ◆ Δ) → ◆ Δ σ → Var (σ ∷ Γ) ⇒ ◆ Δ
+    _-,_ :  ∀ {Γ σ Δ} → (∀ {τ} → Var τ Γ → ◆ τ Δ) → ◆ σ Δ → ∀ {τ} → Var τ (σ ∷ Γ) → ◆ τ Δ
     (ρ -, v) ze    = v
     (ρ -, v) (su k) = ρ k
 
-Val : List Type → Type → Set
-Val Γ base      = Tm Γ base
-Val Γ (arr σ τ) = ∀ {Δ} → (Var Γ ⇒ Var Δ) → Val Δ σ → Val Δ τ
+Val : Model
+Val base      Γ = Tm base Γ
+Val (arr σ τ) Γ = ∀ {Δ} → (∀ {ν} → Var ν Γ → Var ν Δ) → Val σ Δ → Val τ Δ
 
-wk : ∀ {Γ Δ} → (Var Γ ⇒ Var Δ) → Val Γ ⇒ Val Δ
+wk : ∀ {Γ Δ} → (∀ {σ} → Var σ Γ → Var σ Δ) → ∀ {σ} → Val σ Γ → Val σ Δ
 wk ρ {base}    v = ren ρ v
 wk ρ {arr σ τ} v = λ ρ′ → v (ρ′ ∘ ρ)
 
-APP : ∀ {Γ σ τ} → Val Γ (arr σ τ) → Val Γ σ → Val Γ τ
+APP : ∀ {σ τ Γ} → Val (arr σ τ) Γ →  Val σ Γ → Val τ Γ
 APP f t = f id t
 
-LAM : ∀ {Γ σ τ} → Val Γ (arr σ τ) → Val Γ (arr σ τ)
+LAM : ∀ {Γ σ τ} → Val (arr σ τ) Γ → Val (arr σ τ) Γ
 LAM = id
 \end{code}
 %<*nbe>
 \begin{code}
-nbe : {Γ Δ : List Type} → (∀ {σ} → Var Γ σ → Val Δ σ) → (∀ {σ} → Tm Γ σ → Val Δ σ)
+nbe : {Γ Δ : List Type} → (∀ {σ} → Var σ Γ → Val σ Δ) → (∀ {σ} → Tm σ Γ → Val σ Δ)
 nbe ρ (`var v)    = ρ v
 nbe ρ (f `$ t)  = APP (nbe ρ f) (nbe ρ t)
 nbe ρ (`λ t)    = LAM (λ re v → nbe ((wk re ∘ ρ) -, v) t)
@@ -98,7 +114,7 @@ nbe ρ (`λ t)    = LAM (λ re v → nbe ((wk re ∘ ρ) -, v) t)
 \begin{code}
   where
 
-  _-,_ : ∀ {Γ Δ σ} → (Var Γ ⇒ Val Δ) → Val Δ σ → Var (σ ∷ Γ) ⇒ Val Δ
+  _-,_ : ∀ {Γ σ Δ} → (∀ {τ} → Var τ Γ → Val τ Δ) → Val σ Δ → ∀ {τ} → Var τ (σ ∷ Γ) → Val τ Δ
   (ρ -, v) ze     = v
   (ρ -, v) (su k) = ρ k
 \end{code}

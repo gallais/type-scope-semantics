@@ -112,7 +112,7 @@ given by a Kit.
 \caption{Renaming\label{ren} and Substitution\label{sub} for the ST$λ$C}
 
 \ExecuteMetaData[motivation.tex]{kit}
-\caption{Kit traversal for the ST$λ$C\label{kit}}
+\caption{Kit traversal for the ST$λ$C\label{kit}, using κ of type \AR{Kit} ◆}
 
 \ExecuteMetaData[motivation.tex]{nbe}
 \caption{Normalisation by Evaluation for the ST$λ$C\label{nbe}}
@@ -542,6 +542,8 @@ with the one corresponding to model values (\AB{𝓜}).
     ⟦if⟧   :  {σ : Ty} →    [ 𝓜 `2 ⟶ 𝓜 σ ⟶ 𝓜 σ ⟶  𝓜 σ   ]
 \end{code}
 
+
+\todo{relationship with logical relations}
 The fundamental lemma of semantics is then proven in a module indexed by
 a \AF{Semantics}, which would correspond to using a Section in Coq. It is
 defined by structural recursion on the term. Each constructor is replaced

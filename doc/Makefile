@@ -13,7 +13,7 @@ prepare:
 paper: prepare
 	agda -i . -i $(STDLIB) --latex motivation.lagda && \
 	agda -i . -i $(STDLIB) --latex $(PAPER).lagda && \
-	cd latex && sed -f rules.sed -f rules2.sed -i $(PAPER).tex && sed -f rules.sed -f rules2.sed -i motivation.tex && \
+	cd latex && sed -f rules.sed -f rules2.sed -i $(PAPER).tex && sed -f rules-motivation.sed -f rules.sed -f rules2.sed -i motivation.tex && \
 	latexmk -bibtex -pdf -e '$$pdflatex=q/xelatex %O %S/' $(PAPER).tex && cd ..
 
 auxiliary:

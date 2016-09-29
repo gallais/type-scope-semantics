@@ -211,21 +211,25 @@ data Cx : Set where
 \end{code}
 %</context>
 
+To make type signatures more readabale, we introduce combinators acting on
+context-indexed types. The most straightforward ones are pointwise lifting
+of existing operators on types, and we denote them as dotted versions of
+their counterparts: the definition of the pointwise function space \AF{\_⟶\_}
+is shown here and the reader will infer the corresponding one for pointwise
+disjoint sums (\AF{\_∙⊎\_}) and products (\AF{\_∙×\_}). The ``universally''
+operator \AF{[\_]} turn a context-indexed type into a type using an (implicit)
+universal quantification. Last but not least, the operator \AF{\_⊢\_} mechanizes
+the mathematical convention of only mentioning context \emph{extensions} when
+presenting judgements~\cite{martin1982constructive}.
 
 \todo{Fix [\_]}
-\todo{Explain pointwise}
 \begin{code}
+_⟶_ : {ℓ^A ℓ^E : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^E) → (Cx → Set (ℓ^A ⊔ ℓ^E))
+(S ⟶ T) Γ = S Γ → T Γ
+
 [_] : {ℓ^A : Level} → (Cx → Set ℓ^A) → Set ℓ^A
 [ T ] = ∀ {Γ} → T Γ
 
-_⟶_ : {ℓ^A ℓ^E : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^E) → (Cx → Set (ℓ^A ⊔ ℓ^E))
-(S ⟶ T) Γ = S Γ → T Γ
-\end{code}
-
-The \AF{\_⊢\_} operator mechanizes the mathematical convention of only
-mentioning context \emph{extensions} when presenting judgements~\cite{martin1982constructive}.
-
-\begin{code}
 _⊢_ : {ℓ^A : Level} → Ty → (Cx → Set ℓ^A) → (Cx → Set ℓ^A)
 (σ ⊢ S) Γ = S (Γ ∙ σ)
 \end{code}
@@ -293,11 +297,11 @@ data Tm : Ty → (Cx → Set) where
 \section{A Generic Notion of Environment}
 
 \todo{Rename Cx -> Ty -> Set}
-\todo{$𝓔 -> 𝓥$; $𝓜 -> 𝓒$; -Eval -> -Comp}
+\todo{$𝓔 -> 𝓥$; $𝓒 -> 𝓒$; -Eval -> -Comp}
 \todo{call lemma comp and show its type early}
 
 All the semantics we are interested in defining associate to a term \AB{t}
-of type \AB{Γ} \AD{⊢} \AB{σ}, a value of type \AB{𝓜} \AB{Γ} \AB{σ} given
+of type \AB{Γ} \AD{⊢} \AB{σ}, a value of type \AB{𝓒} \AB{Γ} \AB{σ} given
 an interpretation \AB{𝓔} \AB{Δ} {τ} for each one of its free variables
 \AB{τ} in \AB{Γ}. We call the collection of these interpretations an
 \AB{𝓔}-(evaluation) environment. We leave out \AB{𝓔} when it can easily
@@ -325,19 +329,21 @@ infix 5 _-Env
 Model : (ℓ^A : Level) → Set (L.suc ℓ^A)
 Model ℓ^A = Ty → Cx → Set ℓ^A
 
-record RModel {ℓ^E ℓ^M : Level} (𝓔 : Model ℓ^E) (𝓜 : Model ℓ^M) (ℓ^R : Level) : Set (ℓ^E ⊔ ℓ^M ⊔ L.suc ℓ^R) where
+record RModel {ℓ^E ℓ^M : Level} (𝓥 : Model ℓ^E) (𝓒 : Model ℓ^M) (ℓ^R : Level) : Set (ℓ^E ⊔ ℓ^M ⊔ L.suc ℓ^R) where
   constructor mkRModel
-  field rmodel : {σ : Ty} → [ 𝓔 σ ⟶ 𝓜 σ ⟶ const (Set ℓ^R) ]
+  field rmodel : {σ : Ty} → [ 𝓥 σ ⟶ 𝓒 σ ⟶ const (Set ℓ^R) ]
 open RModel public
 
-record _-Env {ℓ^A : Level} (Γ : Cx) (𝓔 : Model ℓ^A) (Δ : Cx) : Set ℓ^A where
+record _-Env {ℓ^A : Level} (Γ : Cx) (𝓥 : Model ℓ^A) (Δ : Cx) : Set ℓ^A where
   constructor pack
-  field lookup : {σ : Ty} → Var σ Γ → 𝓔 σ Δ
+  field lookup : {σ : Ty} → Var σ Γ → 𝓥 σ Δ
 open _-Env public
 
-_-Eval : {ℓ^A : Level} → Cx → (𝓒 : Model ℓ^A) → Cx → Set ℓ^A
-(Γ -Eval) 𝓒 Δ = {σ : Ty} → Tm σ Γ → 𝓒 σ Δ
+_-Comp : {ℓ^A : Level} → Cx → (𝓒 : Model ℓ^A) → Cx → Set ℓ^A
+(Γ -Comp) 𝓒 Δ = {σ : Ty} → Tm σ Γ → 𝓒 σ Δ
 \end{code}
+
+\ExecuteMetaData[motivation.tex]{sem}
 
 \todo{Insert here type of lemma we want to prove}
 \todo{Expand the definition of box}
@@ -353,17 +359,17 @@ _-Eval : {ℓ^A : Level} → Cx → (𝓒 : Model ℓ^A) → Cx → Set ℓ^A
 infixl 10 _`∙_
 \end{code}}
 
-For a fixed context \AB{Δ} and relation \AB{𝓔}, these environments can
+For a fixed context \AB{Δ} and relation \AB{𝓥}, these environments can
 be built step by step by noticing that the environment corresponding to
 an empty context is trivial and that one may extend an already existing
 environment provided a proof of the right type. In concrete cases, there
-will be no sensible way to infer \AB{𝓔} when using the second combinator
+will be no sensible way to infer \AB{𝓥} when using the second combinator
 hence our decision to make it possible to tell Agda which relation we are
 working with.\todo{explain copatterns}
 
 \begin{code}
-`ε : {ℓ^A : Level} {Δ : Cx} {𝓔 : Model ℓ^A} → (ε -Env) 𝓔 Δ
-_`∙_ :  {ℓ^A : Level} {Γ : Cx} {𝓔 : Model ℓ^A} {σ : Ty} → [ (Γ -Env) 𝓔 ⟶ 𝓔 σ ⟶ (Γ ∙ σ -Env) 𝓔 ]
+`ε : {ℓ^A : Level} {Δ : Cx} {𝓥 : Model ℓ^A} → (ε -Env) 𝓥 Δ
+_`∙_ :  {ℓ^A : Level} {Γ : Cx} {𝓥 : Model ℓ^A} {σ : Ty} → [ (Γ -Env) 𝓥 ⟶ 𝓥 σ ⟶ (Γ ∙ σ -Env) 𝓥 ]
 
 lookup `ε ()
 lookup (ρ `∙ s) ze    = s
@@ -402,8 +408,8 @@ principle'', we mean that if \AB{P} holds of \AB{Γ} and \AB{Γ} \AF{⊆} \AB{Δ
 then \AB{P} holds for \AB{Δ} too.
 In the case of variables, weakening merely corresponds to applying the
 renaming function in order to obtain a new variable. The environments'
-case is also quite simple: being a pointwise lifting of a relation \AB{𝓔}
-between contexts and types, they enjoy weakening if \AB{𝓔} does.
+case is also quite simple: being a pointwise lifting of a relation \AB{𝓥}
+between contexts and types, they enjoy weakening if \AB{𝓥} does.
 
 \begin{code}
 Thinnable : {ℓ^A : Level} → (Cx → Set ℓ^A) → Set ℓ^A
@@ -412,8 +418,8 @@ Thinnable S = {Γ Δ : Cx} → Γ ⊆ Δ → (S Γ → S Δ)
 wk^∈ : (σ : Ty) → Thinnable (Var σ)
 wk^∈ σ inc v = lookup inc v
 
-wk[_] :  {ℓ^A : Level} {𝓔 : Model ℓ^A} → ((σ : Ty) → Thinnable (𝓔 σ)) →
-         {Γ : Cx} → Thinnable ((Γ -Env) 𝓔)
+wk[_] :  {ℓ^A : Level} {𝓥 : Model ℓ^A} → ((σ : Ty) → Thinnable (𝓥 σ)) →
+         {Γ : Cx} → Thinnable ((Γ -Env) 𝓥)
 lookup (wk[ wk ] inc ρ) = wk _ inc ∘ lookup ρ
 \end{code}
 
@@ -429,7 +435,7 @@ constructors Altenkirch, Hofmann and Streicher's ``Category of
 refl : {Γ : Cx} → Γ ⊆ Γ
 refl = pack id
 
-trans : {ℓ^A : Level} {Γ Δ Θ : Cx} {𝓔 : Model ℓ^A} → Γ ⊆ Δ → (Δ -Env) 𝓔 Θ → (Γ -Env) 𝓔 Θ
+trans : {ℓ^A : Level} {Γ Δ Θ : Cx} {𝓥 : Model ℓ^A} → Γ ⊆ Δ → (Δ -Env) 𝓥 Θ → (Γ -Env) 𝓥 Θ
 lookup (trans inc ρ) = lookup ρ ∘ lookup inc
 
 step : {σ : Ty} {Γ : Cx} → [ (Γ ⊆_) ⟶ σ ⊢ (Γ ⊆_) ]
@@ -458,10 +464,10 @@ parametrised by such a \AR{Semantics} once and for all and to focus
 on the interesting model constructions instead of repeating the same
 pattern over and over again.
 
-A \AR{Semantics} is indexed by two relations \AB{𝓔} and \AB{𝓜}
+A \AR{Semantics} is indexed by two relations \AB{𝓥} and \AB{𝓒}
 describing respectively the values in the environment and the ones
 in the model. In cases such as substitution or normalisation by
-evaluation, \AB{𝓔} and \AB{𝓜} will happen to coincide but keeping
+evaluation, \AB{𝓥} and \AB{𝓒} will happen to coincide but keeping
 these two relations distinct is precisely what makes it possible
 to go beyond these and also model renaming or printing with names.
 The record packs the properties of these relations necessary to
@@ -471,9 +477,9 @@ define the evaluation function.
 
 \begin{code}
 Applicative : {ℓ^A : Level} → Model ℓ^A → Set ℓ^A
-Applicative 𝓜 = {σ τ : Ty} → [ 𝓜 (σ `→ τ) ⟶ 𝓜 σ ⟶ 𝓜 τ ]
+Applicative 𝓒 = {σ τ : Ty} → [ 𝓒 (σ `→ τ) ⟶ 𝓒 σ ⟶ 𝓒 τ ]
 
-record Semantics {ℓ^E ℓ^M : Level} (𝓔 : Model ℓ^E) (𝓜 : Model ℓ^M) : Set (ℓ^E ⊔ ℓ^M) where
+record Semantics {ℓ^E ℓ^M : Level} (𝓥 : Model ℓ^E) (𝓒 : Model ℓ^M) : Set (ℓ^E ⊔ ℓ^M) where
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -490,8 +496,8 @@ in order to be able to craft a diagonal environment to evaluate an open
 term.
 
 \begin{code}
-    wk      :  (σ : Ty) → Thinnable (𝓔 σ)
-    embed   :  {σ : Ty} → [ Var σ ⟶ 𝓔 σ ]
+    wk      :  (σ : Ty) → Thinnable (𝓥 σ)
+    embed   :  {σ : Ty} → [ Var σ ⟶ 𝓥 σ ]
 \end{code}
 
 The structure of the model is quite constrained: each constructor
@@ -504,7 +510,7 @@ will therefore be able to, when hitting a variable, lookup the
 corresponding value in the environment and return it.
 
 \begin{code}
-    ⟦var⟧   :  {σ : Ty} → [ 𝓔 σ ⟶ 𝓜 σ ]
+    ⟦var⟧   :  {σ : Ty} → [ 𝓥 σ ⟶ 𝓒 σ ]
 \end{code}
 
 The semantic λ-abstraction is notable for two reasons: first, following
@@ -522,24 +528,24 @@ guarantees that such an argument will be provided to us.
   field
 \end{code}}
 \begin{code}
-    ⟦λ⟧     :  {σ τ : Ty} → [ □ (𝓔 σ ⟶ 𝓜 τ) ⟶ 𝓜 (σ `→ τ) ]
+    ⟦λ⟧     :  {σ τ : Ty} → [ □ (𝓥 σ ⟶ 𝓒 τ) ⟶ 𝓒 (σ `→ τ) ]
 \end{code}
 
 The remaining fields' types are a direct translation of the types
 of the constructor they correspond to where the type constructor
 characterising typing derivations (\AD{\_⊢\_}) has been replaced
-with the one corresponding to model values (\AB{𝓜}).
+with the one corresponding to model values (\AB{𝓒}).
 
 \AgdaHide{
 \begin{code}
   field
 \end{code}}
 \begin{code}
-    _⟦$⟧_  :  {σ τ : Ty} →  [ 𝓜 (σ `→ τ) ⟶ 𝓜 σ ⟶   𝓜 τ   ]
-    ⟦⟨⟩⟧   :                [                         𝓜 `1  ]
-    ⟦tt⟧   :                [                         𝓜 `2  ]
-    ⟦ff⟧   :                [                         𝓜 `2  ]
-    ⟦if⟧   :  {σ : Ty} →    [ 𝓜 `2 ⟶ 𝓜 σ ⟶ 𝓜 σ ⟶  𝓜 σ   ]
+    _⟦$⟧_  :  {σ τ : Ty} →  [ 𝓒 (σ `→ τ) ⟶ 𝓒 σ ⟶   𝓒 τ   ]
+    ⟦⟨⟩⟧   :                [                         𝓒 `1  ]
+    ⟦tt⟧   :                [                         𝓒 `2  ]
+    ⟦ff⟧   :                [                         𝓒 `2  ]
+    ⟦if⟧   :  {σ : Ty} →    [ 𝓒 `2 ⟶ 𝓒 σ ⟶ 𝓒 σ ⟶  𝓒 σ   ]
 \end{code}
 
 
@@ -554,25 +560,26 @@ argument can be stored in the environment which will have been weakened
 beforehand.
 
 \begin{code}
-module Eval {ℓ^E ℓ^M : Level} {𝓔 : Model ℓ^E} {𝓜 : Model ℓ^M} (𝓢 : Semantics 𝓔 𝓜) where
-  open Semantics 𝓢
+module Eval {ℓ^E ℓ^M : Level} {𝓥 : Model ℓ^E} {𝓒 : Model ℓ^M} (𝓢 : Semantics 𝓥 𝓒) where
+ open Semantics 𝓢
 \end{code}\vspace{ -2.5em}%ugly but it works!
 %<*evaluation>
 \begin{code}
-  sem : {Γ : Cx} → [ (Γ -Env) 𝓔 ⟶ (Γ -Eval) 𝓜 ]
-  sem ρ (`var v)     = ⟦var⟧ (lookup ρ v)
-  sem ρ (t `$ u)     = sem ρ t ⟦$⟧ sem ρ u
-  sem ρ (`λ b)       = ⟦λ⟧ (λ inc u → sem (wk[ wk ] inc ρ `∙ u) b)
-  sem ρ `⟨⟩          = ⟦⟨⟩⟧
-  sem ρ `tt          = ⟦tt⟧
-  sem ρ `ff          = ⟦ff⟧
-  sem ρ (`if b l r)  = ⟦if⟧ (sem ρ b) (sem ρ l) (sem ρ r)
+ sem : {Γ : Cx} → [ (Γ -Env) 𝓥 ⟶ (Γ -Comp) 𝓒 ]
+ sem ρ (`var v)     = ⟦var⟧ (lookup ρ v)
+ sem ρ (t `$ u)     = sem ρ t ⟦$⟧ sem ρ u
+ sem ρ (`λ b)       = ⟦λ⟧  (λ σ v →
+                           sem (wk[ wk ] σ ρ `∙ v) b)
+ sem ρ `⟨⟩          = ⟦⟨⟩⟧
+ sem ρ `tt          = ⟦tt⟧
+ sem ρ `ff          = ⟦ff⟧
+ sem ρ (`if b l r)  = ⟦if⟧ (sem ρ b) (sem ρ l) (sem ρ r)
 \end{code}
 %</evaluation>
 
 We introduce \AF{\_⊨⟦\_⟧\_} as an alternative name for the fundamental
 lemma and \AF{\_⊨eval\_} for the special case where we use \ARF{embed}
-to generate a diagonal environment of type \AB{Γ} \AF{[} \AB{𝓔} \AF{]}
+to generate a diagonal environment of type \AB{Γ} \AF{[} \AB{𝓥} \AF{]}
 \AB{Γ}. We open the module \AM{Eval} unapplied thus discharging (λ-lifting)
 its members over the \AR{Semantics} parameter. This means that a partial
 application of \AF{\_⊨⟦\_⟧\_} will correspond to the specialisation of the
@@ -583,9 +590,8 @@ the term \AB{t} in the environment \AB{ρ}. Similarly, \AB{𝓢} \AF{⊨eval}
 \AB{𝓢} (using a diagonal environment).
 
 \begin{code}
-
-  lemma′ : {σ : Ty} → [ Tm σ ⟶ 𝓜 σ ]
-  lemma′ t = sem (pack embed) t
+ lemma′ : {σ : Ty} → [ Tm σ ⟶ 𝓒 σ ]
+ lemma′ t = sem (pack embed) t
 \end{code}
 
 The diagonal environment generated using \ARF{embed} when defining the
@@ -611,14 +617,14 @@ the \AF{syntactic} function turning its inhabitants into associated
 
 %<*syntactic>
 \begin{code}
-record Syntactic {ℓ^A : Level} (𝓔 : Model ℓ^A) : Set ℓ^A where
-  field  embed  : {σ : Ty} → [ Var σ ⟶ 𝓔 σ ]
-         wk     : (σ : Ty) → Thinnable (𝓔 σ)
-         ⟦var⟧  : {σ : Ty} → [ 𝓔 σ ⟶ Tm σ ]
+record Syntactic {ℓ^A : Level} (𝓥 : Model ℓ^A) : Set ℓ^A where
+  field  embed  : {σ : Ty} → [ Var σ ⟶ 𝓥 σ ]
+         wk     : (σ : Ty) → Thinnable (𝓥 σ)
+         ⟦var⟧  : {σ : Ty} → [ 𝓥 σ ⟶ Tm σ ]
 \end{code}\vspace{ -1.5em}%ugly but it works!
 %</syntactic>
 \begin{code}
-syntactic : {ℓ^A : Level} {𝓔 : Model ℓ^A} (syn : Syntactic 𝓔) → Semantics 𝓔 Tm
+syntactic : {ℓ^A : Level} {𝓥 : Model ℓ^A} (syn : Syntactic 𝓥) → Semantics 𝓥 Tm
 syntactic syn = let open Syntactic syn in record
   { wk      = wk; embed   = embed; ⟦var⟧   = ⟦var⟧
   ; ⟦λ⟧     = λ t → `λ (t (step refl) (embed ze))
@@ -879,12 +885,12 @@ pretty$ = PEq.refl
 Normalisation by Evaluation is a technique exploiting the computational
 power of a host language in order to normalise expressions of a deeply
 embedded one. The process is based on a model construction describing a
-family of types \AB{𝓜} indexed by a context \AB{Γ} and a type \AB{σ}. Two
+family of types \AB{𝓒} indexed by a context \AB{Γ} and a type \AB{σ}. Two
 procedures are then defined: the first one (\AF{eval}) constructs an element
-of \AB{𝓜} \AB{Γ} \AB{σ} provided a well typed term of the corresponding
+of \AB{𝓒} \AB{Γ} \AB{σ} provided a well typed term of the corresponding
 \AB{Γ} \AD{⊢} \AB{σ} type whilst the second one (\AF{reify}) extracts, in
 a type-directed manner, normal forms \AB{Γ} \AD{⊢^{nf}} \AB{σ} from elements
-of the model \AB{𝓜} \AB{Γ} \AB{σ}. Normalisation is achieved by composing
+of the model \AB{𝓒} \AB{Γ} \AB{σ}. Normalisation is achieved by composing
 the two procedures. The definition of this \AF{eval} function is a natural
 candidate for our \AF{Semantics} framework. Normalisation is always defined
 for a given equational theory so we are going to start by recalling the
@@ -1496,26 +1502,26 @@ formal.
 
 The evidence that two \AR{Semantics} are \AR{Synchronisable} is
 packaged in a record. The record is indexed by the two semantics
-as well as two relations. The first relation (\AB{𝓔^R})
+as well as two relations. The first relation (\AB{𝓥^R})
 characterises the elements of the (respective) environment types
-which are to be considered synchronised, and the second one (\AB{𝓜^R})
+which are to be considered synchronised, and the second one (\AB{𝓒^R})
 describes what synchronisation means in the model. We can lift
-\AB{𝓔^R} in a pointwise manner to talk about entire environments
+\AB{𝓥^R} in a pointwise manner to talk about entire environments
 using the \AF{`∀[\_,\_]} predicate transformer omitted here.
 
 \AgdaHide{
 \begin{code}
-record `∀[_] {ℓ^A ℓ^B ℓ^R : Level} {𝓔^A : Model ℓ^A} {𝓔^B : Model ℓ^B}
-             (𝓔^R : RModel 𝓔^A 𝓔^B ℓ^R)
-             {Γ Δ : Cx} (ρ^A : (Γ -Env) 𝓔^A Δ) (ρ^B : (Γ -Env) 𝓔^B Δ) : Set ℓ^R where
+record `∀[_] {ℓ^A ℓ^B ℓ^R : Level} {𝓥^A : Model ℓ^A} {𝓥^B : Model ℓ^B}
+             (𝓥^R : RModel 𝓥^A 𝓥^B ℓ^R)
+             {Γ Δ : Cx} (ρ^A : (Γ -Env) 𝓥^A Δ) (ρ^B : (Γ -Env) 𝓥^B Δ) : Set ℓ^R where
   constructor pack^R
-  field lookup^R : {σ : Ty} (v : Var σ Γ) → rmodel 𝓔^R (lookup ρ^A v) (lookup ρ^B v)
+  field lookup^R : {σ : Ty} (v : Var σ Γ) → rmodel 𝓥^R (lookup ρ^A v) (lookup ρ^B v)
 open `∀[_]
 \end{code}}
 \begin{code}
-record Synchronisable {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^RE ℓ^RM : Level} {𝓔^A : Model ℓ^EA} {𝓜^A : Model ℓ^MA} {𝓔^B : Model ℓ^EB} {𝓜^B : Model ℓ^MB}
-  (𝓢^A : Semantics 𝓔^A 𝓜^A) (𝓢^B : Semantics 𝓔^B 𝓜^B)
-  (𝓔^R  : RModel 𝓔^A 𝓔^B ℓ^RE) (𝓜^R  : RModel 𝓜^A 𝓜^B ℓ^RM) : Set (ℓ^RE ⊔ ℓ^RM ⊔ ℓ^EA ⊔ ℓ^EB ⊔ ℓ^MA ⊔ ℓ^MB) where
+record Synchronisable {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^RE ℓ^RM : Level} {𝓥^A : Model ℓ^EA} {𝓒^A : Model ℓ^MA} {𝓥^B : Model ℓ^EB} {𝓒^B : Model ℓ^MB}
+  (𝓢^A : Semantics 𝓥^A 𝓒^A) (𝓢^B : Semantics 𝓥^B 𝓒^B)
+  (𝓥^R  : RModel 𝓥^A 𝓥^B ℓ^RE) (𝓒^R  : RModel 𝓒^A 𝓒^B ℓ^RM) : Set (ℓ^RE ⊔ ℓ^RM ⊔ ℓ^EA ⊔ ℓ^EB ⊔ ℓ^MA ⊔ ℓ^MB) where
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -1525,12 +1531,12 @@ record Synchronisable {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^RE ℓ^RM : Level} {𝓔^
 \end{code}}
 
 The record's fields are describing the structure these relations
-need to have. \ARF{𝓔^R‿wk} states that two synchronised environments
+need to have. \ARF{𝓥^R‿wk} states that two synchronised environments
 can be weakened whilst staying synchronised.
 
 \begin{code}
-    𝓔^R‿wk  :  {Γ Δ Θ : Cx} (inc : Δ ⊆ Θ) {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Γ -Env) 𝓔^B Δ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
-               `∀[ 𝓔^R ] (wk[ 𝓢^A.wk ] inc ρ^A) (wk[ 𝓢^B.wk ] inc ρ^B)
+    𝓥^R‿wk  :  {Γ Δ Θ : Cx} (inc : Δ ⊆ Θ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} (ρ^R : `∀[ 𝓥^R ] ρ^A ρ^B) →
+               `∀[ 𝓥^R ] (wk[ 𝓢^A.wk ] inc ρ^A) (wk[ 𝓢^B.wk ] inc ρ^B)
 \end{code}
 
 We then have the relational counterparts of the term constructors.
@@ -1542,8 +1548,8 @@ indeed get synchronised values in the model by applying \ARF{⟦var⟧}
 to the looked up values.
 
 \begin{code}
-    R⟦var⟧    :  {Γ Δ : Cx} {σ : Ty} (v : Var σ Γ) {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Γ -Env) 𝓔^B Δ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
-                 rmodel 𝓜^R (𝓢^A.⟦var⟧ (lookup ρ^A v)) (𝓢^B.⟦var⟧ (lookup ρ^B v))
+    R⟦var⟧    :  {Γ Δ : Cx} {σ : Ty} (v : Var σ Γ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} (ρ^R : `∀[ 𝓥^R ] ρ^A ρ^B) →
+                 rmodel 𝓒^R (𝓢^A.⟦var⟧ (lookup ρ^A v)) (𝓢^B.⟦var⟧ (lookup ρ^B v))
 \end{code}
 
 The second, and probably most interesting case, is the relational counterpart
@@ -1553,8 +1559,8 @@ values is enough to guarantee that evaluating the lambdas in the original
 environments will produce synchronised values.
 
 \begin{code}
-    R⟦λ⟧      :  {Γ : Cx} {σ τ : Ty} {f^A : □ (𝓔^A σ ⟶ 𝓜^A τ) Γ} {f^B : □ (𝓔^B σ ⟶ 𝓜^B τ) Γ} → (f^r :  {Δ : Cx} (inc : Γ ⊆ Δ) {u^A : 𝓔^A σ Δ} {u^B : 𝓔^B σ Δ} (u^R : rmodel 𝓔^R u^A u^B) → rmodel 𝓜^R  (f^A inc u^A) (f^B inc u^B)) →
-                 rmodel 𝓜^R (𝓢^A.⟦λ⟧ f^A) (𝓢^B.⟦λ⟧ f^B)
+    R⟦λ⟧      :  {Γ : Cx} {σ τ : Ty} {f^A : □ (𝓥^A σ ⟶ 𝓒^A τ) Γ} {f^B : □ (𝓥^B σ ⟶ 𝓒^B τ) Γ} → (f^r :  {Δ : Cx} (inc : Γ ⊆ Δ) {u^A : 𝓥^A σ Δ} {u^B : 𝓥^B σ Δ} (u^R : rmodel 𝓥^R u^A u^B) → rmodel 𝓒^R  (f^A inc u^A) (f^B inc u^B)) →
+                 rmodel 𝓒^R (𝓢^A.⟦λ⟧ f^A) (𝓢^B.⟦λ⟧ f^B)
 \end{code}
 
 All the remaining cases are similar. We show here the relational
@@ -1564,15 +1570,15 @@ used are synchronised), one can combine them to obtain a proof
 about the evaluation of an application-headed term.
 
 \begin{code}
-    R⟦$⟧      :  {Γ : Cx} {σ τ : Ty} {f^A : 𝓜^A (σ `→ τ) Γ} {f^B : 𝓜^B (σ `→ τ) Γ} {u^A : 𝓜^A σ Γ} {u^B : 𝓜^B σ Γ} → rmodel 𝓜^R f^A f^B → rmodel 𝓜^R u^A u^B → rmodel 𝓜^R (f^A 𝓢^A.⟦$⟧ u^A) (f^B 𝓢^B.⟦$⟧ u^B)
+    R⟦$⟧      :  {Γ : Cx} {σ τ : Ty} {f^A : 𝓒^A (σ `→ τ) Γ} {f^B : 𝓒^B (σ `→ τ) Γ} {u^A : 𝓒^A σ Γ} {u^B : 𝓒^B σ Γ} → rmodel 𝓒^R f^A f^B → rmodel 𝓒^R u^A u^B → rmodel 𝓒^R (f^A 𝓢^A.⟦$⟧ u^A) (f^B 𝓢^B.⟦$⟧ u^B)
 \end{code}
 \AgdaHide{
 \begin{code}
-    R⟦⟨⟩⟧     :  {Γ : Cx} → rmodel 𝓜^R {_} {Γ} 𝓢^A.⟦⟨⟩⟧ 𝓢^B.⟦⟨⟩⟧
-    R⟦tt⟧     :  {Γ : Cx} → rmodel 𝓜^R {_} {Γ} 𝓢^A.⟦tt⟧ 𝓢^B.⟦tt⟧
-    R⟦ff⟧     :  {Γ : Cx} → rmodel 𝓜^R {_} {Γ} 𝓢^A.⟦ff⟧ 𝓢^B.⟦ff⟧
-    R⟦if⟧   :  {Γ : Cx} {σ : Ty} {b^A : _} {b^B : _} {l^A r^A : _} {l^B r^B : _} → rmodel 𝓜^R {_} {Γ} b^A b^B → rmodel 𝓜^R l^A l^B → rmodel 𝓜^R {σ} r^A r^B →
-                 rmodel 𝓜^R (𝓢^A.⟦if⟧ b^A l^A r^A) (𝓢^B.⟦if⟧ b^B l^B r^B)
+    R⟦⟨⟩⟧     :  {Γ : Cx} → rmodel 𝓒^R {_} {Γ} 𝓢^A.⟦⟨⟩⟧ 𝓢^B.⟦⟨⟩⟧
+    R⟦tt⟧     :  {Γ : Cx} → rmodel 𝓒^R {_} {Γ} 𝓢^A.⟦tt⟧ 𝓢^B.⟦tt⟧
+    R⟦ff⟧     :  {Γ : Cx} → rmodel 𝓒^R {_} {Γ} 𝓢^A.⟦ff⟧ 𝓢^B.⟦ff⟧
+    R⟦if⟧   :  {Γ : Cx} {σ : Ty} {b^A : _} {b^B : _} {l^A r^A : _} {l^B r^B : _} → rmodel 𝓒^R {_} {Γ} b^A b^B → rmodel 𝓒^R l^A l^B → rmodel 𝓒^R {σ} r^A r^B →
+                 rmodel 𝓒^R (𝓢^A.⟦if⟧ b^A l^A r^A) (𝓢^B.⟦if⟧ b^B l^B r^B)
 infixl 10 _∙^R_
 \end{code}}
 
@@ -1590,23 +1596,23 @@ module parametrised by a record packing the evidence that two semantics are
 counterpart of term constructors into scope by \AK{open}ing the record. The
 traversal then uses them to combine the induction hypotheses arising structurally.
 We use \AF{[\_,\_,\_]\_∙^R\_} as a way to circumvent Agda's inhability to
-infer \AR{𝓔^A}, \AR{𝓔^B} and \AR{𝓔^R}.
+infer \AR{𝓥^A}, \AR{𝓥^B} and \AR{𝓥^R}.
 
 \begin{code}
-_∙^R_ :  {ℓ^EA ℓ^EB ℓ^ER : Level} {𝓔^A : Model ℓ^EA} {𝓔^B : Model ℓ^EB} {𝓔^R : RModel 𝓔^A 𝓔^B ℓ^ER} {Δ Γ : Cx} {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Γ -Env) 𝓔^B Δ} {σ : Ty} {u^A : 𝓔^A σ Δ} {u^B : _} → `∀[ 𝓔^R ] ρ^A ρ^B → rmodel 𝓔^R u^A u^B → `∀[ 𝓔^R ] (ρ^A `∙ u^A) (ρ^B `∙ u^B)
+_∙^R_ :  {ℓ^EA ℓ^EB ℓ^ER : Level} {𝓥^A : Model ℓ^EA} {𝓥^B : Model ℓ^EB} {𝓥^R : RModel 𝓥^A 𝓥^B ℓ^ER} {Δ Γ : Cx} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} {σ : Ty} {u^A : 𝓥^A σ Δ} {u^B : _} → `∀[ 𝓥^R ] ρ^A ρ^B → rmodel 𝓥^R u^A u^B → `∀[ 𝓥^R ] (ρ^A `∙ u^A) (ρ^B `∙ u^B)
 lookup^R (ρ^R ∙^R u^R) ze    = u^R
 lookup^R (ρ^R ∙^R u^R) (su v)  = lookup^R ρ^R v
 
-module Synchronised {ℓ^EA ℓ^MA ℓ^EB ℓ^MB : Level} {𝓔^A : Model ℓ^EA} {𝓜^A : Model ℓ^MA} {𝓢^A : Semantics 𝓔^A 𝓜^A} {𝓔^B : Model ℓ^EB} {𝓜^B : Model ℓ^MB} {𝓢^B : Semantics 𝓔^B 𝓜^B} {ℓ^RE ℓ^RM : Level} {𝓔^R : RModel 𝓔^A 𝓔^B ℓ^RE} {𝓜^R : RModel 𝓜^A 𝓜^B ℓ^RM} (𝓡 : Synchronisable 𝓢^A 𝓢^B 𝓔^R 𝓜^R) where
+module Synchronised {ℓ^EA ℓ^MA ℓ^EB ℓ^MB : Level} {𝓥^A : Model ℓ^EA} {𝓒^A : Model ℓ^MA} {𝓢^A : Semantics 𝓥^A 𝓒^A} {𝓥^B : Model ℓ^EB} {𝓒^B : Model ℓ^MB} {𝓢^B : Semantics 𝓥^B 𝓒^B} {ℓ^RE ℓ^RM : Level} {𝓥^R : RModel 𝓥^A 𝓥^B ℓ^RE} {𝓒^R : RModel 𝓒^A 𝓒^B ℓ^RM} (𝓡 : Synchronisable 𝓢^A 𝓢^B 𝓥^R 𝓒^R) where
   open Synchronisable 𝓡
 \end{code}\vspace{ -2.5em}
 %<*relational>
 \begin{code}
-  lemma :  {Γ Δ : Cx} {σ : Ty} (t : Tm σ Γ) {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Γ -Env) 𝓔^B Δ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
-           rmodel 𝓜^R (let open Eval 𝓢^A in sem ρ^A t) (let open Eval 𝓢^B in sem ρ^B t)
+  lemma :  {Γ Δ : Cx} {σ : Ty} (t : Tm σ Γ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} (ρ^R : `∀[ 𝓥^R ] ρ^A ρ^B) →
+           rmodel 𝓒^R (let open Eval 𝓢^A in sem ρ^A t) (let open Eval 𝓢^B in sem ρ^B t)
   lemma (`var v)       ρ^R = R⟦var⟧ v ρ^R
   lemma (f `$ t)       ρ^R = R⟦$⟧ (lemma f ρ^R) (lemma t ρ^R)
-  lemma (`λ t)         ρ^R = R⟦λ⟧ (λ inc u^R → lemma t (𝓔^R‿wk inc ρ^R ∙^R u^R))
+  lemma (`λ t)         ρ^R = R⟦λ⟧ (λ inc u^R → lemma t (𝓥^R‿wk inc ρ^R ∙^R u^R))
   lemma `⟨⟩            ρ^R = R⟦⟨⟩⟧
   lemma `tt            ρ^R = R⟦tt⟧
   lemma `ff            ρ^R = R⟦ff⟧
@@ -1631,7 +1637,7 @@ SynchronisableRenamingSubstitution :  Synchronisable Renaming Substitution
 \begin{code}
 SynchronisableRenamingSubstitution =
   record
-    { 𝓔^R‿wk  = λ inc ρ^R → pack^R (PEq.cong (wk^⊢ _ inc) ∘ lookup^R ρ^R)
+    { 𝓥^R‿wk  = λ inc ρ^R → pack^R (PEq.cong (wk^⊢ _ inc) ∘ lookup^R ρ^R)
     ; R⟦var⟧    = λ v ρ^R → lookup^R ρ^R v
     ; R⟦$⟧      = PEq.cong₂ _`$_
     ; R⟦λ⟧      = λ r → PEq.cong `λ (r (step refl) PEq.refl)
@@ -1771,7 +1777,7 @@ SynchronisableNormalise :  Synchronisable Normalise Normalise EQREL′ EQREL′
 \AgdaHide{
 \begin{code}
 SynchronisableNormalise =
-  record  { 𝓔^R‿wk  = λ inc ρ^R → pack^R (wk^EQREL _ inc ∘ lookup^R ρ^R)
+  record  { 𝓥^R‿wk  = λ inc ρ^R → pack^R (wk^EQREL _ inc ∘ lookup^R ρ^R)
           ; R⟦var⟧   = λ v ρ^R → lookup^R ρ^R v
           ; R⟦$⟧     = λ f → f refl
           ; R⟦λ⟧     = λ r → r
@@ -1814,19 +1820,19 @@ that \AB{𝓢^A} followed by \AB{𝓢^B} can be said to be equivalent
 to \AB{𝓢^C} (e.g. think \AF{Substitution} followed by \AF{Renaming}
 can be reduced to \AF{Substitution}) is packed in a record
 \AR{Fusable} indexed by the three semantics but also three
-relations. The first one (\AB{𝓔^R_{BC}}) states what it means
+relations. The first one (\AB{𝓥^R_{BC}}) states what it means
 for two environment values of \AB{𝓢^B} and \AB{𝓢^C} respectively
-to be related. The second one (\AB{𝓔^R}) characterises the triples
+to be related. The second one (\AB{𝓥^R}) characterises the triples
 of environments (one for each one of the semantics) which are
-compatible. Finally, the last one (\AB{𝓜^R}) relates values
+compatible. Finally, the last one (\AB{𝓒^R}) relates values
 in \AB{𝓢^B} and \AB{𝓢^C}'s respective models.
 
 \begin{code}
 record Fusable
-  {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REBC ℓ^RM : Level} {𝓔^A : Model ℓ^EA} {𝓔^B : Model ℓ^EB} {𝓔^C : Model ℓ^EC} {𝓜^A : Model ℓ^MA} {𝓜^B : Model ℓ^MB} {𝓜^C : Model ℓ^MC} (𝓢^A : Semantics 𝓔^A 𝓜^A) (𝓢^B : Semantics 𝓔^B 𝓜^B) (𝓢^C : Semantics 𝓔^C 𝓜^C)
-  (𝓔^R‿BC : RModel 𝓔^B 𝓔^C ℓ^REBC)
-  (𝓔^R :  {Θ Δ Γ : Cx} → (Γ -Env) 𝓔^A Δ → (Δ -Env) 𝓔^B Θ → (Γ -Env) 𝓔^C Θ → Set ℓ^RE)
-  (𝓜^R : RModel 𝓜^B 𝓜^C ℓ^RM)
+  {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REBC ℓ^RM : Level} {𝓥^A : Model ℓ^EA} {𝓥^B : Model ℓ^EB} {𝓥^C : Model ℓ^EC} {𝓒^A : Model ℓ^MA} {𝓒^B : Model ℓ^MB} {𝓒^C : Model ℓ^MC} (𝓢^A : Semantics 𝓥^A 𝓒^A) (𝓢^B : Semantics 𝓥^B 𝓒^B) (𝓢^C : Semantics 𝓥^C 𝓒^C)
+  (𝓥^R‿BC : RModel 𝓥^B 𝓥^C ℓ^REBC)
+  (𝓥^R :  {Θ Δ Γ : Cx} → (Γ -Env) 𝓥^A Δ → (Δ -Env) 𝓥^B Θ → (Γ -Env) 𝓥^C Θ → Set ℓ^RE)
+  (𝓒^R : RModel 𝓒^B 𝓒^C ℓ^RM)
   : Set (ℓ^RM ⊔ ℓ^RE ⊔ ℓ^EC ⊔ ℓ^EB ⊔ ℓ^EA ⊔ ℓ^MA ⊔ ℓ^REBC) where
 \end{code}
 \AgdaHide{
@@ -1846,37 +1852,37 @@ element of \AB{𝓢^A}'s model. Our first field is therefore
 \ARF{reify^A}:
 
 \begin{code}
-    reify^A    : {σ : Ty} → [ 𝓜^A σ ⟶ Tm σ ]
+    reify^A    : {σ : Ty} → [ 𝓒^A σ ⟶ Tm σ ]
 
 
-  𝓡 : {Γ Δ Θ : Cx} {σ : Ty} (t : Tm σ Γ) → (Γ -Env) 𝓔^A Δ → (Δ -Env) 𝓔^B Θ → (Γ -Env) 𝓔^C Θ → Set _
+  𝓡 : {Γ Δ Θ : Cx} {σ : Ty} (t : Tm σ Γ) → (Γ -Env) 𝓥^A Δ → (Δ -Env) 𝓥^B Θ → (Γ -Env) 𝓥^C Θ → Set _
   𝓡 t ρ^A ρ^B ρ^C =
     let eval^A = let open Eval 𝓢^A in sem
         eval^B = let open Eval 𝓢^B in sem
         eval^C = let open Eval 𝓢^C in sem
-    in rmodel 𝓜^R (eval^B ρ^B (reify^A (eval^A ρ^A t))) (eval^C ρ^C t)
+    in rmodel 𝓒^R (eval^B ρ^B (reify^A (eval^A ρ^A t))) (eval^C ρ^C t)
 
   field
 \end{code}
 
 Then come two constraints dealing with the relations talking
-about evaluation environments. \ARF{𝓔^R‿∙} tells us how to
+about evaluation environments. \ARF{𝓥^R‿∙} tells us how to
 extend related environments: one should be able to push related
 values onto the environments for \AB{𝓢^B} and \AB{𝓢^C} whilst
 merely extending the one for \AB{𝓢^A} with a token value generated
 using \ARF{embed}.
 
-\ARF{𝓔^R‿wk} guarantees that it is always possible to weaken
-the environments for \AB{𝓢^B} and \AB{𝓢^C} in a \AB{𝓔^R}
+\ARF{𝓥^R‿wk} guarantees that it is always possible to weaken
+the environments for \AB{𝓢^B} and \AB{𝓢^C} in a \AB{𝓥^R}
 preserving manner.
 
 \begin{code}
-    𝓔^R‿∙   :  {Γ Δ Θ : Cx} {σ : Ty} {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ} {u^B : 𝓔^B σ Θ} {u^C : 𝓔^C σ Θ} → 𝓔^R ρ^A ρ^B ρ^C → rmodel 𝓔^R‿BC u^B u^C →
-               𝓔^R  (wk[ 𝓢^A.wk ] (step refl) ρ^A `∙ 𝓢^A.embed ze)
+    𝓥^R‿∙   :  {Γ Δ Θ : Cx} {σ : Ty} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} {u^B : 𝓥^B σ Θ} {u^C : 𝓥^C σ Θ} → 𝓥^R ρ^A ρ^B ρ^C → rmodel 𝓥^R‿BC u^B u^C →
+               𝓥^R  (wk[ 𝓢^A.wk ] (step refl) ρ^A `∙ 𝓢^A.embed ze)
                     (ρ^B `∙ u^B) (ρ^C `∙ u^C)
 
-    𝓔^R‿wk  :  {Γ Δ Θ E : Cx} (inc : Θ ⊆ E) {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
-               𝓔^R ρ^A (wk[ 𝓢^B.wk ] inc ρ^B) (wk[ 𝓢^C.wk ] inc ρ^C)
+    𝓥^R‿wk  :  {Γ Δ Θ E : Cx} (inc : Θ ⊆ E) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} (ρ^R : 𝓥^R ρ^A ρ^B ρ^C) →
+               𝓥^R ρ^A (wk[ 𝓢^B.wk ] inc ρ^B) (wk[ 𝓢^C.wk ] inc ρ^C)
 \end{code}
 
 Then we have the relational counterpart of the various term
@@ -1886,7 +1892,7 @@ case. It states that fusion indeed happens when evaluating a
 variable using related environments.
 
 \begin{code}
-    R⟦var⟧  :  {Γ Δ Θ : Cx} {σ : Ty} (v : Var σ Γ) {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ} → 𝓔^R ρ^A ρ^B ρ^C → 𝓡 (`var v) ρ^A ρ^B ρ^C
+    R⟦var⟧  :  {Γ Δ Θ : Cx} {σ : Ty} (v : Var σ Γ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} → 𝓥^R ρ^A ρ^B ρ^C → 𝓡 (`var v) ρ^A ρ^B ρ^C
 \end{code}
 
 The \AIC{`λ}-case puts some rather strong restrictions on the way
@@ -1903,8 +1909,8 @@ related values to be substituted for the variable bound by the \AIC{`λ}.
 
 \begin{code}
     R⟦λ⟧    :
-      {Γ Δ Θ : Cx} {σ τ : Ty} (t : Tm τ (Γ ∙ σ)) {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
-      (r :  {E : Cx} (inc : Θ ⊆ E) {u^B : 𝓔^B σ E} {u^C : 𝓔^C σ E} → rmodel 𝓔^R‿BC u^B u^C →
+      {Γ Δ Θ : Cx} {σ τ : Ty} (t : Tm τ (Γ ∙ σ)) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} (ρ^R : 𝓥^R ρ^A ρ^B ρ^C) →
+      (r :  {E : Cx} (inc : Θ ⊆ E) {u^B : 𝓥^B σ E} {u^C : 𝓥^C σ E} → rmodel 𝓥^R‿BC u^B u^C →
             let  ρ^A′ =  wk[ 𝓢^A.wk ] (step refl) ρ^A `∙ 𝓢^A.embed ze
                  ρ^B′ =  wk[ 𝓢^B.wk ] inc ρ^B `∙ u^B
                  ρ^C′ =  wk[ 𝓢^C.wk ] inc ρ^C `∙ u^C
@@ -1919,16 +1925,16 @@ fusion can happen on the compound expression.
 \AgdaHide{
 \begin{code}
     R⟦$⟧    : {Γ Δ Θ : Cx} {σ τ : Ty} (f : Tm (σ `→ τ) Γ) (t : Tm σ Γ)
-            {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ} →
-             (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
+            {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} →
+             (ρ^R : 𝓥^R ρ^A ρ^B ρ^C) →
             𝓡 f ρ^A ρ^B ρ^C → 𝓡 t ρ^A ρ^B ρ^C → 𝓡 (f `$ t) ρ^A ρ^B ρ^C
 
-    R⟦⟨⟩⟧   : {Γ Δ Θ : Cx} {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ} → 𝓔^R ρ^A ρ^B ρ^C → 𝓡 `⟨⟩ ρ^A ρ^B ρ^C
-    R⟦tt⟧   : {Γ Δ Θ : Cx} {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ} → 𝓔^R ρ^A ρ^B ρ^C → 𝓡 `tt ρ^A ρ^B ρ^C
-    R⟦ff⟧   : {Γ Δ Θ : Cx} {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ} → 𝓔^R ρ^A ρ^B ρ^C → 𝓡 `ff ρ^A ρ^B ρ^C
+    R⟦⟨⟩⟧   : {Γ Δ Θ : Cx} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} → 𝓥^R ρ^A ρ^B ρ^C → 𝓡 `⟨⟩ ρ^A ρ^B ρ^C
+    R⟦tt⟧   : {Γ Δ Θ : Cx} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} → 𝓥^R ρ^A ρ^B ρ^C → 𝓡 `tt ρ^A ρ^B ρ^C
+    R⟦ff⟧   : {Γ Δ Θ : Cx} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} → 𝓥^R ρ^A ρ^B ρ^C → 𝓡 `ff ρ^A ρ^B ρ^C
     R⟦if⟧ : {Γ Δ Θ : Cx} {σ : Ty} (b : Tm `2 Γ) (l r : Tm σ Γ)
-            {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ} →
-            𝓔^R ρ^A ρ^B ρ^C →
+            {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} →
+            𝓥^R ρ^A ρ^B ρ^C →
             𝓡 b ρ^A ρ^B ρ^C →
             𝓡 l ρ^A ρ^B ρ^C →
             𝓡 r ρ^A ρ^B ρ^C →
@@ -1944,17 +1950,17 @@ identified what the constraints should be, proving the fundamental
 lemma turns out to amount to a simple traversal we choose to omit here.
 
 \begin{code}
-module Fusion {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REB ℓ^RM : Level} {𝓔^A : Model ℓ^EA} {𝓔^B : Model ℓ^EB} {𝓔^C : Model ℓ^EC} {𝓜^A : Model ℓ^MA} {𝓜^B : Model ℓ^MB} {𝓜^C : Model ℓ^MC} {𝓢^A : Semantics 𝓔^A 𝓜^A} {𝓢^B : Semantics 𝓔^B 𝓜^B} {𝓢^C : Semantics 𝓔^C 𝓜^C} {𝓔^R‿BC : RModel 𝓔^B 𝓔^C ℓ^REB} {𝓔^R : {Θ Δ Γ : Cx} (ρ^A : (Γ -Env) 𝓔^A Δ) (ρ^B : (Δ -Env) 𝓔^B Θ) (ρ^C : (Γ -Env) 𝓔^C Θ) → Set ℓ^RE} {𝓜^R : RModel 𝓜^B 𝓜^C ℓ^RM} (fusable : Fusable 𝓢^A 𝓢^B 𝓢^C 𝓔^R‿BC 𝓔^R 𝓜^R) where
+module Fusion {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REB ℓ^RM : Level} {𝓥^A : Model ℓ^EA} {𝓥^B : Model ℓ^EB} {𝓥^C : Model ℓ^EC} {𝓒^A : Model ℓ^MA} {𝓒^B : Model ℓ^MB} {𝓒^C : Model ℓ^MC} {𝓢^A : Semantics 𝓥^A 𝓒^A} {𝓢^B : Semantics 𝓥^B 𝓒^B} {𝓢^C : Semantics 𝓥^C 𝓒^C} {𝓥^R‿BC : RModel 𝓥^B 𝓥^C ℓ^REB} {𝓥^R : {Θ Δ Γ : Cx} (ρ^A : (Γ -Env) 𝓥^A Δ) (ρ^B : (Δ -Env) 𝓥^B Θ) (ρ^C : (Γ -Env) 𝓥^C Θ) → Set ℓ^RE} {𝓒^R : RModel 𝓒^B 𝓒^C ℓ^RM} (fusable : Fusable 𝓢^A 𝓢^B 𝓢^C 𝓥^R‿BC 𝓥^R 𝓒^R) where
   open Fusable fusable
 
-  lemma :  {Γ Δ Θ : Cx} {σ : Ty} (t : Tm σ Γ) {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
+  lemma :  {Γ Δ Θ : Cx} {σ : Ty} (t : Tm σ Γ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} (ρ^R : 𝓥^R ρ^A ρ^B ρ^C) →
            𝓡 t ρ^A ρ^B ρ^C
 \end{code}
 \AgdaHide{
 \begin{code}
   lemma (`var v)       ρ^R = R⟦var⟧ v ρ^R
   lemma (f `$ t)       ρ^R = R⟦$⟧ f t ρ^R (lemma f ρ^R) (lemma t ρ^R)
-  lemma (`λ t)         ρ^R = R⟦λ⟧ t ρ^R (λ inc u^R → lemma t (𝓔^R‿∙ (𝓔^R‿wk inc ρ^R) u^R))
+  lemma (`λ t)         ρ^R = R⟦λ⟧ t ρ^R (λ inc u^R → lemma t (𝓥^R‿∙ (𝓥^R‿wk inc ρ^R) u^R))
   lemma `⟨⟩            ρ^R = R⟦⟨⟩⟧ ρ^R
   lemma `tt            ρ^R = R⟦tt⟧ ρ^R
   lemma `ff            ρ^R = R⟦ff⟧ ρ^R
@@ -1972,10 +1978,10 @@ A \AR{SyntacticFusable} record packs the evidence necessary to
 prove that the \AR{Syntactic} semantics \AB{syn^A} and \AB{syn^B}
 can be fused using the \AR{Syntactic} semantics \AB{syn^C}. It
 is indexed by these three \AR{Syntactic}s as well as two relations
-corresponding to the \AB{𝓔^R_{BC}} and \AB{𝓔^R} ones of the
+corresponding to the \AB{𝓥^R_{BC}} and \AB{𝓥^R} ones of the
 \AR{Fusable} framework.
 
-It contains the same \ARF{𝓔^R‿∙}, \ARF{𝓔^R‿wk} and \ARF{R⟦var⟧}
+It contains the same \ARF{𝓥^R‿∙}, \ARF{𝓥^R‿wk} and \ARF{R⟦var⟧}
 fields as a \AR{Fusable} as well as a fourth one (\ARF{embed^{BC}})
 saying that \AB{syn^B} and \AB{syn^C}'s respective \ARF{embed}s are
 producing related values.
@@ -1983,42 +1989,42 @@ producing related values.
 \AgdaHide{
 \begin{code}
 record SyntacticFusable
-  {ℓ^EA ℓ^EB ℓ^EC ℓ^REBC ℓ^RE : Level} {𝓔^A : Model ℓ^EA} {𝓔^B : Model ℓ^EB} {𝓔^C : Model ℓ^EC} (synA : Syntactic 𝓔^A)
-  (synB : Syntactic 𝓔^B)
-  (synC : Syntactic 𝓔^C)
-  (𝓔^R‿BC : RModel 𝓔^B 𝓔^C ℓ^REBC)
-  (𝓔^R : {Θ Δ Γ : Cx} (ρ^A : (Γ -Env) 𝓔^A Δ) (ρ^B : (Δ -Env) 𝓔^B Θ) (ρ^C : (Γ -Env) 𝓔^C Θ) → Set ℓ^RE)
+  {ℓ^EA ℓ^EB ℓ^EC ℓ^REBC ℓ^RE : Level} {𝓥^A : Model ℓ^EA} {𝓥^B : Model ℓ^EB} {𝓥^C : Model ℓ^EC} (synA : Syntactic 𝓥^A)
+  (synB : Syntactic 𝓥^B)
+  (synC : Syntactic 𝓥^C)
+  (𝓥^R‿BC : RModel 𝓥^B 𝓥^C ℓ^REBC)
+  (𝓥^R : {Θ Δ Γ : Cx} (ρ^A : (Γ -Env) 𝓥^A Δ) (ρ^B : (Δ -Env) 𝓥^B Θ) (ρ^C : (Γ -Env) 𝓥^C Θ) → Set ℓ^RE)
   : Set (ℓ^RE ⊔ ℓ^REBC ⊔ ℓ^EC ⊔ ℓ^EB ⊔ ℓ^EA)
   where
   module Syn^A = Syntactic synA
   module Syn^B = Syntactic synB
   module Syn^C = Syntactic synC
   field
-    𝓔^R‿∙ : ({Γ Δ Θ : Cx} {σ : Ty} {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ}
-               {u^B : 𝓔^B σ Θ} {u^C : 𝓔^C σ Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) (u^R : rmodel 𝓔^R‿BC u^B u^C) →
-               𝓔^R (wk[ Syn^A.wk ] (step refl) ρ^A `∙ Syn^A.embed ze)
+    𝓥^R‿∙ : ({Γ Δ Θ : Cx} {σ : Ty} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ}
+               {u^B : 𝓥^B σ Θ} {u^C : 𝓥^C σ Θ} (ρ^R : 𝓥^R ρ^A ρ^B ρ^C) (u^R : rmodel 𝓥^R‿BC u^B u^C) →
+               𝓥^R (wk[ Syn^A.wk ] (step refl) ρ^A `∙ Syn^A.embed ze)
                       (ρ^B `∙ u^B)
                       (ρ^C `∙ u^C))
-    𝓔^R‿wk : {Γ Δ Θ E : Cx} (inc : Θ ⊆ E)
-               {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ} (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
-               𝓔^R ρ^A(wk[ Syn^B.wk ] inc ρ^B) (wk[ Syn^C.wk ] inc ρ^C)
-    R⟦var⟧  : {Γ Δ Θ : Cx} {σ : Ty} (v : Var σ Γ) {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Δ -Env) 𝓔^B Θ} {ρ^C : (Γ -Env) 𝓔^C Θ}
-              (ρ^R : 𝓔^R ρ^A ρ^B ρ^C) →
+    𝓥^R‿wk : {Γ Δ Θ E : Cx} (inc : Θ ⊆ E)
+               {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} (ρ^R : 𝓥^R ρ^A ρ^B ρ^C) →
+               𝓥^R ρ^A(wk[ Syn^B.wk ] inc ρ^B) (wk[ Syn^C.wk ] inc ρ^C)
+    R⟦var⟧  : {Γ Δ Θ : Cx} {σ : Ty} (v : Var σ Γ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ}
+              (ρ^R : 𝓥^R ρ^A ρ^B ρ^C) →
               Eval.sem (syntactic synB) ρ^B (Eval.sem (syntactic synA) ρ^A (`var v))
               ≡ Eval.sem (syntactic synC) ρ^C (`var v)
 \end{code}}
 \begin{code}
-    embed^BC : {Γ : Cx} {σ : Ty} → rmodel 𝓔^R‿BC {_} {Γ ∙ σ} (Syn^B.embed ze) (Syn^C.embed ze)
+    embed^BC : {Γ : Cx} {σ : Ty} → rmodel 𝓥^R‿BC {_} {Γ ∙ σ} (Syn^B.embed ze) (Syn^C.embed ze)
 \end{code}
 
 The important result is that given a \AR{SyntacticFusable} relating
 three \AR{Syntactic} semantics, one can deliver a \AR{Fusable} relating
-the corresponding \AR{Semantics} where \AB{𝓜^R} is the propositional
+the corresponding \AR{Semantics} where \AB{𝓒^R} is the propositional
 equality.
 
 \begin{code}
-syntacticFusable :  {ℓ^EA ℓ^EB ℓ^EC ℓ^RE ℓ^REBC : Level} {𝓔^A : Model ℓ^EA} {𝓔^B : Model ℓ^EB} {𝓔^C : Model ℓ^EC} {syn^A : Syntactic 𝓔^A} {syn^B : Syntactic 𝓔^B} {syn^C : Syntactic 𝓔^C} {𝓔^R‿BC : RModel 𝓔^B 𝓔^C ℓ^REBC} {𝓔^R : {Θ Δ Γ : Cx} (ρ^A : (Γ -Env) 𝓔^A Δ) (ρ^B : (Δ -Env) 𝓔^B Θ) (ρ^C : (Γ -Env) 𝓔^C Θ) → Set ℓ^RE} (syn^R : SyntacticFusable syn^A syn^B syn^C 𝓔^R‿BC 𝓔^R) →
-  Fusable (syntactic syn^A) (syntactic syn^B) (syntactic syn^C) 𝓔^R‿BC 𝓔^R PropEq
+syntacticFusable :  {ℓ^EA ℓ^EB ℓ^EC ℓ^RE ℓ^REBC : Level} {𝓥^A : Model ℓ^EA} {𝓥^B : Model ℓ^EB} {𝓥^C : Model ℓ^EC} {syn^A : Syntactic 𝓥^A} {syn^B : Syntactic 𝓥^B} {syn^C : Syntactic 𝓥^C} {𝓥^R‿BC : RModel 𝓥^B 𝓥^C ℓ^REBC} {𝓥^R : {Θ Δ Γ : Cx} (ρ^A : (Γ -Env) 𝓥^A Δ) (ρ^B : (Δ -Env) 𝓥^B Θ) (ρ^C : (Γ -Env) 𝓥^C Θ) → Set ℓ^RE} (syn^R : SyntacticFusable syn^A syn^B syn^C 𝓥^R‿BC 𝓥^R) →
+  Fusable (syntactic syn^A) (syntactic syn^B) (syntactic syn^C) 𝓥^R‿BC 𝓥^R PropEq
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -2026,8 +2032,8 @@ syntacticFusable synF =
   let open SyntacticFusable synF in
   record
     { reify^A    = id
-    ; 𝓔^R‿∙   = 𝓔^R‿∙
-    ; 𝓔^R‿wk  = 𝓔^R‿wk
+    ; 𝓥^R‿∙   = 𝓥^R‿∙
+    ; 𝓥^R‿wk  = 𝓥^R‿wk
     ; R⟦var⟧    = R⟦var⟧
     ; R⟦$⟧      = λ f t ρ^R → PEq.cong₂ _`$_
     ; R⟦λ⟧      = λ t ρ^R r → PEq.cong `λ (r (step refl) embed^BC)
@@ -2043,7 +2049,7 @@ syntacticFusable synF =
 
 It is then trivial to prove that \AR{Renaming} can be fused with itself
 to give rise to another renaming (obtained by composing the two context
-inclusions): \ARF{𝓔^R‿∙} uses \AF{[\_,\_]}, a case-analysis combinator
+inclusions): \ARF{𝓥^R‿∙} uses \AF{[\_,\_]}, a case-analysis combinator
 for \AB{σ} \AD{∈} (\AB{Γ} \AIC{∙} τ) distinguishing the case where \AB{σ}
 \AD{∈} \AB{Γ} and the one where \AB{σ} equals \AB{τ}, whilst the other connectives
 are either simply combining induction hypotheses using the congruence of
@@ -2056,8 +2062,8 @@ RenamingFusable :
   SyntacticFusable  syntacticRenaming syntacticRenaming syntacticRenaming
                     PropEq (λ ρ^A ρ^B ρ^C → ∀ σ pr → lookup (trans ρ^A ρ^B) pr ≡ lookup ρ^C pr)
 RenamingFusable = record
-  { 𝓔^R‿∙     = λ ρ^R eq → [ eq ,, ρ^R ]
-  ; 𝓔^R‿wk    = λ inc ρ^R σ pr → PEq.cong (lookup inc) (ρ^R σ pr)
+  { 𝓥^R‿∙     = λ ρ^R eq → [ eq ,, ρ^R ]
+  ; 𝓥^R‿wk    = λ inc ρ^R σ pr → PEq.cong (lookup inc) (ρ^R σ pr)
   ; R⟦var⟧    = λ v ρ^R → PEq.cong `var (ρ^R _ v)
   ; embed^BC  = PEq.refl }
 \end{code}
@@ -2074,8 +2080,8 @@ RenamingSubstitutionFusable :
 \AgdaHide{
 \begin{code}
 RenamingSubstitutionFusable =
-  record { 𝓔^R‿∙   = λ ρ^R eq → [ eq ,, ρ^R ]
-         ; 𝓔^R‿wk  = λ inc ρ^R σ pr → PEq.cong (wk^⊢ σ inc) (ρ^R σ pr)
+  record { 𝓥^R‿∙   = λ ρ^R eq → [ eq ,, ρ^R ]
+         ; 𝓥^R‿wk  = λ inc ρ^R σ pr → PEq.cong (wk^⊢ σ inc) (ρ^R σ pr)
          ; R⟦var⟧    = λ v ρ^R → ρ^R _ v
          ; embed^BC   = PEq.refl }
 \end{code}}
@@ -2094,10 +2100,10 @@ SubstitutionRenamingFusable :
 \begin{code}
 SubstitutionRenamingFusable =
   let module RenRen = Fusion (syntacticFusable RenamingFusable) in
-  record { 𝓔^R‿∙   = λ {_} {_} {_} {_} {ρ^A} {ρ^B} {ρ^C} ρ^R eq → [ eq ,, (λ σ pr →
+  record { 𝓥^R‿∙   = λ {_} {_} {_} {_} {ρ^A} {ρ^B} {ρ^C} ρ^R eq → [ eq ,, (λ σ pr →
                          PEq.trans (RenRen.lemma (lookup ρ^A pr) (λ _ _ → PEq.refl))
                                    (ρ^R σ pr)) ]
-         ; 𝓔^R‿wk  = λ inc {ρ^A} {ρ^B} {ρ^C} ρ^R σ pr →
+         ; 𝓥^R‿wk  = λ inc {ρ^A} {ρ^B} {ρ^C} ρ^R σ pr →
                          PEq.trans (PEq.sym (RenRen.lemma (lookup ρ^A pr) (λ _ _ → PEq.refl)))
                                    (PEq.cong (wk^⊢ σ inc) (ρ^R σ pr))
          ; R⟦var⟧    = λ v ρ^R → ρ^R _ v
@@ -2119,10 +2125,10 @@ SubstitutionFusable :
 SubstitutionFusable =
   let module RenSubst = Fusion (syntacticFusable RenamingSubstitutionFusable)
       module SubstRen = Fusion (syntacticFusable SubstitutionRenamingFusable) in
-  record { 𝓔^R‿∙   = λ {_} {_} {_} {_} {ρ^A} {ρ^B} {ρ^C} ρ^R eq → [ eq ,, (λ σ pr →
+  record { 𝓥^R‿∙   = λ {_} {_} {_} {_} {ρ^A} {ρ^B} {ρ^C} ρ^R eq → [ eq ,, (λ σ pr →
                          PEq.trans (RenSubst.lemma (lookup ρ^A pr) (λ _ _ → PEq.refl))
                                    (ρ^R σ pr)) ]
-         ; 𝓔^R‿wk  = λ inc {ρ^A} {ρ^B} {ρ^C} ρ^R σ pr →
+         ; 𝓥^R‿wk  = λ inc {ρ^A} {ρ^B} {ρ^C} ρ^R σ pr →
                          PEq.trans (PEq.sym (SubstRen.lemma (lookup ρ^A pr) (λ _ _ → PEq.refl)))
                                    (PEq.cong (wk^⊢ σ inc) (ρ^R σ pr))
          ; R⟦var⟧    = λ v ρ^R → ρ^R _ v
@@ -2174,8 +2180,8 @@ RenamingNormaliseFusable : Fusable Renaming Normalise Normalise EQREL′
 RenamingNormaliseFusable =
   record
     { reify^A   = id
-    ; 𝓔^R‿∙  = λ ρ^R u^R → [ u^R ,, ρ^R ]
-    ; 𝓔^R‿wk = λ inc ρ^R → λ σ pr → wk^EQREL σ inc (ρ^R σ pr)
+    ; 𝓥^R‿∙  = λ ρ^R u^R → [ u^R ,, ρ^R ]
+    ; 𝓥^R‿wk = λ inc ρ^R → λ σ pr → wk^EQREL σ inc (ρ^R σ pr)
     ; R⟦var⟧   = λ v ρ^R → ρ^R _ v
     ; R⟦$⟧     = λ _ _ _ r → r refl
     ; R⟦λ⟧     = λ _ _ r → r
@@ -2254,7 +2260,7 @@ SubstitutionNormaliseFusable =
       module EqNorm  = Synchronised SynchronisableNormalise in
   record
     { reify^A   = id
-    ; 𝓔^R‿∙  = λ {_} {_} {_} {_} {ρ^A} {ρ^B} {ρ^C} ρ^R u^R →
+    ; 𝓥^R‿∙  = λ {_} {_} {_} {_} {ρ^A} {ρ^B} {ρ^C} ρ^R u^R →
                      (proj₁ ρ^R ∙^R reflEQREL _ u^R)
                    , [ (λ {Θ} inc → wk^EQREL _ inc u^R)
                      ,, (λ σ pr {Θ} inc →
@@ -2263,7 +2269,7 @@ SubstitutionNormaliseFusable =
                                     ((proj₁ ∘ proj₂) ρ^R σ pr inc)) ]
                      , [ u^R ,, (λ σ pr → transEQREL σ (RenNorm.lemma (lookup ρ^A pr) (λ _ → lookup^R (proj₁ ρ^R)))
                                           ((proj₂ ∘ proj₂) ρ^R σ pr)) ]
-    ; 𝓔^R‿wk = λ inc {ρ^A} ρ^R → pack^R (λ pr → wk^EQREL _ inc (lookup^R (proj₁ ρ^R) pr))
+    ; 𝓥^R‿wk = λ inc {ρ^A} ρ^R → pack^R (λ pr → wk^EQREL _ inc (lookup^R (proj₁ ρ^R) pr))
                           , (λ σ pr inc′ →
        transEQREL σ (EqNorm.lemma (lookup ρ^A pr) (pack^R (λ {τ} v → transEQREL τ (wk^2 τ inc inc′ (lookup^R (proj₁ ρ^R) v)) (wk^EQREL τ (trans inc inc′) (lookup^R (proj₁ ρ^R) v)))))
        (transEQREL σ ((proj₁ (proj₂ ρ^R)) σ pr (trans inc inc′))
@@ -2301,8 +2307,8 @@ RenamingPrettyPrintingFusable : Fusable Renaming Printing Printing PropEq
 \begin{code}
 RenamingPrettyPrintingFusable = record
   { reify^A   = id
-  ; 𝓔^R‿∙   = λ {Γ} {Δ} {Θ} {σ} {ρ^A} {ρ^B} {ρ^C} {u^B} {u^C} ρ^R eq → pack^R ((λ {σ} v → [_,,_] {P = λ σ v → lookup (trans (step ρ^A `∙ ze) (ρ^B `∙ u^B)) v ≡ lookup (ρ^C `∙ u^C) v} eq (λ σ v → lookup^R ρ^R v) σ v))
-  ; 𝓔^R‿wk  = λ _ ρ^R → pack^R (PEq.cong (mkN ∘ getN) ∘ lookup^R ρ^R)
+  ; 𝓥^R‿∙   = λ {Γ} {Δ} {Θ} {σ} {ρ^A} {ρ^B} {ρ^C} {u^B} {u^C} ρ^R eq → pack^R ((λ {σ} v → [_,,_] {P = λ σ v → lookup (trans (step ρ^A `∙ ze) (ρ^B `∙ u^B)) v ≡ lookup (ρ^C `∙ u^C) v} eq (λ σ v → lookup^R ρ^R v) σ v))
+  ; 𝓥^R‿wk  = λ _ ρ^R → pack^R (PEq.cong (mkN ∘ getN) ∘ lookup^R ρ^R)
   ; R⟦var⟧   = λ v ρ^R → PEq.cong₂ (λ n ns → getN n , ns) (lookup^R ρ^R v)
   ; R⟦λ⟧     = λ t ρ^R r → λ { {n₁ ∷ n₁s} {n₂ ∷ n₂s} eq →
                         let (neq   , nseq) = ∷-inj eq

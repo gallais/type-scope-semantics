@@ -346,11 +346,13 @@ defined later on is vastly simplified by this rather simple decision.
 %<*environment>
 \begin{code}
 record _-Env {ℓ^A : Level} (Γ : Cx) (𝓥 : Model ℓ^A) (Δ : Cx) : Set ℓ^A where
-  constructor pack
-  field lookup : {σ : Ty} → Var σ Γ → 𝓥 σ Δ
-open _-Env public
+  constructor pack; field lookup : {σ : Ty} → Var σ Γ → 𝓥 σ Δ
 \end{code}
 %</environment>
+\AgdaHide{
+\begin{code}
+open _-Env public
+\end{code}}
 
 Just as an environment interprets variables in a model, a computation
 gives a meaning to terms into a model.
@@ -448,10 +450,10 @@ refl = pack id
 select : {ℓ^A : Level} {Γ Δ Θ : Cx} {𝓥 : Model ℓ^A} → Γ ⊆ Δ → (Δ -Env) 𝓥 Θ → (Γ -Env) 𝓥 Θ
 lookup (select inc ρ) = lookup ρ ∘ lookup inc
 
-step : {σ : Ty} {Γ : Cx} → [ (Γ ⊆_) ⟶ σ ⊢ (Γ ⊆_) ]
+step : {σ : Ty} {Γ Δ : Cx} → Γ ⊆ Δ → Γ ⊆ (Δ ∙ σ)
 step inc = select inc (pack su)
 
-pop! : {σ : Ty} {Γ : Cx} → [ (Γ ⊆_) ⟶ σ ⊢ ((Γ ∙ σ) ⊆_) ]
+pop! : {σ : Ty} {Γ Δ : Cx} → Γ ⊆ Δ → (Γ ∙ σ) ⊆ (Δ ∙ σ)
 pop! inc = step inc `∙ ze
 \end{code}
 
@@ -500,12 +502,11 @@ record Semantics {ℓ^E ℓ^M : Level} (𝓥 : Model ℓ^E) (𝓒 : Model ℓ^M)
 \end{code}}
 
 The first two methods of a \AR{Semantics} are dealing with environment
-values. These values need to come with a notion of weakening (\ARF{wk})
-so that the traversal may introduce fresh variables when going under a
-binder and keep the environment well-scoped. We also need to be able to
-manufacture environment values given a variable in scope (\ARF{embed})
-in order to be able to craft a diagonal environment to evaluate an open
-term.
+values. They need to be thinnable (\ARF{wk}) so that the traversal may
+introduce fresh variables when going under a binder whilst keeping the
+environment well-scoped. The ability to manufacture values from variables
+(\ARF{embed}) guarantees the possibility to kickstart the evaluation
+of an open term with a dummy environment.
 
 \begin{code}
     wk      :  (σ : Ty) → Thinnable (𝓥 σ)
@@ -515,25 +516,23 @@ term.
 The structure of the model is quite constrained: each constructor
 in the language needs a semantic counterpart. We start with the
 two most interesting cases: \ARF{⟦var⟧} and \ARF{⟦λ⟧}. The variable
-case corresponds to the intuition that the environment attaches
-interpretations to the variables in scope: it guarantees that one
-can turn a value from the environment into a model one. The traversal
-will therefore be able to, when hitting a variable, lookup the
-corresponding value in the environment and return it.
+case bridges the gap between the fact that the environment translates
+variables into values \AB{𝓥} but the evaluation function returns
+computations \AB{𝓒}.
 
 \begin{code}
     ⟦var⟧   :  {σ : Ty} → [ 𝓥 σ ⟶ 𝓒 σ ]
 \end{code}
 
-The semantic λ-abstraction is notable for two reasons: first, following
-Mitchell and Moggi~\cite{mitchell1991kripke}, its structure is typical
-of models à la Kripke allowing arbitrary extensions of the context; and
-second, instead of being a function in the host language taking values
-in the model as arguments, it is a function that takes \emph{environment}
-values. Indeed, the body of a λ-abstraction exposes one extra free variable
-thus prompting us to extend the evaluation environment with an additional
-value. This slight variation in the type of semantic λ-abstraction
-guarantees that such an argument will be provided to us.
+The semantic $λ$-abstraction is notable for two reasons: first, following
+Mitchell and Moggi~\cite{mitchell1991kripke}, its \AF{□}-structure is
+typical of models à la Kripke allowing arbitrary extensions of the context;
+and second, instead of being a function in the host language taking
+computations to computations,  it takes \emph{values} to computations.
+It matches precisely the fact that the body of a $λ$-abstraction exposes
+one extra free variable, prompting us to extend the environment with a
+value for it. In the special case where \AB{𝓥} = \AB{𝓒} (normalisation
+by evaluation for instance), we recover the usual Kripke structure.
 
 \AgdaHide{
 \begin{code}
@@ -544,9 +543,9 @@ guarantees that such an argument will be provided to us.
 \end{code}
 
 The remaining fields' types are a direct translation of the types
-of the constructor they correspond to where the type constructor
-characterising typing derivations (\AD{\_⊢\_}) has been replaced
-with the one corresponding to model values (\AB{𝓒}).
+of the constructor they correspond to: substructures have simply
+been replaced with computations thus making these operators ideal
+to combine induction hypotheses. 
 
 \AgdaHide{
 \begin{code}
@@ -599,7 +598,7 @@ module Eval {ℓ^E ℓ^M : Level} {𝓥 : Model ℓ^E} {𝓒 : Model ℓ^M} (�
  lemma′ t = sem diagonal t
 \end{code}}
 
-Finally, one can define a diagonal environment (\AB{Γ} \AF{-Env}) \AB{𝓥} \AB{Γ}
+Finally, one can define a dummy environment (\AB{Γ} \AF{-Env}) \AB{𝓥} \AB{Γ}
 by \AIC{pack}ing the \ARF{embed} field. This lets us kickstart the evaluation
 of arbitrary \emph{open} terms thus generalising the pattern commonly seen in
 normalisation by evaluation where \ARF{embed} simply $η$-expand the variables.
@@ -608,16 +607,18 @@ normalisation by evaluation where \ARF{embed} simply $η$-expand the variables.
 \section{Syntax is the Identity Semantics}
 
 As we have explained earlier, this work has been directly influenced by
-McBride's manuscript~\cite{mcbride2005type}. It seems appropriate
+McBride's ~(\cite{mcbride2005type}) manuscript. It seems appropriate
 to start our exploration of \AR{Semantics} with the two operations he
 implements as a single traversal. We call these operations syntactic
-because the values in the model are actual terms and almost all term
+because the computations in the model are actual terms and almost all term
 constructors are kept as their own semantic counterpart. As observed by
 McBride, it is enough to provide three operations describing the properties
 of the values in the environment to get a full-blown \AR{Semantics}. This
 fact is witnessed by our simple \AR{Syntactic} record type together with
 the \AF{syntactic} function turning its inhabitants into associated
 \AR{Semantics}.
+
+\todo{Shorter name for embed: val?}
 
 %<*syntactic>
 \begin{code}
@@ -628,16 +629,16 @@ record Syntactic {ℓ^A : Level} (𝓥 : Model ℓ^A) : Set ℓ^A where
 \end{code}\vspace{ -1.5em}%ugly but it works!
 %</syntactic>
 \begin{code}
-syntactic : {ℓ^A : Level} {𝓥 : Model ℓ^A} (syn : Syntactic 𝓥) → Semantics 𝓥 Tm
+syntactic : {ℓ^A : Level} {𝓥 : Model ℓ^A} → Syntactic 𝓥 → Semantics 𝓥 Tm
 syntactic syn = let open Syntactic syn in record
-  { wk      = wk; embed   = embed; ⟦var⟧   = ⟦var⟧
-  ; ⟦λ⟧     = λ t → `λ (t (step refl) (embed ze))
-  ; _⟦$⟧_   = _`$_; ⟦⟨⟩⟧ = `⟨⟩; ⟦tt⟧ = `tt; ⟦ff⟧ = `ff; ⟦if⟧  = `if }
+  { wk   = wk; embed   = embed; ⟦var⟧   = ⟦var⟧
+  ; ⟦λ⟧  = λ t → `λ (t (step refl) (embed ze)) ; _⟦$⟧_ = _`$_
+  ; ⟦⟨⟩⟧ = `⟨⟩; ⟦tt⟧ = `tt; ⟦ff⟧ = `ff; ⟦if⟧  = `if }
 \end{code}
 
 The shape of \ARF{⟦λ⟧} or \ARF{⟦⟨⟩⟧} should not trick the reader
 into thinking that this definition performs some sort of η-expansion:
-\AF{lemma} indeed only ever uses one of these when the evaluated term's
+\AF{sem} indeed only ever uses one of these when the evaluated term's
 head constructor is already respectively a \AIC{`λ} or a \AIC{`⟨⟩}.
 It is therefore absolutely possible to define renaming or substitution
 using this approach. We can now port McBride's definitions to our
@@ -647,24 +648,17 @@ framework.
 Our first example of a \AR{Syntactic} operation works with variables as
 environment values. As a consequence, embedding is trivial; we have already
 defined weakening earlier (see Section \ref{category}) and we can turn
-a variable into a term by using the \AIC{`var} constructor.
+a variable into a term by using the \AIC{`var} constructor. The type
+of \AF{sem} specialised to this semantics is then precisely the proof
+that terms are thinnable.
 
+\AgdaHide{
 \begin{code}
 syntacticRenaming : Syntactic Var
 syntacticRenaming = record { embed = id; wk = wk^∈; ⟦var⟧ = `var }
-\end{code}
-\AgdaHide{
-\begin{code}
+
 Renaming : Semantics Var Tm; Renaming = syntactic syntacticRenaming
 \end{code}}
-
-We obtain a rather involved definition of the identity of type \AB{Γ}
-\AD{⊢} \AB{σ} \AS{→} \AB{Γ} \AD{⊢} \AB{σ} as \AF{Renaming} \AF{⊨eval\_}.
-But this construction is not at all useless: indeed, the more general
-\AF{Renaming} \AF{⊨⟦\_⟧\_} function has type \AB{Γ} \AD{⊢} \AB{σ} \AS{→}
-\AB{Γ} \AF{⊆} \AB{Δ} \AS{→} \AB{Δ} \AD{⊢} \AB{σ} which turns out to be
-precisely the notion of weakening for terms we need once its arguments
-have been flipped.
 
 \begin{code}
 wk^⊢ : (σ : Ty) → Thinnable (Tm σ)
@@ -675,27 +669,18 @@ wk^⊢ σ ρ t = let open Eval Renaming in sem ρ t
 Our second example of a semantics is another spin on the syntactic model:
 the environment values are now terms. We can embed variables into environment
 values by using the \AIC{`var} constructor and we inherit weakening for terms
-from the previous example.
-
-\begin{code}
-syntacticSubstitution : Syntactic Tm
-syntacticSubstitution = record { embed = `var; wk = wk^⊢; ⟦var⟧ = id }
-\end{code}
+from the previous example. Once again, specialising the type of \AF{sem}
+reveals that it delivers precisely the simultaneous substitution.
 
 \AgdaHide{
 \begin{code}
+syntacticSubstitution : Syntactic Tm
+syntacticSubstitution = record { embed = `var; wk = wk^⊢; ⟦var⟧ = id }
+
 Substitution : Semantics Tm Tm; Substitution = syntactic syntacticSubstitution
 \end{code}}
-
-Because the diagonal environment used by \AF{Substitution} \AF{⊨eval\_}
-is obtained by \ARF{embed}ding membership proofs into terms using the
-\AIC{`var} constructor, we get yet another definition of the identity
-function on terms. The semantic function \AF{Substitution} \AF{⊨⟦\_⟧\_}
-is once again more interesting: it is an implementation of simultaneous
-substitution.
-
 \begin{code}
-subst : {Γ Δ : Cx} {σ : Ty} (t : Tm σ Γ) (ρ : (Γ -Env) Tm Δ) → Tm σ Δ
+subst : {Γ Δ : Cx} {σ : Ty} → Tm σ Γ → (Γ -Env) Tm Δ → Tm σ Δ
 subst t ρ = let open Eval Substitution in sem ρ t
 \end{code}
 
@@ -710,9 +695,8 @@ avoid directly building a \AD{String} and rather construct an inhabitant of
 a more sophisticated datatype in order to generate a prettier output~\cite{hughes1995design,wadler2003prettier}.
 But we stick to the simpler setup as pretty printing is not our focus here.
 
-
 This example is quite interesting for two reasons. Firstly, the distinction
-between the type of values in the environment and the ones in the model is
+between the type of values in the environment and the computations in the model is
 once more instrumental in giving the procedure a precise type guiding our
 implementation. Indeed, the environment carries \emph{names} for the variables
 currently in scope whilst the inhabitants of the model are \emph{computations}
@@ -739,12 +723,9 @@ open import Relation.Binary.PropositionalEquality as PEq using (_≡_)
 
 \begin{code}
 record Name (σ : Ty) (Γ : Cx) : Set where
-  constructor mkN
-  field getN : String
-
+  constructor mkN; field getN : String
 record Printer (σ : Ty) (Γ : Cx) : Set where
-  constructor mkP
-  field runP : State (Stream String) String
+  constructor mkP; field runP : State (Stream String) String
 \end{code}
 \AgdaHide{
 \begin{code}

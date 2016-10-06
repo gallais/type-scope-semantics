@@ -30,6 +30,7 @@ s/ \\AgdaPrimitive{⊔} //g
 s/ \?\\AgdaBound{{ℓ}{[^{]*{[^{]*{}[^}]*}}}//g
 s/\\AgdaSymbol{(}\\AgdaSymbol{)}//g
 s/ \\AgdaSymbol{(}\\AgdaSymbol{))}/\\AgdaSymbol\{)\}/g
+s/\\AgdaFunction{Model} \\AgdaSymbol{\\_}/\\AgdaFunction\{Model\}/g
 
 # Implicit arguments
 s/\\AgdaSymbol{\\{}.*\\AgdaSymbol{\\}}[^()→;]*\\AgdaSymbol{→} //g

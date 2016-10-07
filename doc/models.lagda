@@ -506,16 +506,12 @@ record Semantics {ℓ^E ℓ^M : Level} (𝓥 : Model ℓ^E) (𝓒 : Model ℓ^M)
   field
 \end{code}}
 
-The first two methods of a \AR{Semantics} are dealing with environment
-values. They need to be thinnable (\ARF{wk}) so that the traversal may
-introduce fresh variables when going under a binder whilst keeping the
-environment well-scoped. The ability to manufacture values from variables
-(\ARF{embed}) guarantees the possibility to kickstart the evaluation
-of an open term with a dummy environment.
+The first method of a \AR{Semantics} deals with environment values. They
+need to be thinnable (\ARF{wk}) so that the traversal may introduce fresh
+variables when going under a binder whilst keeping the environment well-scoped.
 
 \begin{code}
     wk      :  (σ : Ty) → Thinnable (𝓥 σ)
-    embed   :  {σ : Ty} → [ Var σ ⟶ 𝓥 σ ]
 \end{code}
 
 The structure of the model is quite constrained: each constructor
@@ -594,15 +590,6 @@ module Eval {ℓ^E ℓ^M : Level} {𝓥 : Model ℓ^E} {𝓒 : Model ℓ^M} (�
 \end{code}
 %</evaluation>
 
-\AgdaHide{
-\begin{code}
- dummys : {Γ : Cx} → (Γ -Env) 𝓥 Γ
- dummys = pack embed
-
- sem′ : {σ : Ty} → [ Tm σ ⟶ 𝓒 σ ]
- sem′ t = sem dummys t
-\end{code}}
-
 Finally, one can define a dummy environment (\AB{Γ} \AF{-Env}) \AB{𝓥} \AB{Γ}
 by \AIC{pack}ing the \ARF{embed} field. This lets us kickstart the evaluation
 of arbitrary \emph{open} terms thus generalising the pattern commonly seen in
@@ -628,7 +615,7 @@ the \AF{syntactic} function turning its inhabitants into associated
 %<*syntactic>
 \begin{code}
 record Syntactic {ℓ^A : Level} (𝓥 : Model ℓ^A) : Set ℓ^A where
-  field  embed  : {σ : Ty} → [ Var σ ⟶ 𝓥 σ ]
+  field  var‿0  : {σ : Ty} → [ σ ⊢ 𝓥 σ ]
          wk     : (σ : Ty) → Thinnable (𝓥 σ)
          ⟦var⟧  : {σ : Ty} → [ 𝓥 σ ⟶ Tm σ ]
 \end{code}\vspace{ -1.5em}%ugly but it works!
@@ -636,8 +623,8 @@ record Syntactic {ℓ^A : Level} (𝓥 : Model ℓ^A) : Set ℓ^A where
 \begin{code}
 syntactic : {ℓ^A : Level} {𝓥 : Model ℓ^A} → Syntactic 𝓥 → Semantics 𝓥 Tm
 syntactic syn = let open Syntactic syn in record
-  { wk   = wk; embed   = embed; ⟦var⟧   = ⟦var⟧
-  ; ⟦λ⟧  = λ t → `λ (t (step refl) (embed ze)) ; _⟦$⟧_ = _`$_
+  { wk   = wk; ⟦var⟧   = ⟦var⟧
+  ; ⟦λ⟧  = λ t → `λ (t (step refl) var‿0) ; _⟦$⟧_ = _`$_
   ; ⟦⟨⟩⟧ = `⟨⟩; ⟦tt⟧ = `tt; ⟦ff⟧ = `ff; ⟦if⟧  = `if }
 \end{code}
 
@@ -660,7 +647,7 @@ that terms are thinnable.
 \AgdaHide{
 \begin{code}
 syntacticRenaming : Syntactic Var
-syntacticRenaming = record { embed = id; wk = wk^∈; ⟦var⟧ = `var }
+syntacticRenaming = record { var‿0 = ze; wk = wk^∈; ⟦var⟧ = `var }
 
 Renaming : Semantics Var Tm; Renaming = syntactic syntacticRenaming
 \end{code}}
@@ -680,7 +667,7 @@ reveals that it delivers precisely the simultaneous substitution.
 \AgdaHide{
 \begin{code}
 syntacticSubstitution : Syntactic Tm
-syntacticSubstitution = record { embed = `var; wk = wk^⊢; ⟦var⟧ = id }
+syntacticSubstitution = record { var‿0 = `var ze; wk = wk^⊢; ⟦var⟧ = id }
 
 Substitution : Semantics Tm Tm; Substitution = syntactic syntacticSubstitution
 \end{code}}
@@ -760,8 +747,7 @@ domain {σ} _ = σ
 \begin{code}
 Printing : Semantics Name Printer
 Printing = record
-  { embed   = mkN ∘ show ∘ deBruijn
-  ; wk      = λ _ _ → mkN ∘ getN
+  { wk      = λ _ _ → mkN ∘ getN
   ; ⟦var⟧   = mkP ∘ return ∘ getN
   ; _⟦$⟧_   =  λ mf mt → mkP (
                format$ <$> runP mf ⊛ runP mt)
@@ -776,13 +762,6 @@ Printing = record
   ; ⟦if⟧    =  λ mb ml mr → mkP (
        formatIf  <$> runP mb ⊛ runP ml ⊛ runP mr) }
 \end{code}
-\AgdaHide{
-\begin{code}
-  where
-    deBruijn : {Γ : Cx} {σ : Ty} → Var σ Γ → ℕ
-    deBruijn ze    = 0
-    deBruijn (su n)  = 1 + deBruijn n
-\end{code}}
 
 Our definition of \ARF{embed} turns membership proofs into the underlying
 de Bruijn index (a natural number) which is then \AF{show}n using Agda's
@@ -1142,12 +1121,12 @@ evaluation with the dummy environment.
 \begin{code}
  Normalise : Semantics Kr Kr
  Normalise = record
-   { embed = reflect _ ∘ `var; wk = wk^Kr; ⟦var⟧ = id
+   { wk = wk^Kr; ⟦var⟧ = id
    ; _⟦$⟧_ = λ {σ} {τ} → _$$_ {σ} {τ} ; ⟦λ⟧ = id
    ; ⟦⟨⟩⟧ = ⟨⟩; ⟦tt⟧ = `tt; ⟦ff⟧ = `ff; ⟦if⟧  = λ {σ} → if {σ} }
 
  norm : (σ : Ty) → [ Tm σ ⟶ Nf σ ]
- norm σ t = let open Eval Normalise in reify σ (sem′ t)
+ norm σ t = let open Eval Normalise in reify σ (sem (pack (reflect _ ∘ `var)) t)
 \end{code}
 
 \subsection{Normalisation by Evaluation for βιξ}
@@ -1289,12 +1268,12 @@ normaliser which is, this time, \emph{not} producing η-long normal forms.
 \begin{code}
   Normalise : Semantics Kr Kr
   Normalise = record
-    { embed = reflect _ ∘ `var; wk = wk^Kr; ⟦var⟧   = id
+    { wk = wk^Kr; ⟦var⟧   = id
     ; _⟦$⟧_ = _$$_; ⟦λ⟧ = inj₂
     ; ⟦⟨⟩⟧ = inj₂ ⟨⟩; ⟦tt⟧ = inj₂ true; ⟦ff⟧ = inj₂ false; ⟦if⟧  = if }
 
   norm : (σ : Ty) → [ Tm σ ⟶ Nf σ ]
-  norm σ t = let open Eval Normalise in reify σ (sem′ t)
+  norm σ t = let open Eval Normalise in reify σ (sem (pack (reflect _ ∘ `var)) t)
 \end{code}}
 
 
@@ -1434,12 +1413,12 @@ be evaluated.
 \begin{code}
  Normalise : Semantics Kr Kr
  Normalise = record
-   { embed = reflect _ ∘ `var; wk = wk^Kr; ⟦var⟧ = id
+   { wk = wk^Kr; ⟦var⟧ = id
    ; _⟦$⟧_ = _$$_; ⟦λ⟧ = λ t → `λ (proj₁ (t (step refl) (reflect _ (`var ze)))) , inj₂ t
   ; ⟦⟨⟩⟧ = `⟨⟩ , inj₂ ⟨⟩; ⟦tt⟧ = `tt  , inj₂ true; ⟦ff⟧ = `ff  , inj₂ false; ⟦if⟧  = if }
 
  whnorm : (σ : Ty) → [ Tm σ ⟶ Whnf σ ]
- whnorm σ t = let open Eval Normalise in reify σ (sem′ t)
+ whnorm σ t = let open Eval Normalise in reify σ (sem (pack (reflect _ ∘ `var)) t)
 \end{code}}
 
 \section{Proving Properties of Semantics}
@@ -1823,6 +1802,7 @@ element of \AB{𝓢^A}'s model. Our first field is therefore
 
 \begin{code}
     reify^A    : {σ : Ty} → [ 𝓒^A σ ⟶ Tm σ ]
+    var‿0^A    : {σ : Ty} → [ σ ⊢ 𝓥^A σ ]
 
 
   𝓡 : {Γ Δ Θ : Cx} {σ : Ty} (t : Tm σ Γ) → (Γ -Env) 𝓥^A Δ → (Δ -Env) 𝓥^B Θ → (Γ -Env) 𝓥^C Θ → Set _
@@ -1848,7 +1828,7 @@ preserving manner.
 
 \begin{code}
     𝓥^R‿∙   :  {Γ Δ Θ : Cx} {σ : Ty} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} {u^B : 𝓥^B σ Θ} {u^C : 𝓥^C σ Θ} → 𝓥^R ρ^A ρ^B ρ^C → rmodel 𝓥^R‿BC u^B u^C →
-               𝓥^R  (wk[ 𝓢^A.wk ] (step refl) ρ^A `∙ 𝓢^A.embed ze)
+               𝓥^R  (wk[ 𝓢^A.wk ] (step refl) ρ^A `∙ var‿0^A)
                     (ρ^B `∙ u^B) (ρ^C `∙ u^C)
 
     𝓥^R‿wk  :  {Γ Δ Θ E : Cx} (inc : Θ ⊆ E) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} (ρ^R : 𝓥^R ρ^A ρ^B ρ^C) →
@@ -1881,7 +1861,7 @@ related values to be substituted for the variable bound by the \AIC{`λ}.
     R⟦λ⟧    :
       {Γ Δ Θ : Cx} {σ τ : Ty} (t : Tm τ (Γ ∙ σ)) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} (ρ^R : 𝓥^R ρ^A ρ^B ρ^C) →
       (r :  {E : Cx} (inc : Θ ⊆ E) {u^B : 𝓥^B σ E} {u^C : 𝓥^C σ E} → rmodel 𝓥^R‿BC u^B u^C →
-            let  ρ^A′ =  wk[ 𝓢^A.wk ] (step refl) ρ^A `∙ 𝓢^A.embed ze
+            let  ρ^A′ =  wk[ 𝓢^A.wk ] (step refl) ρ^A `∙ var‿0^A
                  ρ^B′ =  wk[ 𝓢^B.wk ] inc ρ^B `∙ u^B
                  ρ^C′ =  wk[ 𝓢^C.wk ] inc ρ^C `∙ u^C
             in 𝓡 t ρ^A′ ρ^B′ ρ^C′) →
@@ -1972,7 +1952,7 @@ record SyntacticFusable
   field
     𝓥^R‿∙ : ({Γ Δ Θ : Cx} {σ : Ty} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ}
                {u^B : 𝓥^B σ Θ} {u^C : 𝓥^C σ Θ} (ρ^R : 𝓥^R ρ^A ρ^B ρ^C) (u^R : rmodel 𝓥^R‿BC u^B u^C) →
-               𝓥^R (wk[ Syn^A.wk ] (step refl) ρ^A `∙ Syn^A.embed ze)
+               𝓥^R (wk[ Syn^A.wk ] (step refl) ρ^A `∙ Syn^A.var‿0)
                       (ρ^B `∙ u^B)
                       (ρ^C `∙ u^C))
     𝓥^R‿wk : {Γ Δ Θ E : Cx} (inc : Θ ⊆ E)
@@ -1984,7 +1964,7 @@ record SyntacticFusable
               ≡ Eval.sem (syntactic synC) ρ^C (`var v)
 \end{code}}
 \begin{code}
-    embed^BC : {Γ : Cx} {σ : Ty} → rmodel 𝓥^R‿BC {_} {Γ ∙ σ} (Syn^B.embed ze) (Syn^C.embed ze)
+    var‿0^BC : {Γ : Cx} {σ : Ty} → rmodel 𝓥^R‿BC {_} {Γ ∙ σ} Syn^B.var‿0 Syn^C.var‿0
 \end{code}
 
 The important result is that given a \AR{SyntacticFusable} relating
@@ -2006,7 +1986,7 @@ syntacticFusable synF =
     ; 𝓥^R‿wk  = 𝓥^R‿wk
     ; R⟦var⟧    = R⟦var⟧
     ; R⟦$⟧      = λ f t ρ^R → PEq.cong₂ _`$_
-    ; R⟦λ⟧      = λ t ρ^R r → PEq.cong `λ (r (step refl) embed^BC)
+    ; R⟦λ⟧      = λ t ρ^R r → PEq.cong `λ (r (step refl) var‿0^BC)
     ; R⟦⟨⟩⟧     = λ ρ^R → PEq.refl
     ; R⟦tt⟧     = λ ρ^R → PEq.refl
     ; R⟦ff⟧     = λ ρ^R → PEq.refl
@@ -2035,7 +2015,7 @@ RenamingFusable = record
   { 𝓥^R‿∙     = λ ρ^R eq → [ eq ,, ρ^R ]
   ; 𝓥^R‿wk    = λ inc ρ^R σ pr → PEq.cong (lookup inc) (ρ^R σ pr)
   ; R⟦var⟧    = λ v ρ^R → PEq.cong `var (ρ^R _ v)
-  ; embed^BC  = PEq.refl }
+  ; var‿0^BC  = PEq.refl }
 \end{code}
 
 Similarly, a \AR{Substitution} following a \AR{Renaming} is equivalent to
@@ -2053,7 +2033,7 @@ RenamingSubstitutionFusable =
   record { 𝓥^R‿∙   = λ ρ^R eq → [ eq ,, ρ^R ]
          ; 𝓥^R‿wk  = λ inc ρ^R σ pr → PEq.cong (wk^⊢ σ inc) (ρ^R σ pr)
          ; R⟦var⟧    = λ v ρ^R → ρ^R _ v
-         ; embed^BC   = PEq.refl }
+         ; var‿0^BC   = PEq.refl }
 \end{code}}
 
 Using the newly established fact about fusing two \AR{Renamings} together,
@@ -2077,7 +2057,7 @@ SubstitutionRenamingFusable =
                          PEq.trans (PEq.sym (RenRen.lemma (lookup ρ^A pr) (λ _ _ → PEq.refl)))
                                    (PEq.cong (wk^⊢ σ inc) (ρ^R σ pr))
          ; R⟦var⟧    = λ v ρ^R → ρ^R _ v
-         ; embed^BC   = PEq.refl }
+         ; var‿0^BC   = PEq.refl }
 \end{code}}
 
 Finally, using the fact that we now know how to fuse a \AR{Substitution}
@@ -2102,7 +2082,7 @@ SubstitutionFusable =
                          PEq.trans (PEq.sym (SubstRen.lemma (lookup ρ^A pr) (λ _ _ → PEq.refl)))
                                    (PEq.cong (wk^⊢ σ inc) (ρ^R σ pr))
          ; R⟦var⟧    = λ v ρ^R → ρ^R _ v
-         ; embed^BC   = PEq.refl }
+         ; var‿0^BC   = PEq.refl }
 
 ifRenNorm :
       {Γ Δ Θ : Cx} {σ : Ty} (b : Tm `2 Γ) (l r : Tm σ Γ)

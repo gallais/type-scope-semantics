@@ -43,8 +43,6 @@
            {University of Strathclyde}
 \maketitle
 
-\todo{citeyear as much as possible}
-
 \begin{abstract}
 We abstract the common type-and-scope safe structure from
 computations on $λ$-terms that deliver, e.g., renaming, substitution, evaluation,
@@ -1008,7 +1006,6 @@ module βιξη where
  R _ = ⊥
  open NormalForms R public
 \end{code}}
-
 %<*sem>
 \begin{code}
  Kr : Model _
@@ -1017,7 +1014,6 @@ module βιξη where
  Kr (σ `→ τ)  = □ (Kr σ ⟶ Kr τ)
 \end{code}
 %</sem>
-
 This model is defined by induction on the type in terms either of
 syntactic objects (\AD{Nf}) or using the \AF{□}-operator which is
 a closure operator for Thinnings. As such, it is trivial to prove
@@ -1029,11 +1025,9 @@ that for all type \AB{σ}, \AF{Kr} \AB{σ} is \AF{Thinnable}.
  wk^Kr `2        = wk^nf `2
  wk^Kr (σ `→ τ)  = th^□
 \end{code}}
-
 Application's semantic counterpart is easy to define: given that \AB{𝓥}
 and \AB{𝓒} are equal in this instance definition, we just feed the argument
 directly to the function, with the identity renaming: \AB{f} \AF{\$\$} \AB{t} \AS{=} \AB{f} \AF{refl} \AB{t}.
-
 \AgdaHide{
 \begin{code}
  infixr 5 _$$_
@@ -1041,7 +1035,6 @@ directly to the function, with the identity renaming: \AB{f} \AF{\$\$} \AB{t} \A
  _$$_ : {σ τ : Ty} → [ Kr (σ `→ τ) ⟶ Kr σ ⟶ Kr τ ]
  t $$ u = t refl u
 \end{code}}
-
 Conditional branching however is more subtle: the boolean value \AIC{`if} branches on
 may be a neutral term in which case the whole elimination form
 is stuck. This forces us to define \AF{reify} and \AF{reflect} first. These
@@ -1071,21 +1064,18 @@ are $λ$-headed. It allows us to define \AF{var‿0}, the semantic counterpart o
 We can then give the semantics of \AIC{`if}: if the boolean
 is a value, the appropriate branch is picked; if it is stuck the whole expression
 is reflected in the model.
-
 \begin{code}
  if : {σ : Ty} → [ Kr `2 ⟶ Kr σ ⟶ Kr σ ⟶ Kr σ ]
  if `tt            l r = l
  if `ff            l r = r
  if {σ} (`ne _ T)  l r = reflect σ (`if T (reify σ l) (reify σ r))
 \end{code}
-
 We can then combine these components. The semantics of
 a $λ$-abstraction is simply the identity function: the structure of the
 functional case in the definition of the model matches precisely the shape
 expected in a \AF{Semantics}. Because the environment carries model values,
 the variable case is trivial. We obtain a normaliser by kickstarting the
 evaluation with a dummy environment of reflected variables.
-
 \begin{code}
  Normalise : Semantics Kr Kr
  Normalise = record
@@ -1143,7 +1133,7 @@ module βιξ where
 
  mutual
 \end{code}}
-\noindent\begin{tabular}{l@{ }r}
+\noindent\begin{tabular}{l@{\hskip 2em}r}
 \hspace{-0.5cm}\begin{minipage}[t]{0.15\textwidth}
 \begin{code}
   Kr : Model _
@@ -1307,7 +1297,7 @@ be evaluated.
 \begin{code}
  mutual
 \end{code}}
-\noindent\begin{tabular}{l@{ }r}
+\noindent\begin{tabular}{l@{\hskip 2em}r}
 \hspace{-0.5cm}\begin{minipage}[t]{0.15\textwidth}
 \begin{code}
   Kr : Model _

@@ -454,7 +454,7 @@ Now that we are equipped with the notion of inclusion, we have all
 the pieces necessary to describe the Kripke structure of our models
 of the simply typed $λ$-calculus.
 
-\section{Semantics and Generic Evaluation Functions}
+\section{Semantics and their Generic Evaluators}
 
 The upcoming sections are dedicated to demonstrating that renaming,
 substitution, printing with names, and normalisation by evaluation all
@@ -832,7 +832,7 @@ eta t = `λ (wk^Tm _ (step refl) t `$ `var ze)
 
 _⟨_/var₀⟩ : {σ τ : Ty} → [ σ ⊢ Tm τ ⟶ Tm σ ⟶ Tm τ ] 
 t ⟨ u /var₀⟩ = subst t (pack `var `∙ u)
-\end{code}
+\end{code}\vspace{ -2em}
 \begin{mathpar}
 \inferrule{\text{\AB{t} \AS{:} \AD{Tm} (\AB{σ} \AIC{`→} \AB{τ}) \AB{Γ}}
   }{\text{\AB{t} ↝ \AF{eta} \AB{t}}
@@ -851,7 +851,7 @@ but the presence of an inductive data type (\AIC{`2}) and its eliminator
 boolean the eliminator branches on is in canonical form, we may apply
 a ι-rule. Finally, the ξ-rule lets us reduce under
 $λ$-abstractions --- the distinction between weak-head normalisation and
-strong normalisation.
+strong normalisation.\vspace{ -1em}
 \begin{mathpar}
 \inferrule{
   }{\text{\AIC{`if} \AIC{`tt} \AB{l} \AB{r} ↝ \AB{l}}
@@ -1293,6 +1293,7 @@ content) or the original. We exploit this ability most
 notably in reification where once we have obtained either a
 head constructor or a head variable, no subterms need
 be evaluated.
+
 \AgdaHide{
 \begin{code}
  mutual

@@ -9,7 +9,6 @@
 
 \setlength\mathindent{0em}
 
-\usepackage{todonotes}
 \usepackage{mathpartir}
 
 \include{commands}
@@ -223,7 +222,6 @@ operator \AF{[\_]} turn a context-indexed type into a type using an (implicit)
 universal quantification. Last but not least, the operator \AF{\_⊢\_} mechanizes
 the mathematical convention of only mentioning context \emph{extensions} when
 presenting judgements~\cite{martin1982constructive}.
-\todo{Fix [\_]}
 \begin{code}
 _⟶_ : {ℓ^A ℓ^E : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^E) → (Cx → Set (ℓ^A ⊔ ℓ^E))
 (S ⟶ T) Γ = S Γ → T Γ

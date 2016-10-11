@@ -48,3 +48,6 @@ s/\\AgdaSymbol{\\{}[^;]*\\AgdaSymbol{\\}}//g
 s/`→/`\\!\\!→/g
 s/`1/`\\!1/g
 s/`2/`\\!2/g
+
+# Awful Hack
+s/\\AgdaSymbol{∀} \\AgdaBound{T}/\\AgdaSymbol{∀} \\AgdaSymbol{\\{}\\AgdaBound{Γ}\\AgdaSymbol{\\}} \\AgdaSymbol{→} \\AgdaBound{T}/

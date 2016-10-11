@@ -815,15 +815,15 @@ of \AB{𝓜} \AB{Γ} \AB{σ} provided a well typed term of the corresponding
 a type-directed manner, normal forms \AB{Γ} \AD{⊢^{nf}} \AB{σ} from elements
 of the model \AB{𝓜} \AB{Γ} \AB{σ}. NBE composes the two procedures. The
 definition of this \AF{eval} function is a natural candidate for our
-\AF{Semantics} framework. Normalisation is always defined \emph{for} a
+\AF{Semantics} framework. NBE is always defined \emph{for} a
 given equational theory so we are going to start by recalling the various
 rules a theory may satisfy.
 
 Thanks to \AF{Renaming} and \AF{Substitution} respectively, we can formally
-define η-expansion and β-reduction. The η-rules are saying that for some types,
-terms have a canonical form: functions will all be λ-headed whilst record will
-be a collection of fields which translates here to all the elements of the
-\AIC{`1} type being equal to \AIC{`⟨⟩}.
+define η-expansion and β-reduction. The η-rules say that for some types,
+terms have a canonical form: functions will all be λ-headed whilst records will
+collect their fields --- here this makes all elements of
+\AIC{`1} equal to \AIC{`⟨⟩}.
 \AgdaHide{
 \begin{code}
 infixl 10 _⟨_/var₀⟩
@@ -847,12 +847,12 @@ t ⟨ u /var₀⟩ = subst t (pack `var `∙ u)
   }{β}
 \end{mathpar}
 
-The β-rule is the main driving force when it comes to actually computing
+The β-rule is the main driver for actual computation,
 but the presence of an inductive data type (\AIC{`2}) and its eliminator
-(\AIC{`if}) means we have an extra opportunity for redexes: whenever the
-boolean the eliminator is branching over is in canonical form, we may apply
-a ι-rule. Finally, the ξ-rule is the one making it possible to reduce under
-$λ$-abstractions which is the distinction between weak-head normalisation and
+(\AIC{`if}) means we have further redexes: whenever the
+boolean the eliminator branches on is in canonical form, we may apply
+a ι-rule. Finally, the ξ-rule lets us reduce under
+$λ$-abstractions --- the distinction between weak-head normalisation and
 strong normalisation.
 \begin{mathpar}
 \inferrule{
@@ -879,13 +879,13 @@ which goes under λs and produces η-long βι-short normal forms.
 In the case of NBE, the environment values
 and the computations in the model will both have the same type \AF{Kr}
 (standing for ``Kripke''), defined by induction on the \AD{Ty} argument.
-The η-rules guarantee that we can represent functions (resp. inhabitants
-of \AIC{`1}) in the source language as function spaces (resp. \AR{⊤})
-in Agda, there are no such rules for boolean values. We therefore need
+The η-rules allow us to represent functions (resp. inhabitants
+of \AIC{`1}) in the source language as function spaces (resp. \AR{⊤}).
+In Agda, there are no such rules for boolean values. We thus need
 a notion of syntactic normal forms.
 We parametrise the mutually defined inductive families \AD{Ne} and \AD{Nf}
 by a predicate \AB{R} constraining the types at which one may embed a neutral
-as a normal form. This make it possible to guarantee (or not) that the
+as a normal form. This make it possible to control the way
 NBE $η$-expands all terms at certain types.
 \AgdaHide{
 \begin{code}
@@ -907,9 +907,9 @@ module NormalForms (R : Ty → Set) where
 \end{code}
 
 Once more, context inclusions induce the expected notions of weakening \AF{wk^{ne}}
-and \AF{wk^{nf}}. We omit their purely structural implementation here and would
-thoroughly enjoy doing so in the source file too: our constructions so far have
-been syntax-directed and could hopefully be leveraged by a generic account of syntaxes
+and \AF{wk^{nf}}. We omit their purely structural implementation here and wish we could do
+so in source code, too: our constructions so far have
+been syntax-directed and could surely be leveraged by a generic account of syntaxes
 with binding.
 
 \AgdaHide{
@@ -986,17 +986,17 @@ with binding.
  wk^ne-trans inc₁ inc₂ = wk^ne-trans′ (λ _ _ → PEq.refl)
 \end{code}}
 
-We now come to the definition of the model. The \AR{R} predicate
+We now define the model. The \AR{R} predicate
 characterising the types for which neutral terms may be considered
-normal forms is here equivalent to the unit type for \AIC{`2} and the
-empty type otherwise. This effectively guarantees that we use η-rules
+normal is here equivalent to the unit type for \AIC{`2} and the
+empty type otherwise. This makes us use η-rules
 eagerly: all inhabitants of \AD{Nf} \AB{Γ} \AIC{`1} and
 \AD{Nf} \AB{Γ} (\AB{σ} \AIC{`→} \AB{τ}) are equal to \AIC{`⟨⟩} and
 \AIC{`λ}-headed respectively.
 
 The model construction then follows the usual pattern pioneered by
 Berger~(\citeyear{berger1993program}) and formally analysed and thoroughly
-explained by Catarina Coquand~(\citeyear{coquand2002formalised}). We proceed
+explained by Catarina Coquand~(\citeyear{coquand2002formalised}). We work
 by induction on the type and describe η-expanded values: all inhabitants
 of \AF{Kr} \AIC{`1} \AB{Γ} are indeed equal and all elements
 of \AF{Kr} (\AB{σ} \AIC{`→} \AB{τ}) \AB{Γ} are functions in Agda.
@@ -1030,9 +1030,9 @@ that for all type \AB{σ}, \AF{Kr} \AB{σ} is \AF{Thinnable}.
  wk^Kr (σ `→ τ)  = th^□
 \end{code}}
 
-The semantic counterpart of application is easy to define: given that \AB{𝓥}
-and \AB{𝓒} are equal in this instance definition, we can simply feed the argument
-directly to the function, passing in the identity renaming: \AB{f} \AF{\$\$} \AB{t} \AS{=} \AB{f} \AF{refl} \AB{t}.
+Application's semantic counterpart is easy to define: given that \AB{𝓥}
+and \AB{𝓒} are equal in this instance definition, we just feed the argument
+directly to the function, with the identity renaming: \AB{f} \AF{\$\$} \AB{t} \AS{=} \AB{f} \AF{refl} \AB{t}.
 
 \AgdaHide{
 \begin{code}
@@ -1042,10 +1042,10 @@ directly to the function, passing in the identity renaming: \AB{f} \AF{\$\$} \AB
  t $$ u = t refl u
 \end{code}}
 
-Conditional branching however is more subtle: the boolean value \AIC{`if} is
-branching over may be a neutral term in which case the whole elimination form
+Conditional branching however is more subtle: the boolean value \AIC{`if} branches on
+may be a neutral term in which case the whole elimination form
 is stuck. This forces us to define \AF{reify} and \AF{reflect} first. These
-functions, also known as quote and unquote respectively, are showing the interplay
+functions, also known as quote and unquote respectively, give the interplay
 between neutral terms, model values and normal forms. \AF{reflect} performs a
 form of semantic η-expansion: all stuck \AIC{`1} terms are equated and all functions
 are $λ$-headed. It allows us to define \AF{var‿0}, the semantic counterpart of \AIC{`var} \AIC{ze}.
@@ -1068,7 +1068,7 @@ are $λ$-headed. It allows us to define \AF{var‿0}, the semantic counterpart o
   reify (σ `→ τ)  T = `λ (reify τ (T (step refl) (var‿0 σ)))
 \end{code}
 
-The semantic counterpart of \AIC{`if} can then be defined: if the boolean
+We can then give the semantics of \AIC{`if}: if the boolean
 is a value, the appropriate branch is picked; if it is stuck the whole expression
 is reflected in the model.
 
@@ -1079,7 +1079,7 @@ is reflected in the model.
  if {σ} (`ne _ T)  l r = reflect σ (`if T (reify σ l) (reify σ r))
 \end{code}
 
-We can then put all of these things together. The semantic counterpart of
+We can then combine these components. The semantics of
 a $λ$-abstraction is simply the identity function: the structure of the
 functional case in the definition of the model matches precisely the shape
 expected in a \AF{Semantics}. Because the environment carries model values,
@@ -1105,20 +1105,21 @@ As we have just seen, the traditional typed model construction leads to an NBE
 procedure outputting βι-normal η-long terms. However evaluation
 strategies implemented in actual proof systems tend to avoid applying η-rules
 as much as possible: unsurprisingly, it is a rather bad idea to η-expand proof
-terms which are already large when typechecking complex developments. Garillot\todo{not true, fix up: normalise and compare\cite{coquand1991algorithm}}
-and colleagues~\cite{garillot2009packaging} report that common mathematical
-structures packaged in records can lead to terms of such a size that theorem
-proving becomes impractical.
+terms which are already large when typechecking complex developments.
+%Garillot\todo{not true, fix up: normalise and compare\cite{coquand1991algorithm}}
+%and colleagues~\cite{garillot2009packaging} report that common mathematical
+%structures packaged in records can lead to terms of such a size that theorem
+%proving becomes impractical.
 
 In these systems, normal forms are neither η-long nor η-short: the η-rule is
 actually never considered except when comparing two terms for equality, one of
-which is neutral whilst the other is constructor-headed. Instead of declaring
-them distinct, the algorithm will perform one step of η-expansion on the
-neutral term and compare their subterms structurally. The conversion test
-will only fail when confronted with two neutral terms with distinct head
-variables or two normal forms with different head constructors.
+which is neutral, the other constructor-headed. Instead of declaring
+them distinct, the algorithm does one step of η-expansion on the
+neutral term and compares their subterms structurally. The conversion test
+fails only when confronted with neutral terms with distinct head
+variables or normal forms with different head constructors.
 
-To reproduce this behaviour, the NBE needs to be amended.
+To reproduce this behaviour, NBE must be amended.
 It is possible to alter the model definition described earlier so that it
 avoids unnecessary η-expansions. We proceed by enriching the traditional
 model with extra syntactical artefacts in a manner reminiscent of Coquand
@@ -1210,10 +1211,10 @@ module βιξ where
 
 Most combinators acting on this model have a definition very similar
 to their counterpart in the previous section. Semantic application is
-more interesting: in case the function is a stuck term, we can grow its
+more interesting: in case the function is a stuck term, we grow its
 spine by reifying its argument; otherwise we have an Agda function ready
 to be applied. We proceed similarly for the definition of the semantical
-``if'' (omitted here). Putting all of these pieces together we get another
+``if'' (omitted here). Altogether, we get another
 normaliser which is, this time, \emph{not} producing η-long normal forms.
 
 \begin{code}
@@ -1248,9 +1249,9 @@ normaliser which is, this time, \emph{not} producing η-long normal forms.
 
 \subsection{Normalisation by Evaluation for βι}
 
-The decision to lazily apply the η-rule can be pushed even further: one may
+The decision to apply the η-rule lazily can be pushed even further: one may
 forgo using the ξ-rule too and simply perform weak-head normalisation. This
-leads to pursuing the computation only when absolutely necessary e.g.
+drives computation only when absolutely necessary, e.g.
 when two terms compared for equality have matching head constructors
 and one needs to inspect these constructors' arguments to conclude.
 
@@ -1294,13 +1295,13 @@ module βι where
  erase^whne (`if t l r)  = `if (erase^whne t) l r
 \end{code}}
 
-The model construction is quite similar to the previous one except
+The model construction is much like the previous one except
 that source terms are now stored in the model too. This means that
 from an element of the model, one can pick either the reduced version
-of the original term (i.e. a stuck term or the term's computational
-content) or the original term itself. We exploit this ability most
-notably at reification time where once we have obtained either a
-head constructor or a head variable, none of the subterms need to
+of the input term (i.e. a stuck term or the term's computational
+content) or the original. We exploit this ability most
+notably in reification where once we have obtained either a
+head constructor or a head variable, no subterms need
 be evaluated.
 \AgdaHide{
 \begin{code}
@@ -1393,31 +1394,30 @@ be evaluated.
 \section{Proving Properties of Semantics}
 \label{properties}
 
-Thanks to the introduction of \AF{Semantics}, we have already saved
-quite a bit of work by not reimplementing the same traversals over
-and over again. But this disciplined approach to building models and
-defining the associated evaluation functions can also help us refactor
-the process of proving some properties of these semantics.
+Thanks to \AF{Semantics}, we have already saved work by not reiterating the same traversals.
+Moreover, this disciplined approach to building models and
+defining the associated evaluation functions can help us refactor
+the proofs of some properties of these semantics.
 
 Instead of using proof scripts as Benton et al.~(\citeyear{benton2012strongly})
 do, we describe abstractly the constraints the logical relations~\cite{reynolds1983types}
-defined on computations (and environment values) have to respect for us to be
-able to conclude that the evaluation of a term in related environments
-produces related outputs. This gives us a generic proof framework to
+defined on computations (and environment values) have to respect to ensure
+that evaluating a term in related environments
+produces related outputs. This gives us a generic framework to
 state and prove, in one go, properties about all of these semantics.
 
 Our first example of such a framework will stay simple on purpose.
-However this does not entail that it is a meaningless exercise: the
-result proven here will actually be useful in the following subsections
+However it is no mere bureaucracy: the
+result proven here will actually be useful in the sequel
 when considering more complex properties.\todo{spelt out or not?}
 
 \subsection{The Simulation Relation}
 
 This first example is basically describing the relational interpretation
-of the terms. It should give the reader a good idea of the structure of
-this type of setup before we move on to a more complex one. The types
-involved might look a bit scary because of the level of generality that
-we adopt but the idea is rather simple: we have a \AR{Simulation} between
+of the terms. It should give the reader a good introduction to
+the setup before we take on more complexity. The types
+involved might look a bit scarily abstract but the idea is rather simple:
+we have a \AR{Simulation} between
 two \AR{Semantics} when evaluating a term in related environments yields
 related values. The bulk of the work is to make this intuition formal.
 
@@ -1425,7 +1425,7 @@ The evidence that we have a \AR{Simulation} between two \AR{Semantics} is
 packaged in a record indexed by the semantics as well as two relations.
 We call \AF{RModel} (for \emph{R}elational \emph{Model}) the type of these
 relations; the first one (\AB{𝓥^R}) relates values in the respective environments
-and the second one (\AB{𝓒^R}) describes what simulation means for computations.
+and the second one (\AB{𝓒^R}) describes simulation for computations.
 
 \AgdaHide{
 \begin{code}
@@ -1456,9 +1456,9 @@ record Simulation {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^RE ℓ^RM : Level} {𝓥^A : 
  field
 \end{code}}
 
-The record's fields are describing the structure these relations
-need to have. \ARF{𝓥^R‿wk} states that two synchronised environments
-can be weakened whilst staying synchronised. It is stated using the
+The record's fields say what structure these relations
+need to have. \ARF{𝓥^R‿wk} states that two similar environments
+can be weakened whilst staying in simulation. It is stated using the
 \AF{`∀[\_]} predicate transformer (omitted here) which lifts \AB{𝓥^R}
 to contexts in a pointwise manner.
 
@@ -1470,7 +1470,7 @@ to contexts in a pointwise manner.
 We then have the relational counterparts of the term constructors.
 To lighten the presentation we introduce \AF{𝓡}, which states that
 the evaluation of a term in distinct contexts yields related computations.
-And we will focus on the most interesting combinators, giving only one
+And we focus on the most interesting combinators, giving only one
 characteristic example of the remaining ones.
 \begin{code}
  𝓡 : {Γ Δ : Cx} {σ : Ty} → Tm σ Γ → (Γ -Env) 𝓥^A Δ → (Γ -Env) 𝓥^B Δ → Set _
@@ -1491,9 +1491,9 @@ In other words \ARF{⟦var⟧} turns related values in related computations.
 
 The second, and probably most interesting case, is the relational counterpart
 to the \ARF{⟦λ⟧} combinator. The ability to evaluate the body of a \AIC{`λ} in
-weakened environments, each extended by related values, and deliver synchronised
-values is enough to guarantee that evaluating the lambdas in the original
-environments will produce synchronised values.
+weakened environments, each extended by related values, and deliver similar
+values is enough to guarantee that evaluating the $\lambda$s in the original
+environments will produce similar values.
 
 \begin{code}
   R⟦λ⟧ :  {Γ Δ : Cx} {σ τ : Ty} {b : Tm τ (Γ ∙ σ)} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} (r :  {Θ : Cx} {u^A : 𝓥^A σ Θ} {u^B : 𝓥^B σ Θ} → ∀ inc → rmodel 𝓥^R u^A u^B →
@@ -1503,7 +1503,7 @@ environments will produce synchronised values.
           `∀[ 𝓥^R ] ρ^A ρ^B → 𝓡 (`λ b) ρ^A ρ^B
 \end{code}
 
-All the remaining cases are similar: assuming that the evaluation of
+All the remaining cases follow suit: assuming that the evaluation of
 subterms produces related computations and that the current environments
 are related, we conclude that the evaluation of the whole term should
 yield related computations. We show here the relational counterpart of
@@ -1537,8 +1537,8 @@ are \AB{𝓥^R}-related in a pointwise manner then the semantics associated
 to \AB{t} by \AB{𝓢^A} using \AB{ρ^A} is \AB{𝓒^R}-related to the one associated to
 \AB{t} by \AB{𝓢^B} using \AB{ρ^B}.
 \end{theorem}
-\begin{proof}The proof is by a simple structural induction on \AB{t} similar
-to the one used to define \AF{sem}. It uses the combinators provided by
+\begin{proof}The proof is a structural induction on \AB{t} like the
+one used to define \AF{sem}. It uses the combinators provided by
 the constraint that \AB{𝓢^A} and \AB{𝓢^B} are in simulation to make use of the
 induction hypotheses.
 \end{proof}
@@ -1585,9 +1585,8 @@ simulations for the special case where: \AB{𝓢^A} is \AF{Renaming},
 substitution are precisely the variables in the renaming), and
 \AB{𝓒^R} is propositional equality.
 
-The constraints corresponding to the various combinators are mundane
-and mostly discharged by using the fact that propositional equality
-is a congruence.
+The constraints corresponding to the various combinators are mundane,
+given that propositional equality is a congruence.
 \end{proof}
 \AgdaHide{
 \begin{code}
@@ -1610,24 +1609,25 @@ rensub : {Γ Δ : Cx} {σ : Ty} → ∀ t ρ → wk^Tm σ {Γ} {Δ} ρ t ≡ sub
 rensub t ρ = sim t (pack^R (λ _ → PEq.refl))
   where open Simulate SimulationRenamingSubstitution
 \end{code}}
-Another example of a corollary of the simulation lemma relates Normalisation
-by Evaluation to itself. This may appear like mindless symbol pushing but
-it is actually crucial to prove such a theorem: the model definition \AF{Kr}
+
+Another example of a corollary of the simulation lemma relates NBE to itself.
+This may seem bureaucratic but
+it is crucial: the model definition \AF{Kr}
 uses the host language's function space which contains more functions than
 simply the ones obtained by evaluating a $λ$-term. These exotic functions have
-undesirable behaviours and need to be rooted out to be able to prove that the
-normalisation procedure has good properties. This is done by defining a Partial
+undesirable behaviours and need to be ruled out to ensure that
+normalisation has good properties. This is done by defining a Partial
 Equivalence Relation~\cite{mitchell1996foundations} (PER) on the model: the
-elements equal to themselves will be guaranteed to be well-behaved. And we can
-show that given an environment of values equal to themselves according to the PER,
-the computation produced by evaluating a $λ$-term in it will be equal to itself too.
+elements equal to themselves will be guaranteed to be well behaved. We
+show that given an environment of values PER-related to themselves,
+the computation produced by evaluating a $λ$-term in it equals itself too.
 
-We start with the definition of the PER for the model. It is constructed
+We start by defining the PER for the model. It is constructed
 by induction on the type and ensures that terms which behave the same
 extensionally are declared equal. Two values of type \AIC{`1} are
 always trivially equal;  values of type \AIC{`2} are normal forms
 and are declared equal when they are effectively syntactically the same;
-finally functions are equal whenever given equal inputs they yield equal
+finally functions are equal whenever equal inputs map to equal
 outputs.
 \AgdaHide{
 \begin{code}
@@ -1688,8 +1688,8 @@ wk^PER (σ `→ τ)  inc eq = λ inc′ eqVW → eq (select inc inc′) eqVW
 \end{code}}
 
 The interplay of reflect and reify with this notion of equality has
-to be described in one go because of their being mutually defined.
-It confirms our claim that \AF{PER} is an appropriate notion of
+to be described in one go because of their mutual definition.
+It confirms that \AF{PER} is an appropriate notion of
 semantic equality: \AF{PER}-related values are reified to propositionally
 equal normal forms whilst propositionally equal neutral terms are reflected
 to \AF{PER}-related values.
@@ -1719,8 +1719,8 @@ ifRelNorm {σ} {b^A = `ne _ ne} PEq.refl l^R r^R =
   reflect^PER σ (PEq.cong₂ (`if ne) (reify^PER σ l^R) (reify^PER σ r^R))
 \end{code}}
 
-And that's enough to prove that evaluating a term in two
-environments related in a pointwise manner by \AF{PER}
+That suffices to show that evaluating a term in two
+environments related pointwise by \AF{PER}
 yields two semantic objects themselves related by \AF{PER}.
 
 \begin{corollary}[No exotic values]The evaluation of a term $t$
@@ -1760,8 +1760,8 @@ Benton et al.~(\citeyear{benton2012strongly}) prove six such lemmas
 relating renaming, substitution and a typeful semantics embedding
 their calculus into Coq. This observation naturally led us to
 defining a fusion framework describing how to relate three semantics:
-the pair we want to run sequentially and the third one they correspond
-to. The fundamental lemma we prove can then be instantiated six times
+the pair we sequence and their sequential composition. The fundamental
+lemma we prove can then be instantiated six times
 to derive the corresponding corollaries.
 
 The evidence that \AB{𝓢^A}, \AB{𝓢^B} and \AB{𝓢^C} are such
@@ -1792,7 +1792,8 @@ record Fusable {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REBC ℓ^RM
  sem^C = Eval.sem 𝓢^C
  field
 \end{code}}
-Similarly to the previous section, most of the fields of this record describe
+
+As before, most of the fields of this record describe
 what structure these relations need to have. However, we start with something
 slightly different: given that we are planing to run the \AR{Semantics} \AB{𝓢^B}
 \emph{after} having run \AB{𝓢^A}, we need two components: a way to extract a
@@ -1885,9 +1886,10 @@ can happen on the compound expression.
             𝓡 r ρ^A ρ^B ρ^C →
             𝓡 (`if b l r) ρ^A ρ^B ρ^C
 \end{code}}
-As with synchronisation, we measure the usefulness of this framework
-by the fact that we can prove its fundamental lemma first and that
-we get useful corollaries out of it second. Once again, having carefully
+
+As with simulation, we measure the utility of this framework
+by the way we can prove its fundamental lemma and then
+obtain useful corollaries. Once again, having carefully
 identified what the constraints should be, proving the fundamental lemma
 is not a problem:
 
@@ -1925,8 +1927,8 @@ module Fusion {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REB ℓ^RM :
 Given that the translation from \AR{Syntactic} to \AR{Semantics} uses a lot
 of constructors as their own semantic counterpart, it is possible to generate
 evidence of \AR{Syntactic} triplets being fusable with much fewer assumptions.
-We isolate them and prove the result generically in order to avoid repeating
-ourselves. A \AR{SyntacticFusable} record packs the necessary evidence for
+We isolate them and prove the result generically to avoid repetition. A
+\AR{SyntacticFusable} record packs the necessary evidence for
 \AR{Syntactic} semantics \AB{syn^A}, \AB{syn^B} and \AB{syn^C}. It is indexed
 by these three \AR{Syntactic}s as well as two relations corresponding to the
 \AB{𝓥^R_{BC}} and \AB{𝓥^R} ones of the \AR{Fusable} framework.
@@ -2129,18 +2131,16 @@ sub-sub ρ ρ′ t = let open Fusion (syntacticFusable SubstitutionFusable) in l
 \end{code}}
 \end{corollary}
 
-These four lemmas are usually painfully proven one after the other. Here
-we managed to discharge them by simply instantiating our framework four
-times in a row, using the former instances to discharge the constraints
-arising in the later ones. But we are not at all limited to proving
-statements about \AR{Syntactic}s only.
+These four lemmas are usually proven in painful separation. Here
+we discharged them by rapid successive instantiation of our framework,
+using the earlier results to discharge the later constraints.
+But we are not at all limited to proving \AR{Syntactic} statements.
 
 \paragraph{Examples of Fusable Semantics}
 
 The most simple example of \AR{Fusable} \AR{Semantics} involving a non
 \AR{Syntactic} one is probably the proof that \AR{Renaming} followed
-by \AR{Normalise^{βιξη}} is equivalent to Normalisation by Evaluation
-where the environment has been tweaked.
+by \AR{Normalise^{βιξη}} is equivalent to NBE with an adjusted environment.
 
 \begin{corollary}[Renaming-Normalise fusion]
 \AgdaHide{
@@ -2223,8 +2223,7 @@ Evaluation after a \AR{Substitution} amounts to normalising the original
 term where the substitution has been evaluated first. The constraints
 imposed on the environments might seem quite restrictive but they are
 actually similar to the Uniformity condition described by C. Coquand~(\citeyear{coquand2002formalised})
-in her detailed account of Normalisation by Evaluation for a simply typed
-$λ$-calculus with explicit substitution.
+in her detailed account of NBE for a ST$λ$C with explicit substitution.
 
 
 \begin{corollary}[Renaming-Normalise fusion]
@@ -2289,7 +2288,7 @@ sub-nbe ρ ρ′ t ρ^R ρ^R′ =
 \end{corollary}
 
 
-Finally, we may use the notion of \AR{Fusable} to prove that our
+Finally, we use \AR{Fusable} to prove that our
 definition of pretty-printing ignores \AR{Renamings}. In other
 words, as long as the names provided for the free variables are
 compatible after the renaming and as long as the name supplies

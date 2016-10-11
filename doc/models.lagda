@@ -116,18 +116,19 @@ given by, and enabled by, Kit.
 \caption{Normalisation by Evaluation for the ST$λ$C\label{nbe}}
 \end{figure}
 
-\paragraph{Outline} We shall start by defining the simple calculus we will use
-as a running example. We will then introduce a notion of environments as well
-as one well known instance: the category of renamings. This will lead
-us to defining a generic notion of type and scope-preserving Semantics
-together with a generic evaluation function. We will then showcase the
-ground covered by these Semantics: from the syntactic ones corresponding
-to renaming and substitution to printing with names or some variations on Normalisation
-by Evaluation. Finally, we will demonstrate how, the definition of Semantics
-being generic enough, we can prove fundamental lemmas about these evaluation
-functions: we characterise the semantics which are synchronisable and give an
-abstract treatment of composition yielding compaction and reuse of proofs
-compared to Benton et al.~(\citeyear{benton2012strongly})
+\paragraph{Outline} We start by defining the simple calculus we will
+use as a running example. We then introduce a notion of environments
+and one well known instance: the category of renamings. This leads us
+to defining a generic notion of type and scope-preserving Semantics
+together with a generic evaluation function. We then showcase the
+ground covered by these Semantics: from the syntactic ones
+corresponding to renaming and substitution to printing with names or
+variations of Normalisation by Evaluation. Finally, given the generic
+definition of Semantics, we can prove fundamental lemmas about these
+evaluation functions: we characterise the semantics which are
+synchronisable and give an abstract treatment of composition yielding
+compaction and reuse of proofs compared to Benton et
+al.~(\citeyear{benton2012strongly})
 
 \paragraph{Notations}\todo{revisit} This article is a literate Agda file typeset using the
 \LaTeX{} backend with as little post-processing as possible: we simply hide

@@ -226,7 +226,6 @@ operator \AF{[\_]} turn a context-indexed type into a type using an (implicit)
 universal quantification. Last but not least, the operator \AF{\_⊢\_} mechanizes
 the mathematical convention of only mentioning context \emph{extensions} when
 presenting judgements~\cite{martin1982constructive}.
-
 \todo{Fix [\_]}
 \begin{code}
 _⟶_ : {ℓ^A ℓ^E : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^E) → (Cx → Set (ℓ^A ⊔ ℓ^E))
@@ -238,7 +237,6 @@ _⟶_ : {ℓ^A ℓ^E : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^E) → 
 _⊢_ : {ℓ^A : Level} → Ty → (Cx → Set ℓ^A) → (Cx → Set ℓ^A)
 (σ ⊢ S) Γ = S (Γ ∙ σ)
 \end{code}
-
 \AgdaHide{
 \begin{code}
 infixr 5 _⟶_
@@ -252,12 +250,10 @@ _∙×_ : {ℓ^A ℓ^E : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^E) �
 
 infixr 6 _⊢_
 \end{code}}
-
 Variables are then positions in such a context represented as typed de
 Bruijn~(\citeyear{de1972lambda}) indices. As shown in the comments, this
 amounts to an inductive definition of context membership. We use the
 combinators defined above to show only local changes to the context.
-
 %<*var>
 \begin{code}
 data Var (τ : Ty) : Cx → Set where
@@ -265,10 +261,8 @@ data Var (τ : Ty) : Cx → Set where
                    [          τ ⊢ Var τ ]
   su  :            -- ∀ Γ σ. Var τ Γ → Var τ (Γ ∙ σ)
        {σ : Ty} →  [ Var τ ⟶  σ ⊢ Var τ ]
-
 \end{code}
 %</var>
-
 The syntax for this calculus guarantees that terms are well scoped-and-typed
 by construction. This presentation due to
 Altenkirch and Reus~(\citeyear{altenkirch1999monadic}) relies heavily on
@@ -815,7 +809,7 @@ prettyId = PEq.refl
 
 \section{Normalisation by Evaluation}
 
-Normalisation by Evaluation is a technique leveraging the computational
+Normalisation by Evaluation (NBE) is a technique leveraging the computational
 power of a host language in order to normalise expressions of a deeply
 embedded one. The process is based on a model construction describing a
 family of types \AB{𝓜} indexed by a context \AB{Γ} and a type \AB{σ}. Two
@@ -823,11 +817,11 @@ procedures are then defined: the first one (\AF{eval}) constructs an element
 of \AB{𝓜} \AB{Γ} \AB{σ} provided a well typed term of the corresponding
 \AB{Γ} \AD{⊢} \AB{σ} type whilst the second one (\AF{reify}) extracts, in
 a type-directed manner, normal forms \AB{Γ} \AD{⊢^{nf}} \AB{σ} from elements
-of the model \AB{𝓜} \AB{Γ} \AB{σ}. Normalisation is achieved by composing
-the two procedures. The definition of this \AF{eval} function is a natural
-candidate for our \AF{Semantics} framework. Normalisation is always defined
-\emph{for} a given equational theory so we are going to start by recalling the
-various rules a theory may satisfy.
+of the model \AB{𝓜} \AB{Γ} \AB{σ}. NBE composes the two procedures. The
+definition of this \AF{eval} function is a natural candidate for our
+\AF{Semantics} framework. Normalisation is always defined \emph{for} a
+given equational theory so we are going to start by recalling the various
+rules a theory may satisfy.
 
 Thanks to \AF{Renaming} and \AF{Substitution} respectively, we can formally
 define η-expansion and β-reduction. The η-rules are saying that for some types,
@@ -880,13 +874,13 @@ strong normalisation.
 
 Now that we have recalled all these rules, we can talk precisely about the
 sort of equational theory decided by the model construction we choose to
-perform. We start with the usual definition of Normalisation by Evaluation
+perform. We start with the usual definition of NBE
 which goes under λs and produces η-long βι-short normal forms.
 
 \subsection{Normalisation by Evaluation for βιξη}
 \label{normbye}
 
-In the case of Normalisation by Evaluation, the environment values
+In the case of NBE, the environment values
 and the computations in the model will both have the same type \AF{Kr}
 (standing for ``Kripke''), defined by induction on the \AD{Ty} argument.
 The η-rules guarantee that we can represent functions (resp. inhabitants
@@ -896,7 +890,7 @@ a notion of syntactic normal forms.
 We parametrise the mutually defined inductive families \AD{Ne} and \AD{Nf}
 by a predicate \AB{R} constraining the types at which one may embed a neutral
 as a normal form. This make it possible to guarantee (or not) that the
-normalisation $η$-expands all terms at certain types.
+NBE $η$-expands all terms at certain types.
 \AgdaHide{
 \begin{code}
 module NormalForms (R : Ty → Set) where
@@ -1099,8 +1093,7 @@ evaluation with a dummy environment of reflected variables.
 \begin{code}
  Normalise : Semantics Kr Kr
  Normalise = record
-   { wk = wk^Kr; ⟦var⟧ = id
-   ; _⟦$⟧_ = λ {σ} {τ} → _$$_ {σ} {τ} ; ⟦λ⟧ = id
+   { wk = wk^Kr; ⟦var⟧ = id; _⟦$⟧_ = λ {σ} {τ} → _$$_ {σ} {τ}; ⟦λ⟧ = id
    ; ⟦⟨⟩⟧ = ⟨⟩; ⟦tt⟧ = `tt; ⟦ff⟧ = `ff; ⟦if⟧  = λ {σ} → if {σ} }
 
  nbe : {Γ : Cx} → [ (Γ -Env) Kr ⟶ (Γ -Comp) Kr ]
@@ -1112,8 +1105,8 @@ evaluation with a dummy environment of reflected variables.
 
 \subsection{Normalisation by Evaluation for βιξ}
 
-As we have just seen, the traditional typed model construction leads to a
-normalisation procedure outputting βι-normal η-long terms. However evaluation
+As we have just seen, the traditional typed model construction leads to an NBE
+procedure outputting βι-normal η-long terms. However evaluation
 strategies implemented in actual proof systems tend to avoid applying η-rules
 as much as possible: unsurprisingly, it is a rather bad idea to η-expand proof
 terms which are already large when typechecking complex developments. Garillot\todo{not true, fix up: normalise and compare\cite{coquand1991algorithm}}
@@ -1129,12 +1122,11 @@ neutral term and compare their subterms structurally. The conversion test
 will only fail when confronted with two neutral terms with distinct head
 variables or two normal forms with different head constructors.
 
-To reproduce this behaviour, the normalisation procedure needs to be amended.
+To reproduce this behaviour, the NBE needs to be amended.
 It is possible to alter the model definition described earlier so that it
 avoids unnecessary η-expansions. We proceed by enriching the traditional
 model with extra syntactical artefacts in a manner reminiscent of Coquand
-and Dybjer's~(\citeyear{CoqDybSK}) approach to defining a Normalisation
-by Evaluation procedure for the SK combinator calculus. Their resorting to glueing
+and Dybjer's~(\citeyear{CoqDybSK}) approach to defining an NBE procedure for the SK combinator calculus. Their resorting to glueing
 terms to elements of the model was dictated by the sheer impossibily to write
 a sensible reification procedure but, in hindsight, it provides us with a
 powerful technique to build models internalizing alternative equational
@@ -1154,14 +1146,14 @@ module βιξ where
 
  mutual
 \end{code}}
-\noindent\begin{tabular}{lr}
-\hspace{-0.5cm}\begin{minipage}{0.15\textwidth}
+\noindent\begin{tabular}{l@{ }r}
+\hspace{-0.5cm}\begin{minipage}[t]{0.15\textwidth}
 \begin{code}
   Kr : Model _
   Kr σ = Ne σ ∙⊎ Go σ
 \end{code}
 \end{minipage}
-&\begin{minipage}{0.25\textwidth}
+&\begin{minipage}[t]{0.25\textwidth}
 \begin{code}
   Go : Model _
   Go `1        = const ⊤
@@ -1318,15 +1310,15 @@ be evaluated.
 \begin{code}
  mutual
 \end{code}}
-\noindent\begin{tabular}{lr}
-\hspace{-0.5cm}\begin{minipage}{0.15\textwidth}
+\noindent\begin{tabular}{l@{ }r}
+\hspace{-0.5cm}\begin{minipage}[t]{0.15\textwidth}
 \begin{code}
   Kr : Model _
   Kr σ  = Tm σ ∙×
     (Whne σ ∙⊎ Go σ)
 \end{code}
 \end{minipage}
-&\begin{minipage}{0.25\textwidth}
+&\begin{minipage}[t]{0.25\textwidth}
 \begin{code}
   Go : Model _
   Go `1        = const ⊤
@@ -1744,9 +1736,8 @@ yields two semantic objects themselves related by \AF{PER}.
 in an environment of values equal to themselves according to \AF{PER}
 yields a value equal to itself according to \AF{PER}
 \end{corollary}
-\begin{proof}By instantiating the fundamental lemma of simulations
-with \AB{𝓢^A} and \AB{𝓢^B} equal to \AF{Normalise}, \AB{𝓥^R} and
-\AB{𝓒^R} to \AF{PER}.
+\begin{proof}By the fundamental lemma of simulations with \AB{𝓢^A} and
+\AB{𝓢^B} equal to \AF{Normalise}, \AB{𝓥^R} and \AB{𝓒^R} to \AF{PER}.
 \end{proof}
 
 \AgdaHide{
@@ -2077,7 +2068,7 @@ RenamingSubstitutionFusable =
 ren-sub : {Γ Δ Θ : Cx} {σ : Ty} (ρ : Γ ⊆ Δ) (ρ′ : (Δ -Env) Tm Θ) (t : Tm σ Γ) → 
 \end{code}}
 \begin{code}
-          subst (wk^Tm σ ρ t) ρ′ ≡ subst t (select ρ ρ′)
+ subst (wk^Tm σ ρ t) ρ′ ≡ subst t (select ρ ρ′)
 \end{code}
 \AgdaHide{
 \begin{code}

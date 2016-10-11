@@ -105,7 +105,7 @@ given by, and enabled by, Kit.
 
 
 \begin{figure}[h]
-\ExecuteMetaData[motivation.tex]{ren}
+\ExecuteMetaData[motivation.tex]{ren}\vspace{ -1.5em}
 \ExecuteMetaData[motivation.tex]{sub}
 \caption{Renaming\label{ren} and Substitution\label{sub} for the ST$λ$C}
 
@@ -271,7 +271,6 @@ having untyped pre-terms and a typing relation assigning a type to
 them, the typing rules are here enforced in the syntax. Notice that
 the only use of \AF{\_⊢\_} to extend the context is for the body of
 a $λ$.
-
 \AgdaHide{
 \begin{code}
 open import Data.Nat as ℕ using (ℕ ; _+_)
@@ -282,7 +281,7 @@ size (Γ ∙ _)  = 1 + size Γ
 
 infixl 5 _`$_
 \end{code}}
-%<*term>
+%<*term>\vspace{ -2.5em}
 \begin{code}
 data Tm : Ty → (Cx → Set) where
   `var     : {σ : Ty} →    [ Var σ ⟶                 Tm σ         ]
@@ -293,6 +292,7 @@ data Tm : Ty → (Cx → Set) where
   `if      : {σ : Ty} →    [ Tm `2 ⟶ Tm σ ⟶ Tm σ ⟶   Tm σ         ]
 \end{code}
 %</term>
+
 \section{A Generic Notion of Environment}
 
 All the semantics we are interested in defining associate to a term \AB{t}
@@ -301,26 +301,19 @@ an interpretation \AB{𝓔} \AB{Δ} {τ} for each one of its free variables
 \AB{τ} in \AB{Γ}. We call the collection of these interpretations an
 \AB{𝓔}-(evaluation) environment. We leave out \AB{𝓔} when it can easily
 be inferred from the context.
-
 \AgdaHide{
 \begin{code}
 infix 5 _-Env
 \end{code}}\todo{Fix mangled Levels}
-
 The content of environments may vary wildly between different semantics:
 when defining renaming, the environments will carry variables whilst the
 ones used for normalisation by evaluation contain elements of the model.
 But their structure stays the same which prompts us to define the notion
-generically.
-
+generically for a notion of \AF{Model}.
 \begin{code}
 Model : (ℓ^A : Level) → Set (L.suc ℓ^A)
 Model ℓ^A = Ty → Cx → Set ℓ^A
 \end{code}
-
-Type preserving mapping of variables to models in a possibly different
-context.
-
 Formally, this translates to \AB{𝓔}-environments being the
 pointwise lifting of the relation \AB{𝓔} between contexts and types to a
 relation between two contexts. Rather than using a datatype to represent
@@ -1593,8 +1586,6 @@ The constraints corresponding to the various combinators are mundane
 and mostly discharged by using the fact that propositional equality
 is a congruence.
 \end{proof}
-
-
 \AgdaHide{
 \begin{code}
 SimulationRenamingSubstitution :  Simulation Renaming Substitution
@@ -1611,13 +1602,11 @@ SimulationRenamingSubstitution =
     ; R⟦if⟧    = λ eqb eql eqr _ → PEq.cong₂ (uncurry `if) (PEq.cong₂ _,_ eqb eql) eqr
     }
 \end{code}
-
 \begin{code}
 rensub : {Γ Δ : Cx} {σ : Ty} → ∀ t ρ → wk^Tm σ {Γ} {Δ} ρ t ≡ subst t (map^Env `var ρ)
 rensub t ρ = sim t (pack^R (λ _ → PEq.refl))
   where open Simulate SimulationRenamingSubstitution
 \end{code}}
-
 Another example of a corollary of the simulation lemma relates Normalisation
 by Evaluation to itself. This may appear like mindless symbol pushing but
 it is actually crucial to prove such a theorem: the model definition \AF{Kr}
@@ -1660,7 +1649,6 @@ PropEq = mkRModel _≡_
 It is indeed a PER as witnessed by the (omitted here) proofs that
 \AF{PER} \AB{σ} is symmetric and transitive. It also respects the
 notion of weakening defined for \AF{Kr}.
-
 \begin{code}
 sym^PER : {Γ : Cx} (σ : Ty) {S T : Kr σ Γ} → PER σ S T → PER σ T S
 \end{code}
@@ -1739,7 +1727,6 @@ yields a value equal to itself according to \AF{PER}
 \begin{proof}By the fundamental lemma of simulations with \AB{𝓢^A} and
 \AB{𝓢^B} equal to \AF{Normalise}, \AB{𝓥^R} and \AB{𝓒^R} to \AF{PER}.
 \end{proof}
-
 \AgdaHide{
 %<*synchroexample>
 \begin{code}
@@ -1785,7 +1772,6 @@ to be related. The second one (\AB{𝓥^R}) characterises the triples
 of environments (one for each one of the semantics) which are
 compatible. Finally, the last one (\AB{𝓒^R}) relates values
 in \AB{𝓢^B} and \AB{𝓢^C}'s respective models.
-
 \begin{code}
 record Fusable {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REBC ℓ^RM : Level} {𝓥^A : Model ℓ^EA} {𝓥^B : Model ℓ^EB} {𝓥^C : Model ℓ^EC} {𝓒^A : Model ℓ^MA} {𝓒^B : Model ℓ^MB} {𝓒^C : Model ℓ^MC} (𝓢^A : Semantics 𝓥^A 𝓒^A)
  (𝓢^B : Semantics 𝓥^B 𝓒^B) (𝓢^C : Semantics 𝓥^C 𝓒^C)
@@ -1803,19 +1789,16 @@ record Fusable {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REBC ℓ^RM
  sem^C = Eval.sem 𝓢^C
  field
 \end{code}}
-
 Similarly to the previous section, most of the fields of this record describe
 what structure these relations need to have. However, we start with something
 slightly different: given that we are planing to run the \AR{Semantics} \AB{𝓢^B}
 \emph{after} having run \AB{𝓢^A}, we need two components: a way to extract a
 term from an \AB{𝓢^A} and a way to manufacture a dummy \AB{𝓢^A} value when
 going under a binder. Our first two fields are therefore:
-
 \begin{code}
   reify^A    : {σ : Ty} → [  𝓒^A σ ⟶ Tm σ  ]
   var‿0^A    : {σ : Ty} → [  σ ⊢ 𝓥^A σ     ]
 \end{code}
-
 Then come two constraints dealing with the relations talking
 about evaluation environments. \ARF{𝓥^R‿∙} tells us how to
 extend related environments: one should be able to push related
@@ -1825,7 +1808,6 @@ merely extending the one for \AB{𝓢^A} with the token value \ARF{var‿0^A}.
 \ARF{𝓥^R‿wk} guarantees that it is always possible to weaken
 the environments for \AB{𝓢^B} and \AB{𝓢^C} in a \AB{𝓥^R}
 preserving manner.
-
 \begin{code}
   𝓥^R‿∙   :  {Γ Δ Θ : Cx} {σ : Ty} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} {u^B : 𝓥^B σ Θ} {u^C : 𝓥^C σ Θ} → 𝓥^R ρ^A ρ^B ρ^C → rmodel 𝓥^R‿BC u^B u^C →
              let ρ^A′ = wk[ 𝓢^A.wk ] (step refl) ρ^A `∙ var‿0^A
@@ -1834,14 +1816,12 @@ preserving manner.
   𝓥^R‿wk  :  {Γ Δ Θ E : Cx} (inc : Θ ⊆ E) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} → 𝓥^R ρ^A ρ^B ρ^C →
              𝓥^R ρ^A (wk[ 𝓢^B.wk ] inc ρ^B) (wk[ 𝓢^C.wk ] inc ρ^C)
 \end{code}
-
 Then we have the relational counterpart of the various term constructors.
 We can once more introduce an extra definition \AF{𝓡} which will make the type
 of the combinators defined later on clearer. \AF{𝓡} relates a term and three
 environments by stating that the computation one gets by sequentially evaluating
 the term in the first and then the second environment is related to the one
 obtained by directly evaluating the term in the third environment.
-
 \AgdaHide{
 \begin{code}
  𝓡 : {σ : Ty} {Γ Δ Θ : Cx} → Tm σ Γ → (Γ -Env) 𝓥^A Δ → (Δ -Env) 𝓥^B Θ → (Γ -Env) 𝓥^C Θ → Set _
@@ -1850,12 +1830,10 @@ obtained by directly evaluating the term in the third environment.
  𝓡 t ρ^A ρ^B ρ^C = rmodel 𝓒^R  (sem^B ρ^B (reify^A (sem^A ρ^A t)))
                                (sem^C ρ^C t)
 \end{code}
-
 \AgdaHide{
 \begin{code}
  field
 \end{code}}
-
 As with the previous section, only a handful of these combinators are out
 of the ordinary. We will start with the \AIC{`var} case. It states that
 fusion indeed happens when evaluating a variable using related environments.
@@ -1874,7 +1852,6 @@ it turns out that this is indeed enough for all of our examples.
 The evaluation environments used by the semantics \AB{𝓢^B} and \AB{𝓢^C}
 on the other hand can be arbitrarily weakened before being extended with
 related values to be substituted for the variable bound by the \AIC{`λ}.
-
 \begin{code}
   R⟦λ⟧    :  {Γ Δ Θ : Cx} {σ τ : Ty} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} (t : Tm τ (Γ ∙ σ))
              (r :  {E : Cx} {u^B : 𝓥^B σ E} {u^C : 𝓥^C σ E} → ∀ inc → rmodel 𝓥^R‿BC u^B u^C →
@@ -1884,12 +1861,10 @@ related values to be substituted for the variable bound by the \AIC{`λ}.
                    in 𝓡 t ρ^A′ ρ^B′ ρ^C′) →
              𝓥^R ρ^A ρ^B ρ^C → 𝓡 (`λ t) ρ^A ρ^B ρ^C
 \end{code}
-
 The other cases (omitted here) are just stating that, given
 the expected induction hypotheses, and the assumption that the three
 environments are \AB{𝓥^R}-related we can deliver a proof that fusion
 can happen on the compound expression.
-
 \AgdaHide{
 \begin{code}
   R⟦$⟧    : {Γ Δ Θ : Cx} {σ τ : Ty} (f : Tm (σ `→ τ) Γ) (t : Tm σ Γ)
@@ -1907,8 +1882,6 @@ can happen on the compound expression.
             𝓡 r ρ^A ρ^B ρ^C →
             𝓡 (`if b l r) ρ^A ρ^B ρ^C
 \end{code}}
-
-
 As with synchronisation, we measure the usefulness of this framework
 by the fact that we can prove its fundamental lemma first and that
 we get useful corollaries out of it second. Once again, having carefully
@@ -1928,8 +1901,6 @@ to the one associated to \AB{t} by \AB{𝓢^C} using \AB{ρ^C}.
 \begin{proof} The proof is by structural induction on \AB{t} using the
 combinators to assemble the induction hypotheses.
 \end{proof}
-
-
 \AgdaHide{
 \begin{code}
 module Fusion {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REB ℓ^RM : Level} {𝓥^A : Model ℓ^EA} {𝓥^B : Model ℓ^EB} {𝓥^C : Model ℓ^EC} {𝓒^A : Model ℓ^MA} {𝓒^B : Model ℓ^MB} {𝓒^C : Model ℓ^MC} {𝓢^A : Semantics 𝓥^A 𝓒^A} {𝓢^B : Semantics 𝓥^B 𝓒^B} {𝓢^C : Semantics 𝓥^C 𝓒^C} {𝓥^R‿BC : RModel 𝓥^B 𝓥^C ℓ^REB} {𝓥^R : {Θ Δ Γ : Cx} (ρ^A : (Γ -Env) 𝓥^A Δ) (ρ^B : (Δ -Env) 𝓥^B Θ) (ρ^C : (Γ -Env) 𝓥^C Θ) → Set ℓ^RE} {𝓒^R : RModel 𝓒^B 𝓒^C ℓ^RM} (fusable : Fusable 𝓢^A 𝓢^B 𝓢^C 𝓥^R‿BC 𝓥^R 𝓒^R) where
@@ -1961,7 +1932,6 @@ It contains the same \ARF{𝓥^R‿∙}, \ARF{𝓥^R‿wk} and \ARF{R⟦var⟧}
 fields as a \AR{Fusable} as well as a fourth one (\ARF{var‿0^{BC}})
 saying that \AB{syn^B} and \AB{syn^C}'s respective \ARF{var‿0}s are
 producing related values.
-
 \AgdaHide{
 \begin{code}
 record SyntacticFusable
@@ -2001,8 +1971,6 @@ we get a \AR{Fusable} relating the corresponding \AR{Semantics} where
 \begin{proof}The proof relies on the way the translation from \AR{Syntactic}
 to \AR{Semantics} is formulated in \cref{syntactic}.
 \end{proof}
-
-
 \AgdaHide{
 \begin{code}
 syntacticFusable :  {ℓ^EA ℓ^EB ℓ^EC ℓ^RE ℓ^REBC : Level} {𝓥^A : Model ℓ^EA} {𝓥^B : Model ℓ^EB} {𝓥^C : Model ℓ^EC} {syn^A : Syntactic 𝓥^A} {syn^B : Syntactic 𝓥^B} {syn^C : Syntactic 𝓥^C} {𝓥^R‿BC : RModel 𝓥^B 𝓥^C ℓ^REBC} {𝓥^R : {Θ Δ Γ : Cx} (ρ^A : (Γ -Env) 𝓥^A Δ) (ρ^B : (Δ -Env) 𝓥^B Θ) (ρ^C : (Γ -Env) 𝓥^C Θ) → Set ℓ^RE} (syn^R : SyntacticFusable syn^A syn^B syn^C 𝓥^R‿BC 𝓥^R) →
@@ -2053,17 +2021,17 @@ ren-ren ρ ρ′ t = let open Fusion (syntacticFusable RenamingFusable) in lemma
 
 \begin{corollary}[Renaming-Substitution fusion]Given a renaming \AB{ρ} from
 \AB{Γ} to \AB{Δ}, a substitution \AB{ρ′} from \AB{Δ} to \AB{Θ} and a term
-\AB{t} of type \AB{σ} with free variables in \AB{Γ}, we have that:
+\AB{t} of type \AB{σ} with free variables in \AB{Γ}, we have that:\vspace{ -1.5em}
 \AgdaHide{
 \begin{code}
 RenamingSubstitutionFusable :
   SyntacticFusable syntacticRenaming syntacticSubstitution syntacticSubstitution
   PropEq (λ ρ^A ρ^B ρ^C → ∀ σ pr → lookup ρ^B (lookup ρ^A pr) ≡ lookup ρ^C pr)
-RenamingSubstitutionFusable =
-  record { 𝓥^R‿∙   = λ ρ^R eq → [ eq ,, ρ^R ]
-         ; 𝓥^R‿wk  = λ inc ρ^R σ pr → PEq.cong (wk^Tm σ inc) (ρ^R σ pr)
-         ; R⟦var⟧    = λ v ρ^R → ρ^R _ v
-         ; var‿0^BC   = PEq.refl }
+RenamingSubstitutionFusable = record
+  { 𝓥^R‿∙   = λ ρ^R eq → [ eq ,, ρ^R ]
+  ; 𝓥^R‿wk  = λ inc ρ^R σ pr → PEq.cong (wk^Tm σ inc) (ρ^R σ pr)
+  ; R⟦var⟧    = λ v ρ^R → ρ^R _ v
+  ; var‿0^BC   = PEq.refl }
 
 ren-sub : {Γ Δ Θ : Cx} {σ : Ty} (ρ : Γ ⊆ Δ) (ρ′ : (Δ -Env) Tm Θ) (t : Tm σ Γ) → 
 \end{code}}
@@ -2078,7 +2046,7 @@ ren-sub ρ ρ′ t = let open Fusion (syntacticFusable RenamingSubstitutionFusab
 
 \begin{corollary}[Substitution-Renaming fusion]Given a substitution \AB{ρ}
 from \AB{Γ} to \AB{Δ}, a renaming \AB{ρ′} from \AB{Δ} to \AB{Θ} and a term
-\AB{t} of type \AB{σ} with free variables in \AB{Γ}, we have that:
+\AB{t} of type \AB{σ} with free variables in \AB{Γ}, we have that:\vspace{ -1.5em}
 \AgdaHide{
 \begin{code}
 SubstitutionRenamingFusable :
@@ -2107,7 +2075,7 @@ sub-ren ρ ρ′ t = let open Fusion (syntacticFusable SubstitutionRenamingFusab
 
 \begin{corollary}[Substitution-Substitution fusion]Given two substitutitons,
 \AB{ρ} from \AB{Γ} to \AB{Δ} and \AB{ρ′} from \AB{Δ} to \AB{Θ}, and a term
-\AB{t} of type \AB{σ} with free variables in \AB{Γ}, we have that:
+\AB{t} of type \AB{σ} with free variables in \AB{Γ}, we have that:\vspace{ -1.5em}
 \AgdaHide{
 \begin{code}
 SubstitutionFusable :
@@ -2170,7 +2138,6 @@ The most simple example of \AR{Fusable} \AR{Semantics} involving a non
 \AR{Syntactic} one is probably the proof that \AR{Renaming} followed
 by \AR{Normalise^{βιξη}} is equivalent to Normalisation by Evaluation
 where the environment has been tweaked.
-
 
 \begin{corollary}[Renaming-Normalise fusion]
 \AgdaHide{

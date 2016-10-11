@@ -128,30 +128,32 @@ definition of Semantics, we can prove fundamental lemmas about these
 evaluation functions: we characterise the semantics which are
 synchronisable and give an abstract treatment of composition yielding
 compaction and reuse of proofs compared to Benton et
-al.~(\citeyear{benton2012strongly})
+al.~(\citeyear{benton2012strongly}).
 
-\paragraph{Notations}\todo{revisit} This article is a literate Agda file typeset using the
-\LaTeX{} backend with as little post-processing as possible: we simply hide
-telescopes of implicit arguments as well as \APT{Set} levels and properly display (super / sub)-scripts
-as well as special operators such as \AF{>>=} or \AF{++}. As such, a lot of
-the notations have a meaning in Agda: \AIC{green} identifiers are data constructors,
-\ARF{pink} names refer to record fields, and \AF{blue} is characteristic of
-defined symbols. Underscores have a special status: when defining mixfix
-identifiers~\cite{danielsson2011parsing}, they mark positions where arguments
-may be inserted; our using the development version of Agda means that we have
-access to Haskell-style sections i.e. one may write \AF{\_+} \AN{5} for the partial
-application of \AF{\_+\_} corresponding to \AS{λ} \AB{x} \AS{→} \AB{x} \AF{+} \AN{5}
-or, to mention something that we will use later on, \AF{Renaming} \AF{⊨⟦\_⟧\_}
-for the partial application of \AF{\_⊨⟦\_⟧\_} to \AF{Renaming}.
+\paragraph{Notation} This article is a literate Agda
+file. We hide telescopes of implicit arguments and \APT{Set} levels,
+and properly display (super / sub)-scripts as well as special
+operators such as \AF{>>=} or \AF{++}. Colours matter: \AIC{green}
+identifiers are data constructors, \ARF{pink} names refer to record
+fields, and \AF{blue} is characteristic of defined
+symbols. Underscores have a special status: when defining mixfix
+identifiers~\cite{danielsson2011parsing}, they mark positions where
+arguments may be inserted.
 
-\paragraph{Formalisation} This whole development\footnote{\url{https://github.com/gallais/type-scope-semantics}}
-has been checked by Agda~\cite{norell2009dependently} which guarantees that all
-constructions are indeed well typed, and all functions are total. Nonetheless, it
-should be noted that the generic model constructions and the various examples of
-\AR{Semantics} given here, although not the proofs, can be fully replicated in
-Haskell using type families, higher rank polymorphism and generalised algebraic
-data types to build singletons~\cite{eisenberg2013dependently} providing the user
-with the runtime descriptions of their types or their contexts' shapes.
+\paragraph{Formalisation} This whole
+development\footnote{\url{https://github.com/gallais/type-scope-semantics}}
+has been checked by Agda~\cite{norell2009dependently} which guarantees
+that all constructions are indeed well typed, and all functions are
+total. Nonetheless, it should be noted that the generic model
+constructions and the various examples of \AR{Semantics} given here,
+although not the proofs, can and have been fully replicated in Haskell
+using type families, higher rank polymorphism and generalised
+algebraic data types to build
+singletons~\cite{eisenberg2013dependently} providing the user with the
+runtime descriptions of their types or their contexts' shapes. This
+yields, to the best of our knowledge, the first tagless and typeful
+implementation of a Kripke-style Normalisation by Evaluation in
+Haskell.
 
 
 \AgdaHide{
@@ -2421,8 +2423,7 @@ yield an instance of the third one.
 \section{}
 
 
-This yields, to the best of our knowledge, the
-first tagless and typeful implementation of a Kripke-style Normalisation by Evaluation in Haskell. The
+ The
 subtleties of working with dependent types in Haskell~\cite{lindley2014hasochism} are
 outside the scope of this paper but we do provide a (commented) Haskell module containing
 all the selectlated definitions. It should be noted that Danvy, Keller and Puech have achieved~\todo{\cite{atkey2009syntax}}

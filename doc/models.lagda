@@ -179,12 +179,13 @@ b, t, u & ∷= & x \quad{}|\quad{} t\,u \quad{}|\quad{} λx.\, b \quad{}|\quad{}
         & |  & \mathtt{tt} \quad{}|\quad{} \mathtt{ff} \quad{}|\quad{} \mathtt{if}~ b ~\mathtt{then}~ t ~\mathtt{else}~ u
 \end{array}\]
 
-We work with the above simply typed $λ$-calculus deeply embedded in Agda.
-It comes with \texttt{1} and \texttt{2} as base types and serves as
-a minimal example of a system with a record type equipped with an η-rule
-and a sum type. We embed each category of the grammar as an inductive family
-in Agda, and to each production corresponds a constructor, which we
-distinguish with a prefix backtick \AIC{`}.
+We work with simply typed $λ$-calculus deeply embedded in Agda.  It
+has \texttt{1} and \texttt{2} as base types and serves as a minimal
+example of a system with a record type equipped with an η-rule and a
+sum type. This grammar is represented in Agda as follows:
+%We embed each category of the grammar as an inductive family
+%in Agda, and to each production corresponds a constructor, which we
+%distinguish with a prefix backtick \AIC{`}.
 
 \AgdaHide{
 \begin{code}

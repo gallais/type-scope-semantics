@@ -85,23 +85,22 @@ off common bugs, she can opt for inductive families~\cite{dybjer1991inductive}
 to enforce precise invariants. But the traversals now have to be
 invariant preserving too!
 
-In an unpublished manuscript, McBride~(\citeyear{mcbride2005type}) spots
-the similarities between the types and implementations of renaming
-and substitution for the (scoped and typed) simply typed $λ$-calculus
-(ST$λ$C) in a dependently typed language. He then carves out a notion
-of ``Kit'' abstracting the difference between the two. The
-\ARF{Kit.─} uses generalising the traversal are shown (in pink)
-in \cref{kit}.
+In an unpublished manuscript, McBride~(\citeyear{mcbride2005type})
+observes the similarity between the types and implementations of
+renaming and substitution for simply typed $λ$-calculus (ST$λ$C) in a
+dependently typed language. He defines a notion of ``Kit'' abstracting
+the difference between the two. The \ARF{Kit.─} uses generalising the
+traversal are shown (in pink) in \cref{kit}.
 
-The contribution of the present paper is twofold:
+The contributions of the present paper are twofold:
 \begin{itemize}
 \item{} We generalise the ``Kit'' approach from syntax to semantics
 bringing operations like normalisation (cf.~\cref{nbe}) and printing
 with a name supply into our framework.
 
-\item{} We take advantage of this newfound uniformity to prove
+\item{} We  prove
 generic results about simulations between and fusions of semantics
-given by a Kit.
+given by, and enabled by, Kit.
 \end{itemize}
 
 

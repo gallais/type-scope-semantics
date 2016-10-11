@@ -183,7 +183,6 @@ a minimal example of a system with a record type equipped with an η-rule
 and a sum type. We embed each category of the grammar as an inductive family
 in Agda, and to each production corresponds a constructor, which we
 distinguish with a prefix backtick \AIC{`}.
-
 \AgdaHide{
 \begin{code}
 infixr 20 _`→_
@@ -210,12 +209,10 @@ data Cx : Set where
 \end{minipage}
 \end{tabular}
 
-
 To talk about the types of the variables in scope, we need \emph{contexts}.
 We choose to represent them as ``snoc'' lists of types; \AIC{ε} denotes the
 empty context and \AB{Γ} \AIC{∙} \AB{σ} the context \AB{Γ} extended with a
 fresh variable of type \AB{σ}.
-
 
 To make type signatures more readabale, we introduce combinators acting on
 context-indexed types. The most straightforward ones are pointwise lifting
@@ -231,10 +228,12 @@ presenting judgements~\cite{martin1982constructive}.
 \begin{code}
 _⟶_ : {ℓ^A ℓ^E : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^E) → (Cx → Set (ℓ^A ⊔ ℓ^E))
 (S ⟶ T) Γ = S Γ → T Γ
-
+\end{code}\vspace*{ -1.5em}
+\begin{code}
 [_] : {ℓ^A : Level} → (Cx → Set ℓ^A) → Set ℓ^A
 [ T ] = ∀ {Γ} → T Γ
-
+\end{code}\vspace*{ -1.5em}
+\begin{code}
 _⊢_ : {ℓ^A : Level} → Ty → (Cx → Set ℓ^A) → (Cx → Set ℓ^A)
 (σ ⊢ S) Γ = S (Γ ∙ σ)
 \end{code}
@@ -282,7 +281,7 @@ size (Γ ∙ _)  = 1 + size Γ
 
 infixl 5 _`$_
 \end{code}}
-%<*term>\vspace{ -2.5em}
+%<*term>\vspace*{ -2.5em}
 \begin{code}
 data Tm : Ty → (Cx → Set) where
   `var     : {σ : Ty} →    [ Var σ ⟶                 Tm σ         ]
@@ -323,7 +322,6 @@ on Jeffrey's observation~(\citeyear{jeffrey2011assoc}) that one can obtain
 associativity of append for free by using difference lists. In our case the
 interplay between various combinators (e.g. \AF{refl} and \AF{select})
 defined later on is vastly simplified by this rather simple decision.
-
 %<*environment>
 \begin{code}
 record _-Env {ℓ^A : Level} (Γ : Cx) (𝓥 : Model ℓ^A) (Δ : Cx) : Set ℓ^A where
@@ -338,25 +336,20 @@ map^Env : {ℓ^A ℓ^B : Level} {𝓥 : Model ℓ^A} {𝓦 : Model ℓ^B} {Γ Δ
           (f : {σ : Ty} → 𝓥 σ Δ → 𝓦 σ Θ) → (Γ -Env) 𝓥 Δ → (Γ -Env) 𝓦 Θ
 lookup (map^Env f ρ) v = f (lookup ρ v)
 \end{code}}
-
 Just as an environment interprets variables in a model, a computation
 gives a meaning to terms into a model.
-
 \begin{code}
 _-Comp : {ℓ^A : Level} → Cx → (𝓒 : Model ℓ^A) → Cx → Set ℓ^A
 (Γ -Comp) 𝓒 Δ = {σ : Ty} → Tm σ Γ → 𝓒 σ Δ
 \end{code}
-
 An appropriate notion of semantics for the calculus is one that
 will map environments to computations. In other words, a set of
 constraints on $𝓥$ and $𝓒$ guaranteeing the existence of a function
 of type: \ExecuteMetaData[motivation.tex]{sem}
-
 \AgdaHide{
 \begin{code}
 infixl 10 _`∙_
 \end{code}}
-
 These environments naturally behave like the contexts they are indexed by:
 there is a trivial environment for the empty context and one can easily
 extend an existing one by providing an appropriate value. The packaging of
@@ -365,7 +358,6 @@ things: it helps the typechecker by stating explicitly which \AF{Model}
 the values correspond to and it empowers us to define environments by
 copattern-matching~\cite{abel2013copatterns} thus defining environments
 by their use cases.
-
 \begin{code}
 `ε : {ℓ^A : Level} {𝓥 : Model ℓ^A} → [ (ε -Env) 𝓥 ]
 _`∙_ :  {ℓ^A : Level} {Γ : Cx} {𝓥 : Model ℓ^A} {σ : Ty} → [ (Γ -Env) 𝓥 ⟶ 𝓥 σ ⟶ (Γ ∙ σ -Env) 𝓥 ]
@@ -388,7 +380,6 @@ on.
 
 A thinning \AB{Γ} \AF{⊆} \AB{Δ} is an environment pairing each variable of
 type \AB{σ} in \AB{Γ} to one of the same type in \AB{Δ}.
-
 \AgdaHide{
 \begin{code}
 
@@ -398,7 +389,6 @@ infix 5 _⊆_
 _⊆_ : (Γ Δ : Cx) → Set
 Γ ⊆ Δ = (Γ -Env) Var Δ
 \end{code}
-
 Context inclusions allow for the formulation of weakening principles
 explaining how to transport properties along inclusions. By a ``weakening
 principle'', we mean that if \AB{P} holds of \AB{Γ} and \AB{Γ} \AF{⊆} \AB{Δ}
@@ -407,49 +397,49 @@ In the case of variables, weakening merely corresponds to applying the
 renaming function in order to obtain a new variable. The environments'
 case is also quite simple: being a pointwise lifting of a relation \AB{𝓥}
 between contexts and types, they enjoy weakening if \AB{𝓥} does.
-
 \begin{code}
 Thinnable : {ℓ^A : Level} → (Cx → Set ℓ^A) → Set ℓ^A
 Thinnable S = {Γ Δ : Cx} → Γ ⊆ Δ → (S Γ → S Δ)
-
+\end{code}\vspace*{ -1.5em}
+\begin{code}
 wk^∈ : (σ : Ty) → Thinnable (Var σ)
 wk^∈ σ inc v = lookup inc v
-
+\end{code}\vspace*{ -1.5em}
+\begin{code}
 wk[_] :  {ℓ^A : Level} {𝓥 : Model ℓ^A} → ((σ : Ty) → Thinnable (𝓥 σ)) →
          {Γ : Cx} → Thinnable ((Γ -Env) 𝓥)
 lookup (wk[ wk ] inc ρ) = wk _ inc ∘ lookup ρ
-\end{code}
-
+\end{code}\vspace*{ -1.5em}
 These simple observations allow us to prove that context inclusions
 form a category which, in turn, lets us provide the user with the
 constructors Altenkirch, Hofmann and Streicher's ``Category of
 Weakening"~(\citeyear{altenkirch1995categorical}) is based on.
-
 \begin{code}
 refl : {Γ : Cx} → Γ ⊆ Γ
 refl = pack id
-
+\end{code}\vspace*{ -1.5em}
+\begin{code}
 select : {ℓ^A : Level} {Γ Δ Θ : Cx} {𝓥 : Model ℓ^A} → Γ ⊆ Δ → (Δ -Env) 𝓥 Θ → (Γ -Env) 𝓥 Θ
 lookup (select inc ρ) = lookup ρ ∘ lookup inc
-
+\end{code}\vspace*{ -1.5em}
+\begin{code}
 step : {σ : Ty} {Γ Δ : Cx} → Γ ⊆ Δ → Γ ⊆ (Δ ∙ σ)
 step inc = select inc (pack su)
-
+\end{code}\vspace*{ -1.5em}
+\begin{code}
 pop! : {σ : Ty} {Γ Δ : Cx} → Γ ⊆ Δ → (Γ ∙ σ) ⊆ (Δ ∙ σ)
 pop! inc = step inc `∙ ze
 \end{code}
-
 The modal operator \AF{□} stating that a given predicate holds for
 all extensions of a context is a closure operator for \AF{Thinnable}.
-
 \begin{code}
 □ : {ℓ^A : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^A)
 (□ S) Γ = {Δ : Cx} → Γ ⊆ Δ → S Δ
-
+\end{code}\vspace*{ -1.5em}
+\begin{code}
 th^□ : {ℓ^A : Level} {S : Cx → Set ℓ^A} → Thinnable (□ S)
 th^□ inc s = s ∘ select inc
 \end{code}
-
 Now that we are equipped with the notion of inclusion, we have all
 the pieces necessary to describe the Kripke structure of our models
 of the simply typed $λ$-calculus.
@@ -473,7 +463,6 @@ these two relations distinct is precisely what makes it possible
 to go beyond these and also model renaming or printing with names.
 The record packs the properties of these relations necessary to
 define the evaluation function.
-
 \begin{code}
 record Semantics {ℓ^E ℓ^M : Level} (𝓥 : Model ℓ^E) (𝓒 : Model ℓ^M) : Set (ℓ^E ⊔ ℓ^M) where
 \end{code}
@@ -482,26 +471,21 @@ record Semantics {ℓ^E ℓ^M : Level} (𝓥 : Model ℓ^E) (𝓒 : Model ℓ^M)
   infixl 5 _⟦$⟧_
   field
 \end{code}}
-
 The first method of a \AR{Semantics} deals with environment values. They
 need to be thinnable (\ARF{wk}) so that the traversal may introduce fresh
 variables when going under a binder whilst keeping the environment well-scoped.
-
 \begin{code}
     wk      :  (σ : Ty) → Thinnable (𝓥 σ)
 \end{code}
-
 The structure of the model is quite constrained: each constructor
 in the language needs a semantic counterpart. We start with the
 two most interesting cases: \ARF{⟦var⟧} and \ARF{⟦λ⟧}. The variable
 case bridges the gap between the fact that the environment translates
 variables into values \AB{𝓥} but the evaluation function returns
 computations \AB{𝓒}.
-
 \begin{code}
     ⟦var⟧   :  {σ : Ty} → [ 𝓥 σ ⟶ 𝓒 σ ]
 \end{code}
-
 The semantic $λ$-abstraction is notable for two reasons: first, following
 Mitchell and Moggi~(\citeyear{mitchell1991kripke}), its \AF{□}-structure is
 typical of models à la Kripke allowing arbitrary extensions of the context;
@@ -511,7 +495,6 @@ It matches precisely the fact that the body of a $λ$-abstraction exposes
 one extra free variable, prompting us to extend the environment with a
 value for it. In the special case where \AB{𝓥} = \AB{𝓒} (normalisation
 by evaluation for instance), we recover the usual Kripke structure.
-
 \AgdaHide{
 \begin{code}
   field
@@ -519,12 +502,10 @@ by evaluation for instance), we recover the usual Kripke structure.
 \begin{code}
     ⟦λ⟧     :  {σ τ : Ty} → [ □ (𝓥 σ ⟶ 𝓒 τ) ⟶ 𝓒 (σ `→ τ) ]
 \end{code}
-
 The remaining fields' types are a direct translation of the types
 of the constructor they correspond to: substructures have simply
 been replaced with computations thus making these operators ideal
 to combine induction hypotheses. 
-
 \AgdaHide{
 \begin{code}
   field
@@ -536,8 +517,6 @@ to combine induction hypotheses.
     ⟦ff⟧   :               [                     𝓒 `2  ]
     ⟦if⟧   : {σ : Ty} →    [ 𝓒 `2 ⟶ 𝓒 σ ⟶ 𝓒 σ ⟶  𝓒 σ   ]
 \end{code}
-
-
 The type we chose for the \ARF{⟦λ⟧} field makes the \AF{Semantics} notion
 powerful enough that even logical predicates are instances of it. And we
 indeed exploit this power later on when defining normalisation by evaluation
@@ -548,11 +527,10 @@ fundamental lemma of semantics. We prove it in a module parameterised by a
 defined by structural recursion on the term. Each constructor is replaced
 by its semantic counterpart in order to combine the induction hypotheses
 for its subterms.
-
 \begin{code}
 module Eval {ℓ^E ℓ^M : Level} {𝓥 : Model ℓ^E} {𝓒 : Model ℓ^M} (𝓢 : Semantics 𝓥 𝓒) where
  open Semantics 𝓢
-\end{code}\vspace{ -2.5em}%ugly but it works!
+\end{code}\vspace*{ -2.5em}%ugly but it works!
 %<*evaluation>
 \begin{code}
  sem : {Γ : Cx} → [ (Γ -Env) 𝓥 ⟶ (Γ -Comp) 𝓒 ]
@@ -581,14 +559,13 @@ of the values in the environment to get a full-blown \AR{Semantics}. This
 fact is witnessed by our simple \AR{Syntactic} record type together with
 the \AF{syntactic} function turning its inhabitants into associated
 \AR{Semantics}.
-
 %<*syntactic>
 \begin{code}
 record Syntactic {ℓ^A : Level} (𝓥 : Model ℓ^A) : Set ℓ^A where
   field  wk     : (σ : Ty) → Thinnable (𝓥 σ)
          var‿0  : {σ : Ty} → [  σ ⊢ 𝓥 σ     ]
          ⟦var⟧  : {σ : Ty} → [  𝓥 σ ⟶ Tm σ  ]
-\end{code}\vspace{ -1.5em}%ugly but it works!
+\end{code}\vspace*{ -1.5em}%ugly but it works!
 %</syntactic>
 \begin{code}
 syntactic : {ℓ^A : Level} {𝓥 : Model ℓ^A} → Syntactic 𝓥 → Semantics 𝓥 Tm
@@ -597,7 +574,6 @@ syntactic syn = let open Syntactic syn in record
   ; ⟦λ⟧  = λ t → `λ (t (step refl) var‿0) ; _⟦$⟧_ = _`$_
   ; ⟦⟨⟩⟧ = `⟨⟩; ⟦tt⟧ = `tt; ⟦ff⟧ = `ff; ⟦if⟧  = `if }
 \end{code}
-
 The shape of \ARF{⟦λ⟧} or \ARF{⟦⟨⟩⟧} should not trick the reader
 into thinking that this definition performs some sort of η-expansion:
 \AF{sem} indeed only ever uses one of these when the evaluated term's
@@ -613,7 +589,6 @@ Section \ref{category}) and we can turn
 a variable into a term by using the \AIC{`var} constructor. The type
 of \AF{sem} specialised to this semantics is then precisely the proof
 that terms are thinnable.
-
 \AgdaHide{
 \begin{code}
 syntacticRenaming : Syntactic Var
@@ -621,7 +596,6 @@ syntacticRenaming = record { var‿0 = ze; wk = wk^∈; ⟦var⟧ = `var }
 
 Renaming : Semantics Var Tm; Renaming = syntactic syntacticRenaming
 \end{code}}
-
 \begin{code}
 wk^Tm : (σ : Ty) → Thinnable (Tm σ)
 wk^Tm σ ρ t = let open Eval Renaming in sem ρ t
@@ -632,14 +606,13 @@ Our second example of a semantics is another spin on the syntactic model:
 the environment values are now terms. We inherit weakening for terms
 from the previous example. Once again, specialising the type of \AF{sem}
 reveals that it delivers precisely the simultaneous substitution.
-
 \AgdaHide{
 \begin{code}
 syntacticSubstitution : Syntactic Tm
 syntacticSubstitution = record { var‿0 = `var ze; wk = wk^Tm; ⟦var⟧ = id }
 
 Substitution : Semantics Tm Tm; Substitution = syntactic syntacticSubstitution
-\end{code}}
+\end{code}}\vspace*{ -1.5em}
 \begin{code}
 subst : {Γ Δ : Cx} {σ : Ty} → Tm σ Γ → (Γ -Env) Tm Δ → Tm σ Δ
 subst t ρ = let open Eval Substitution in sem ρ t
@@ -679,7 +652,6 @@ open RawIMonadState (StateMonadState (Stream String)) hiding (zipWith ; pure)
 open import Relation.Binary.PropositionalEquality as PEq using (_≡_)
 \end{code}
 }
-
 \begin{code}
 record Name (σ : Ty) (Γ : Cx) : Set where
  constructor mkN; field getN : String
@@ -782,7 +754,7 @@ init : {Γ : Cx} → State (Stream String) ((Γ -Env) Name Γ)
 \AgdaHide{
 \begin{code}
 init {Γ} = nameContext Γ Γ
-\end{code}}\vspace{ -2em}%ugly but it works!
+\end{code}}\vspace*{ -2em}%ugly but it works!
 \begin{code}
 print : {Γ : Cx} {σ : Ty} → Tm σ Γ → String
 print {Γ} t = let open Eval Printing in
@@ -832,7 +804,7 @@ eta t = `λ (wk^Tm _ (step refl) t `$ `var ze)
 
 _⟨_/var₀⟩ : {σ τ : Ty} → [ σ ⊢ Tm τ ⟶ Tm σ ⟶ Tm τ ] 
 t ⟨ u /var₀⟩ = subst t (pack `var `∙ u)
-\end{code}\vspace{ -2em}
+\end{code}\vspace*{ -2em}
 \begin{mathpar}
 \inferrule{\text{\AB{t} \AS{:} \AD{Tm} (\AB{σ} \AIC{`→} \AB{τ}) \AB{Γ}}
   }{\text{\AB{t} ↝ \AF{eta} \AB{t}}
@@ -851,7 +823,7 @@ but the presence of an inductive data type (\AIC{`2}) and its eliminator
 boolean the eliminator branches on is in canonical form, we may apply
 a ι-rule. Finally, the ξ-rule lets us reduce under
 $λ$-abstractions --- the distinction between weak-head normalisation and
-strong normalisation.\vspace{ -1em}
+strong normalisation.\vspace*{ -1em}
 \begin{mathpar}
 \inferrule{
   }{\text{\AIC{`if} \AIC{`tt} \AB{l} \AB{r} ↝ \AB{l}}
@@ -1549,7 +1521,7 @@ lookup^R (ρ^R ∙^R u^R) (su v)  = lookup^R ρ^R v
 
 module Simulate {ℓ^EA ℓ^MA ℓ^EB ℓ^MB : Level} {𝓥^A : Model ℓ^EA} {𝓒^A : Model ℓ^MA} {𝓢^A : Semantics 𝓥^A 𝓒^A} {𝓥^B : Model ℓ^EB} {𝓒^B : Model ℓ^MB} {𝓢^B : Semantics 𝓥^B 𝓒^B} {ℓ^RE ℓ^RM : Level} {𝓥^R : RModel 𝓥^A 𝓥^B ℓ^RE} {𝓒^R : RModel 𝓒^A 𝓒^B ℓ^RM} (𝓡 : Simulation 𝓢^A 𝓢^B 𝓥^R 𝓒^R) where
   open Simulation 𝓡
-\end{code}\vspace{ -2.5em}
+\end{code}\vspace*{ -2.5em}
 %<*relational>
 \begin{code}
   sim :  {Γ Δ : Cx} {σ : Ty} (t : Tm σ Γ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} (ρ^R : `∀[ 𝓥^R ] ρ^A ρ^B) →
@@ -1651,7 +1623,7 @@ sym^PER : {Γ : Cx} (σ : Ty) {S T : Kr σ Γ} → PER σ S T → PER σ T S
 sym^PER `1     eq = ⟨⟩
 sym^PER `2     eq = PEq.sym eq
 sym^PER (σ `→ τ)  eq = λ inc eqVW → sym^PER τ (eq inc (sym^PER σ eqVW))
-\end{code}}\vspace{ -2.5em}%ugly but it works!
+\end{code}}\vspace*{ -2.5em}%ugly but it works!
 \begin{code}
 trans^PER : {Γ : Cx} (σ : Ty) {S T U : Kr σ Γ} → PER σ S T → PER σ T U → PER σ S U
 \end{code}
@@ -1667,7 +1639,7 @@ trans^PER (σ `→ τ)  eq₁ eq₂ =
   λ inc eqVW → trans^PER τ (eq₁ inc (refl^PER σ eqVW)) (eq₂ inc eqVW)
 
 refl^PER σ eq = trans^PER σ eq (sym^PER σ eq)
-\end{code}}\vspace{ -2.5em}%ugly but it works!
+\end{code}}\vspace*{ -2.5em}%ugly but it works!
 \begin{code}
 wk^PER :  {Δ Γ : Cx} (σ : Ty) (inc : Γ ⊆ Δ) {T U : Kr σ Γ} → PER σ T U → PER σ (wk^Kr σ inc T) (wk^Kr σ inc U)
 \end{code}
@@ -2017,7 +1989,7 @@ ren-ren ρ ρ′ t = let open Fusion (syntacticFusable RenamingFusable) in lemma
 
 \begin{corollary}[Renaming-Substitution fusion]Given a renaming \AB{ρ} from
 \AB{Γ} to \AB{Δ}, a substitution \AB{ρ′} from \AB{Δ} to \AB{Θ} and a term
-\AB{t} of type \AB{σ} with free variables in \AB{Γ}, we have that:\vspace{ -1.5em}
+\AB{t} of type \AB{σ} with free variables in \AB{Γ}, we have that:\vspace*{ -1.5em}
 \AgdaHide{
 \begin{code}
 RenamingSubstitutionFusable :
@@ -2042,7 +2014,7 @@ ren-sub ρ ρ′ t = let open Fusion (syntacticFusable RenamingSubstitutionFusab
 
 \begin{corollary}[Substitution-Renaming fusion]Given a substitution \AB{ρ}
 from \AB{Γ} to \AB{Δ}, a renaming \AB{ρ′} from \AB{Δ} to \AB{Θ} and a term
-\AB{t} of type \AB{σ} with free variables in \AB{Γ}, we have that:\vspace{ -1.5em}
+\AB{t} of type \AB{σ} with free variables in \AB{Γ}, we have that:\vspace*{ -1.5em}
 \AgdaHide{
 \begin{code}
 SubstitutionRenamingFusable :
@@ -2071,7 +2043,7 @@ sub-ren ρ ρ′ t = let open Fusion (syntacticFusable SubstitutionRenamingFusab
 
 \begin{corollary}[Substitution-Substitution fusion]Given two substitutitons,
 \AB{ρ} from \AB{Γ} to \AB{Δ} and \AB{ρ′} from \AB{Δ} to \AB{Θ}, and a term
-\AB{t} of type \AB{σ} with free variables in \AB{Γ}, we have that:\vspace{ -1.5em}
+\AB{t} of type \AB{σ} with free variables in \AB{Γ}, we have that:\vspace*{ -1.5em}
 \AgdaHide{
 \begin{code}
 SubstitutionFusable :

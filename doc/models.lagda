@@ -1050,7 +1050,7 @@ evaluation with a dummy environment of reflected variables.
  Normalise : Semantics Kr Kr
  Normalise = record
    { wk = wk^Kr; ⟦var⟧ = id; _⟦$⟧_ = λ {σ} {τ} → _$$_ {σ} {τ}; ⟦λ⟧ = id
-   ; ⟦⟨⟩⟧ = ⟨⟩; ⟦tt⟧ = `tt; ⟦ff⟧ = `ff; ⟦if⟧  = λ {σ} → if {σ} }
+   ; ⟦⟨⟩⟧ = ⟨⟩; ⟦tt⟧ = `tt; ⟦ff⟧ = `ff; ⟦if⟧ = λ {σ} → if {σ} }
 \end{code}\vspace*{ -1.5em}
 \begin{code}
  nbe : {Γ : Cx} → [ (Γ -Env) Kr ⟶ (Γ -Comp) Kr ]

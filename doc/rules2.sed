@@ -4,4 +4,3 @@ s/𝓢/\\mathcal\{S\}/g
 s/𝓒/\\mathcal\{C\}/g
 s/𝓥/\\mathcal\{V\}/g
 s/ε/\\varepsilon\{\}/g
-s/λ/\\lambda\{\}/g

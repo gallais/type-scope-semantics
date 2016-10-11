@@ -43,8 +43,6 @@
            {University of Strathclyde}
 \maketitle
 
-\todo{citeyear as much as possible}
-
 \begin{abstract}
 We abstract the common type-and-scope safe structure from
 computations on $λ$-terms that deliver, e.g., renaming, substitution, evaluation,
@@ -128,30 +126,32 @@ definition of Semantics, we can prove fundamental lemmas about these
 evaluation functions: we characterise the semantics which are
 synchronisable and give an abstract treatment of composition yielding
 compaction and reuse of proofs compared to Benton et
-al.~(\citeyear{benton2012strongly})
+al.~(\citeyear{benton2012strongly}).
 
-\paragraph{Notations}\todo{revisit} This article is a literate Agda file typeset using the
-\LaTeX{} backend with as little post-processing as possible: we simply hide
-telescopes of implicit arguments as well as \APT{Set} levels and properly display (super / sub)-scripts
-as well as special operators such as \AF{>>=} or \AF{++}. As such, a lot of
-the notations have a meaning in Agda: \AIC{green} identifiers are data constructors,
-\ARF{pink} names refer to record fields, and \AF{blue} is characteristic of
-defined symbols. Underscores have a special status: when defining mixfix
-identifiers~\cite{danielsson2011parsing}, they mark positions where arguments
-may be inserted; our using the development version of Agda means that we have
-access to Haskell-style sections i.e. one may write \AF{\_+} \AN{5} for the partial
-application of \AF{\_+\_} corresponding to \AS{λ} \AB{x} \AS{→} \AB{x} \AF{+} \AN{5}
-or, to mention something that we will use later on, \AF{Renaming} \AF{⊨⟦\_⟧\_}
-for the partial application of \AF{\_⊨⟦\_⟧\_} to \AF{Renaming}.
+\paragraph{Notation} This article is a literate Agda
+file. We hide telescopes of implicit arguments and \APT{Set} levels,
+and properly display (super / sub)-scripts as well as special
+operators such as \AF{>>=} or \AF{++}. Colours matter: \AIC{green}
+identifiers are data constructors, \ARF{pink} names refer to record
+fields, and \AF{blue} is characteristic of defined
+symbols. Underscores have a special status: when defining mixfix
+identifiers~\cite{danielsson2011parsing}, they mark positions where
+arguments may be inserted.
 
-\paragraph{Formalisation} This whole development\footnote{\url{https://github.com/gallais/type-scope-semantics}}
-has been checked by Agda~\cite{norell2009dependently} which guarantees that all
-constructions are indeed well typed, and all functions are total. Nonetheless, it
-should be noted that the generic model constructions and the various examples of
-\AR{Semantics} given here, although not the proofs, can be fully replicated in
-Haskell using type families, higher rank polymorphism and generalised algebraic
-data types to build singletons~\cite{eisenberg2013dependently} providing the user
-with the runtime descriptions of their types or their contexts' shapes.
+\paragraph{Formalisation} This whole
+development\footnote{\url{https://github.com/gallais/type-scope-semantics}}
+has been checked by Agda~\cite{norell2009dependently} which guarantees
+that all constructions are indeed well typed, and all functions are
+total. Nonetheless, it should be noted that the generic model
+constructions and the various examples of \AR{Semantics} given here,
+although not the proofs, can and have been fully replicated in Haskell
+using type families, higher rank polymorphism and generalised
+algebraic data types to build
+singletons~\cite{eisenberg2013dependently} providing the user with the
+runtime descriptions of their types or their contexts' shapes. This
+yields, to the best of our knowledge, the first tagless and typeful
+implementation of a Kripke-style Normalisation by Evaluation in
+Haskell.
 
 
 \AgdaHide{
@@ -177,12 +177,13 @@ b, t, u & ∷= & x \quad{}|\quad{} t\,u \quad{}|\quad{} λx.\, b \quad{}|\quad{}
         & |  & \mathtt{tt} \quad{}|\quad{} \mathtt{ff} \quad{}|\quad{} \mathtt{if}~ b ~\mathtt{then}~ t ~\mathtt{else}~ u
 \end{array}\]
 
-We work with the above simply typed $λ$-calculus deeply embedded in Agda.
-It comes with \texttt{1} and \texttt{2} as base types and serves as
-a minimal example of a system with a record type equipped with an η-rule
-and a sum type. We embed each category of the grammar as an inductive family
-in Agda, and to each production corresponds a constructor, which we
-distinguish with a prefix backtick \AIC{`}.
+We work with simply typed $λ$-calculus deeply embedded in Agda.  It
+has \texttt{1} and \texttt{2} as base types and serves as a minimal
+example of a system with a record type equipped with an η-rule and a
+sum type. This grammar is represented in Agda as follows:
+%We embed each category of the grammar as an inductive family
+%in Agda, and to each production corresponds a constructor, which we
+%distinguish with a prefix backtick \AIC{`}.
 
 \AgdaHide{
 \begin{code}
@@ -454,7 +455,7 @@ Now that we are equipped with the notion of inclusion, we have all
 the pieces necessary to describe the Kripke structure of our models
 of the simply typed $λ$-calculus.
 
-\section{Semantics and Generic Evaluation Functions}
+\section{Semantics and their Generic Evaluators}
 
 The upcoming sections are dedicated to demonstrating that renaming,
 substitution, printing with names, and normalisation by evaluation all
@@ -832,7 +833,7 @@ eta t = `λ (wk^Tm _ (step refl) t `$ `var ze)
 
 _⟨_/var₀⟩ : {σ τ : Ty} → [ σ ⊢ Tm τ ⟶ Tm σ ⟶ Tm τ ] 
 t ⟨ u /var₀⟩ = subst t (pack `var `∙ u)
-\end{code}
+\end{code}\vspace{ -2em}
 \begin{mathpar}
 \inferrule{\text{\AB{t} \AS{:} \AD{Tm} (\AB{σ} \AIC{`→} \AB{τ}) \AB{Γ}}
   }{\text{\AB{t} ↝ \AF{eta} \AB{t}}
@@ -851,7 +852,7 @@ but the presence of an inductive data type (\AIC{`2}) and its eliminator
 boolean the eliminator branches on is in canonical form, we may apply
 a ι-rule. Finally, the ξ-rule lets us reduce under
 $λ$-abstractions --- the distinction between weak-head normalisation and
-strong normalisation.
+strong normalisation.\vspace{ -1em}
 \begin{mathpar}
 \inferrule{
   }{\text{\AIC{`if} \AIC{`tt} \AB{l} \AB{r} ↝ \AB{l}}
@@ -1006,7 +1007,6 @@ module βιξη where
  R _ = ⊥
  open NormalForms R public
 \end{code}}
-
 %<*sem>
 \begin{code}
  Kr : Model _
@@ -1015,7 +1015,6 @@ module βιξη where
  Kr (σ `→ τ)  = □ (Kr σ ⟶ Kr τ)
 \end{code}
 %</sem>
-
 This model is defined by induction on the type in terms either of
 syntactic objects (\AD{Nf}) or using the \AF{□}-operator which is
 a closure operator for Thinnings. As such, it is trivial to prove
@@ -1027,11 +1026,9 @@ that for all type \AB{σ}, \AF{Kr} \AB{σ} is \AF{Thinnable}.
  wk^Kr `2        = wk^nf `2
  wk^Kr (σ `→ τ)  = th^□
 \end{code}}
-
 Application's semantic counterpart is easy to define: given that \AB{𝓥}
 and \AB{𝓒} are equal in this instance definition, we just feed the argument
 directly to the function, with the identity renaming: \AB{f} \AF{\$\$} \AB{t} \AS{=} \AB{f} \AF{refl} \AB{t}.
-
 \AgdaHide{
 \begin{code}
  infixr 5 _$$_
@@ -1039,7 +1036,6 @@ directly to the function, with the identity renaming: \AB{f} \AF{\$\$} \AB{t} \A
  _$$_ : {σ τ : Ty} → [ Kr (σ `→ τ) ⟶ Kr σ ⟶ Kr τ ]
  t $$ u = t refl u
 \end{code}}
-
 Conditional branching however is more subtle: the boolean value \AIC{`if} branches on
 may be a neutral term in which case the whole elimination form
 is stuck. This forces us to define \AF{reify} and \AF{reflect} first. These
@@ -1069,21 +1065,18 @@ are $λ$-headed. It allows us to define \AF{var‿0}, the semantic counterpart o
 We can then give the semantics of \AIC{`if}: if the boolean
 is a value, the appropriate branch is picked; if it is stuck the whole expression
 is reflected in the model.
-
 \begin{code}
  if : {σ : Ty} → [ Kr `2 ⟶ Kr σ ⟶ Kr σ ⟶ Kr σ ]
  if `tt            l r = l
  if `ff            l r = r
  if {σ} (`ne _ T)  l r = reflect σ (`if T (reify σ l) (reify σ r))
 \end{code}
-
 We can then combine these components. The semantics of
 a $λ$-abstraction is simply the identity function: the structure of the
 functional case in the definition of the model matches precisely the shape
 expected in a \AF{Semantics}. Because the environment carries model values,
 the variable case is trivial. We obtain a normaliser by kickstarting the
 evaluation with a dummy environment of reflected variables.
-
 \begin{code}
  Normalise : Semantics Kr Kr
  Normalise = record
@@ -1141,7 +1134,7 @@ module βιξ where
 
  mutual
 \end{code}}
-\noindent\begin{tabular}{l@{ }r}
+\noindent\begin{tabular}{l@{\hskip 2em}r}
 \hspace{-0.5cm}\begin{minipage}[t]{0.15\textwidth}
 \begin{code}
   Kr : Model _
@@ -1301,11 +1294,12 @@ content) or the original. We exploit this ability most
 notably in reification where once we have obtained either a
 head constructor or a head variable, no subterms need
 be evaluated.
+
 \AgdaHide{
 \begin{code}
  mutual
 \end{code}}
-\noindent\begin{tabular}{l@{ }r}
+\noindent\begin{tabular}{l@{\hskip 2em}r}
 \hspace{-0.5cm}\begin{minipage}[t]{0.15\textwidth}
 \begin{code}
   Kr : Model _
@@ -2420,8 +2414,7 @@ yield an instance of the third one.
 \section{}
 
 
-This yields, to the best of our knowledge, the
-first tagless and typeful implementation of a Kripke-style Normalisation by Evaluation in Haskell. The
+ The
 subtleties of working with dependent types in Haskell~\cite{lindley2014hasochism} are
 outside the scope of this paper but we do provide a (commented) Haskell module containing
 all the selectlated definitions. It should be noted that Danvy, Keller and Puech have achieved~\todo{\cite{atkey2009syntax}}

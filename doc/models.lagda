@@ -103,7 +103,7 @@ given by, and enabled by, Kit.
 
 
 \begin{figure}[h]
-\ExecuteMetaData[motivation.tex]{ren}\vspace{ -1.5em}
+\ExecuteMetaData[motivation.tex]{ren}\vspace{ -1.75em}
 \ExecuteMetaData[motivation.tex]{sub}
 \caption{Renaming\label{ren} and Substitution\label{sub} for the ST$λ$C}
 
@@ -152,8 +152,6 @@ runtime descriptions of their types or their contexts' shapes. This
 yields, to the best of our knowledge, the first tagless and typeful
 implementation of a Kripke-style Normalisation by Evaluation in
 Haskell.
-
-
 \AgdaHide{
 \begin{code}
 {-# OPTIONS --copatterns #-}
@@ -177,7 +175,7 @@ b, t, u & ∷= & x \quad{}|\quad{} t\,u \quad{}|\quad{} λx.\, b \quad{}|\quad{}
         & |  & \mathtt{tt} \quad{}|\quad{} \mathtt{ff} \quad{}|\quad{} \mathtt{if}~ b ~\mathtt{then}~ t ~\mathtt{else}~ u
 \end{array}\]
 
-We work with simply typed $λ$-calculus deeply embedded in Agda.  It
+We work with a deeply embedded simply typed $λ$-calculus.  It
 has \texttt{1} and \texttt{2} as base types and serves as a minimal
 example of a system with a record type equipped with an η-rule and a
 sum type. This grammar is represented in Agda as follows:
@@ -229,11 +227,11 @@ presenting judgements~\cite{martin1982constructive}.
 \begin{code}
 _⟶_ : {ℓ^A ℓ^E : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^E) → (Cx → Set (ℓ^A ⊔ ℓ^E))
 (S ⟶ T) Γ = S Γ → T Γ
-\end{code}\vspace*{ -1.5em}
+\end{code}\vspace*{ -1.75em}
 \begin{code}
 [_] : {ℓ^A : Level} → (Cx → Set ℓ^A) → Set ℓ^A
 [ T ] = ∀ {Γ} → T Γ
-\end{code}\vspace*{ -1.5em}
+\end{code}\vspace*{ -1.75em}
 \begin{code}
 _⊢_ : {ℓ^A : Level} → Ty → (Cx → Set ℓ^A) → (Cx → Set ℓ^A)
 (σ ⊢ S) Γ = S (Γ ∙ σ)
@@ -282,7 +280,7 @@ size (Γ ∙ _)  = 1 + size Γ
 
 infixl 5 _`$_
 \end{code}}
-%<*term>\vspace*{ -2.5em}
+%<*term>
 \begin{code}
 data Tm : Ty → (Cx → Set) where
   `var     : {σ : Ty} →    [ Var σ ⟶                 Tm σ         ]
@@ -291,7 +289,7 @@ data Tm : Ty → (Cx → Set) where
   `⟨⟩      :               [                         Tm `1        ]
   `tt `ff  :               [                         Tm `2        ]
   `if      : {σ : Ty} →    [ Tm `2 ⟶ Tm σ ⟶ Tm σ ⟶   Tm σ         ]
-\end{code}
+\end{code}\vspace*{ -2.5em}
 %</term>
 
 \section{A Generic Notion of Environment}
@@ -305,7 +303,7 @@ be inferred from the context.
 \AgdaHide{
 \begin{code}
 infix 5 _-Env
-\end{code}}\todo{Fix mangled Levels}
+\end{code}}
 The content of environments may vary wildly between different semantics:
 when defining renaming, the environments will carry variables whilst the
 ones used for normalisation by evaluation contain elements of the model.
@@ -346,7 +344,7 @@ _-Comp : {ℓ^A : Level} → Cx → (𝓒 : Model ℓ^A) → Cx → Set ℓ^A
 An appropriate notion of semantics for the calculus is one that
 will map environments to computations. In other words, a set of
 constraints on $𝓥$ and $𝓒$ guaranteeing the existence of a function
-of type: \ExecuteMetaData[motivation.tex]{sem}
+of type:\ExecuteMetaData[motivation.tex]{sem}
 \AgdaHide{
 \begin{code}
 infixl 10 _`∙_
@@ -362,7 +360,8 @@ by their use cases.
 \begin{code}
 `ε : {ℓ^A : Level} {𝓥 : Model ℓ^A} → [ (ε -Env) 𝓥 ]
 _`∙_ :  {ℓ^A : Level} {Γ : Cx} {𝓥 : Model ℓ^A} {σ : Ty} → [ (Γ -Env) 𝓥 ⟶ 𝓥 σ ⟶ (Γ ∙ σ -Env) 𝓥 ]
-
+\end{code}\vspace*{ -1.5em}
+\begin{code}
 lookup `ε        ()
 lookup (ρ `∙ s)  ze      = s
 lookup (ρ `∙ s)  (su n)  = lookup ρ n
@@ -410,7 +409,7 @@ wk^∈ σ inc v = lookup inc v
 wk[_] :  {ℓ^A : Level} {𝓥 : Model ℓ^A} → ((σ : Ty) → Thinnable (𝓥 σ)) →
          {Γ : Cx} → Thinnable ((Γ -Env) 𝓥)
 lookup (wk[ wk ] inc ρ) = wk _ inc ∘ lookup ρ
-\end{code}\vspace*{ -1.5em}
+\end{code}
 These simple observations allow us to prove that context inclusions
 form a category which, in turn, lets us provide the user with the
 constructors Altenkirch, Hofmann and Streicher's ``Category of
@@ -418,15 +417,15 @@ Weakening"~(\citeyear{altenkirch1995categorical}) is based on.
 \begin{code}
 refl : {Γ : Cx} → Γ ⊆ Γ
 refl = pack id
-\end{code}\vspace*{ -1.5em}
+\end{code}\vspace*{ -1.75em}
 \begin{code}
 select : {ℓ^A : Level} {Γ Δ Θ : Cx} {𝓥 : Model ℓ^A} → Γ ⊆ Δ → (Δ -Env) 𝓥 Θ → (Γ -Env) 𝓥 Θ
 lookup (select inc ρ) = lookup ρ ∘ lookup inc
-\end{code}\vspace*{ -1.5em}
+\end{code}\vspace*{ -1.75em}
 \begin{code}
 step : {σ : Ty} {Γ Δ : Cx} → Γ ⊆ Δ → Γ ⊆ (Δ ∙ σ)
 step inc = select inc (pack su)
-\end{code}\vspace*{ -1.5em}
+\end{code}\vspace*{ -1.75em}
 \begin{code}
 pop! : {σ : Ty} {Γ Δ : Cx} → Γ ⊆ Δ → (Γ ∙ σ) ⊆ (Δ ∙ σ)
 pop! inc = step inc `∙ ze
@@ -436,7 +435,7 @@ all extensions of a context is a closure operator for \AF{Thinnable}.
 \begin{code}
 □ : {ℓ^A : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^A)
 (□ S) Γ = {Δ : Cx} → Γ ⊆ Δ → S Δ
-\end{code}\vspace*{ -1.5em}
+\end{code}\vspace*{ -1.75em}
 \begin{code}
 th^□ : {ℓ^A : Level} {S : Cx → Set ℓ^A} → Thinnable (□ S)
 th^□ inc s = s ∘ select inc
@@ -596,7 +595,7 @@ syntacticRenaming : Syntactic Var
 syntacticRenaming = record { var‿0 = ze; wk = wk^∈; ⟦var⟧ = `var }
 
 Renaming : Semantics Var Tm; Renaming = syntactic syntacticRenaming
-\end{code}}
+\end{code}}\vspace*{ -1em}
 \begin{code}
 wk^Tm : (σ : Ty) → Thinnable (Tm σ)
 wk^Tm σ ρ t = let open Eval Renaming in sem ρ t
@@ -604,8 +603,8 @@ wk^Tm σ ρ t = let open Eval Renaming in sem ρ t
 
 \paragraph{Simultaneous Substitution}
 Our second example of a semantics is another spin on the syntactic model:
-the environment values are now terms. We inherit weakening for terms
-from the previous example. Once again, specialising the type of \AF{sem}
+environment values are now terms. We get weakening for terms from the
+previous example. Again, specialising the type of \AF{sem}
 reveals that it delivers precisely the simultaneous substitution.
 \AgdaHide{
 \begin{code}
@@ -613,10 +612,10 @@ syntacticSubstitution : Syntactic Tm
 syntacticSubstitution = record { var‿0 = `var ze; wk = wk^Tm; ⟦var⟧ = id }
 
 Substitution : Semantics Tm Tm; Substitution = syntactic syntacticSubstitution
-\end{code}}\vspace*{ -1.5em}
+\end{code}}\vspace*{ -1em}
 \begin{code}
-subst : {Γ Δ : Cx} {σ : Ty} → Tm σ Γ → (Γ -Env) Tm Δ → Tm σ Δ
-subst t ρ = let open Eval Substitution in sem ρ t
+subst : {Γ Δ : Cx} {σ : Ty} → (Γ -Env) Tm Δ → Tm σ Γ → Tm σ Δ
+subst ρ t = let open Eval Substitution in sem ρ t
 \end{code}
 
 \section{Printing with Names}
@@ -761,14 +760,12 @@ print : {Γ : Cx} {σ : Ty} → Tm σ Γ → String
 print {Γ} t = let open Eval Printing in
   proj₁ ((init >>= λ ρ → runP (sem ρ t)) names)
 \end{code}
-
 We can observe \AF{print}'s behaviour by writing a test; we state it as a
 propositional equality and prove it using \AIC{refl}, forcing the typechecker
 to check that both expressions indeed compute to the same normal form. Here
 we display the identity function defined in a context of size 2. As we can see,
 the binder receives the name \AStr{"c"} because \AStr{"a"} and \AStr{"b"} have
 already been assigned to the free variables in scope.
-
 \begin{code}
 prettyId : {σ : Ty} → print {Γ = ε ∙ `1 ∙ `2} {σ = σ `→ σ} (`λ (`var ze)) ≡ "λc. c"
 prettyId = PEq.refl
@@ -802,10 +799,11 @@ infixl 10 _⟨_/var₀⟩
 \begin{code}
 eta : {σ τ : Ty} → [ Tm (σ `→ τ) ⟶ Tm (σ `→ τ) ]
 eta t = `λ (wk^Tm _ (step refl) t `$ `var ze)
-
+\end{code}\vspace*{ -1.75em}
+\begin{code}
 _⟨_/var₀⟩ : {σ τ : Ty} → [ σ ⊢ Tm τ ⟶ Tm σ ⟶ Tm τ ] 
-t ⟨ u /var₀⟩ = subst t (pack `var `∙ u)
-\end{code}\vspace*{ -2em}
+t ⟨ u /var₀⟩ = subst (pack `var `∙ u) t
+\end{code}\vspace*{ -1.5em}
 \begin{mathpar}
 \inferrule{\text{\AB{t} \AS{:} \AD{Tm} (\AB{σ} \AIC{`→} \AB{τ}) \AB{Γ}}
   }{\text{\AB{t} ↝ \AF{eta} \AB{t}}
@@ -813,18 +811,19 @@ t ⟨ u /var₀⟩ = subst t (pack `var `∙ u)
 \and \inferrule{\text{\AB{t} \AS{:} \AD{Tm} \AIC{`1} \AB{Γ}}
   }{\text{\AB{t} ↝ \AIC{`⟨⟩}}
   }{η_2}
-\and \inferrule{
+\end{mathpar}\vspace*{ -1em}
+\begin{mathpar}
+\inferrule{
   }{\text{(\AIC{`λ} \AB{t}) \AIC{`\$} \AB{u} ↝ \AB{t} \AF{⟨} \AB{u} \AF{/var₀⟩}}
   }{β}
 \end{mathpar}
-
 The β-rule is the main driver for actual computation,
 but the presence of an inductive data type (\AIC{`2}) and its eliminator
 (\AIC{`if}) means we have further redexes: whenever the
 boolean the eliminator branches on is in canonical form, we may apply
 a ι-rule. Finally, the ξ-rule lets us reduce under
 $λ$-abstractions --- the distinction between weak-head normalisation and
-strong normalisation.\vspace*{ -1em}
+strong normalisation.\vspace*{ -1.5em}
 \begin{mathpar}
 \inferrule{
   }{\text{\AIC{`if} \AIC{`tt} \AB{l} \AB{r} ↝ \AB{l}}
@@ -863,26 +862,25 @@ NBE $η$-expands all terms at certain types.
 module NormalForms (R : Ty → Set) where
 
  mutual
-\end{code}}
+\end{code}}\vspace*{ -1em}
 \begin{code}
   data Ne : Model L.zero  where
     `var   : {σ : Ty} →    [ Var σ ⟶                Ne σ ]
     _`$_   : {σ τ : Ty} →  [ Ne (σ `→ τ) ⟶ Nf σ ⟶   Ne τ ]
     `if  : {σ : Ty} →      [ Ne `2 ⟶ Nf σ ⟶ Nf σ ⟶  Ne σ ]
-
+\end{code}\vspace*{ -1.75em}
+\begin{code}
   data Nf : Model L.zero where
     `ne      : {σ : Ty} → R σ →   [ Ne σ ⟶      Nf σ         ]
     `⟨⟩      :                    [             Nf `1        ]
     `tt `ff  :                    [             Nf `2        ]
     `λ       : {σ τ : Ty} →       [ σ ⊢ Nf τ ⟶  Nf (σ `→ τ)  ]
 \end{code}
-
 Once more, context inclusions induce the expected notions of weakening \AF{wk^{ne}}
 and \AF{wk^{nf}}. We omit their purely structural implementation here and wish we could do
 so in source code, too: our constructions so far have
 been syntax-directed and could surely be leveraged by a generic account of syntaxes
 with binding.
-
 \AgdaHide{
 \begin{code}
  wk^ne : (σ : Ty) → Thinnable (Ne σ)
@@ -956,7 +954,6 @@ with binding.
               (t : Ne σ Γ) →  wk^ne σ inc₂ (wk^ne σ inc₁ t) ≡ wk^ne σ (select inc₁ inc₂) t
  wk^ne-trans inc₁ inc₂ = wk^ne-trans′ (λ _ _ → PEq.refl)
 \end{code}}
-
 We now define the model. The \AR{R} predicate
 characterising the types for which neutral terms may be considered
 normal is here equivalent to the unit type for \AIC{`2} and the
@@ -1054,19 +1051,21 @@ evaluation with a dummy environment of reflected variables.
  Normalise = record
    { wk = wk^Kr; ⟦var⟧ = id; _⟦$⟧_ = λ {σ} {τ} → _$$_ {σ} {τ}; ⟦λ⟧ = id
    ; ⟦⟨⟩⟧ = ⟨⟩; ⟦tt⟧ = `tt; ⟦ff⟧ = `ff; ⟦if⟧  = λ {σ} → if {σ} }
-
+\end{code}\vspace*{ -1.5em}
+\begin{code}
  nbe : {Γ : Cx} → [ (Γ -Env) Kr ⟶ (Γ -Comp) Kr ]
  nbe ρ t = let open Eval Normalise in sem ρ t
-
+\end{code}\vspace*{ -1.5em}
+\begin{code}
  norm : (σ : Ty) → [ Tm σ ⟶ Nf σ ]
  norm σ t = reify σ (nbe (pack (reflect _ ∘ `var)) t)
-\end{code}
+\end{code}\vspace*{ -1.5em}
 
 \subsection{Normalisation by Evaluation for βιξ}
 
-As we have just seen, the traditional typed model construction leads to an NBE
-procedure outputting βι-normal η-long terms. However evaluation
-strategies implemented in actual proof systems tend to avoid applying η-rules
+As seen above, the traditional typed model construction leads to an NBE
+procedure outputting βι-normal η-long terms. However actual proof systems
+rely on evaluation strategies that avoid applying η-rules
 as much as possible: unsurprisingly, it is a rather bad idea to η-expand proof
 terms which are already large when typechecking complex developments.
 %Garillot\todo{not true, fix up: normalise and compare\cite{coquand1991algorithm}}
@@ -1075,8 +1074,8 @@ terms which are already large when typechecking complex developments.
 %proving becomes impractical.
 
 In these systems, normal forms are neither η-long nor η-short: the η-rule is
-actually never considered except when comparing two terms for equality, one of
-which is neutral, the other constructor-headed. Instead of declaring
+never deployed except when comparing a neutral and a constructor-headed term
+for equality. Instead of declaring
 them distinct, the algorithm does one step of η-expansion on the
 neutral term and compares their subterms structurally. The conversion test
 fails only when confronted with neutral terms with distinct head
@@ -1154,7 +1153,6 @@ module βιξ where
 % \AF{reify^{βιξ⋆}} may look like it is performing some η-expansions, it
 % is not the case: all the values in the acting model are notionally obtained
 % from constructor-headed terms.
-
 \AgdaHide{
 \begin{code}
   reflect : (σ : Ty) → [ Ne σ ⟶ Kr σ ]
@@ -1171,15 +1169,13 @@ module βιξ where
   reify⋆ (σ `→ τ)  T = `λ (reify τ (T (step refl) var‿0))
     where var‿0 = inj₁ (`var ze)
 \end{code}}
-
-Most combinators acting on this model have a definition very similar
-to their counterpart in the previous section. Semantic application is
+Most combinators acting on this model follow a pattern similar to their
+counterpart's in the previous section. Semantic application is
 more interesting: in case the function is a stuck term, we grow its
 spine by reifying its argument; otherwise we have an Agda function ready
 to be applied. We proceed similarly for the definition of the semantical
 ``if'' (omitted here). Altogether, we get another
 normaliser which is, this time, \emph{not} producing η-long normal forms.
-
 \begin{code}
   _$$_ : {σ τ : Ty} → [ Kr (σ `→ τ) ⟶ Kr σ ⟶ Kr τ ]
   (inj₁ ne)  $$ u = inj₁ (ne `$ reify _ u)
@@ -1191,12 +1187,10 @@ normaliser which is, this time, \emph{not} producing η-long normal forms.
   if (inj₁ ne) l r = inj₁ (`if ne (reify _ l) (reify _ r))
   if (inj₂ T)  l r = if T then l else r
 \end{code}}
-
 % Finally, we have all the necessary components to show that evaluating
 % the term whilst not η-expanding all stuck terms is a perfectly valid
 % \AR{Semantics}. As usual, normalisation is defined by composing
 % reification and evaluation on the diagonal environment.
-
 \AgdaHide{
 \begin{code}
   Normalise : Semantics Kr Kr
@@ -1208,7 +1202,6 @@ normaliser which is, this time, \emph{not} producing η-long normal forms.
   norm : (σ : Ty) → [ Tm σ ⟶ Nf σ ]
   norm σ t = let open Eval Normalise in reify σ (sem (pack (reflect _ ∘ `var)) t)
 \end{code}}
-
 
 \subsection{Normalisation by Evaluation for βι}
 
@@ -1372,8 +1365,8 @@ state and prove, in one go, properties about all of these semantics.
 
 Our first example of such a framework will stay simple on purpose.
 However it is no mere bureaucracy: the
-result proven here will actually be useful in the sequel
-when considering more complex properties.\todo{spelt out or not?}
+result proven here will actually be useful in the next section
+when considering more complex properties.
 
 \subsection{The Simulation Relation}
 
@@ -1448,17 +1441,14 @@ characteristic example of the remaining ones.
 Our first interesting case is the relational counterpart of \AIC{`var}:
 a variable evaluated in two related environments yields related computations.
 In other words \ARF{⟦var⟧} turns related values in related computations.
-
 \begin{code}
   R⟦var⟧    :  {Γ Δ : Cx} {σ : Ty} (v : Var σ Γ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} → `∀[ 𝓥^R ] ρ^A ρ^B → 𝓡 (`var v) ρ^A ρ^B
 \end{code}
-
 The second, and probably most interesting case, is the relational counterpart
 to the \ARF{⟦λ⟧} combinator. The ability to evaluate the body of a \AIC{`λ} in
 weakened environments, each extended by related values, and deliver similar
 values is enough to guarantee that evaluating the $\lambda$s in the original
 environments will produce similar values.
-
 \begin{code}
   R⟦λ⟧ :  {Γ Δ : Cx} {σ τ : Ty} {b : Tm τ (Γ ∙ σ)} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} (r :  {Θ : Cx} {u^A : 𝓥^A σ Θ} {u^B : 𝓥^B σ Θ} → ∀ inc → rmodel 𝓥^R u^A u^B →
                     let  ρ^A′ = wk[ 𝓢^A.wk ] inc ρ^A `∙ u^A
@@ -1466,13 +1456,11 @@ environments will produce similar values.
                     in 𝓡 b ρ^A′ ρ^B′) →
           `∀[ 𝓥^R ] ρ^A ρ^B → 𝓡 (`λ b) ρ^A ρ^B
 \end{code}
-
 All the remaining cases follow suit: assuming that the evaluation of
 subterms produces related computations and that the current environments
 are related, we conclude that the evaluation of the whole term should
 yield related computations. We show here the relational counterpart of
 the application constructor and omit the remaining ones:
-
 \begin{code}
   R⟦$⟧  :  {Γ Δ : Cx} {σ τ : Ty} {f : Tm (σ `→ τ) Γ} {t : _} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : _} → 𝓡 f ρ^A ρ^B → 𝓡 t ρ^A ρ^B →
            `∀[ 𝓥^R ] ρ^A ρ^B → 𝓡 (f `$ t) ρ^A ρ^B
@@ -1486,7 +1474,6 @@ the application constructor and omit the remaining ones:
              `∀[ 𝓥^R ] ρ^A ρ^B → 𝓡 (`if b l r) ρ^A ρ^B
 infixl 10 _∙^R_
 \end{code}}
-
 This specification is only useful if some semantics satisfy it and if given
 that these constraints are satisfied we can prove the fundamental lemma of
 simulations stating that the evaluation of a term on related inputs yields
@@ -1549,8 +1536,8 @@ simulations for the special case where: \AB{𝓢^A} is \AF{Renaming},
 substitution are precisely the variables in the renaming), and
 \AB{𝓒^R} is propositional equality.
 
-The constraints corresponding to the various combinators are mundane,
-given that propositional equality is a congruence.
+The constraints corresponding to the various combinators are mundane:
+propositional equality is a congruence.
 \end{proof}
 \AgdaHide{
 \begin{code}
@@ -1569,14 +1556,13 @@ SimulationRenamingSubstitution =
     }
 \end{code}
 \begin{code}
-rensub : {Γ Δ : Cx} {σ : Ty} → ∀ t ρ → wk^Tm σ {Γ} {Δ} ρ t ≡ subst t (map^Env `var ρ)
+rensub : {Γ Δ : Cx} {σ : Ty} → ∀ t ρ → wk^Tm σ {Γ} {Δ} ρ t ≡ subst (map^Env `var ρ) t
 rensub t ρ = sim t (pack^R (λ _ → PEq.refl))
   where open Simulate SimulationRenamingSubstitution
 \end{code}}
 
-Another example of a corollary of the simulation lemma relates NBE to itself.
-This may seem bureaucratic but
-it is crucial: the model definition \AF{Kr}
+Another corollary of the simulation lemma relates NBE to itself. This may
+seem bureaucratic but it is crucial: the model definition \AF{Kr}
 uses the host language's function space which contains more functions than
 simply the ones obtained by evaluating a $λ$-term. These exotic functions have
 undesirable behaviours and need to be ruled out to ensure that
@@ -1584,7 +1570,7 @@ normalisation has good properties. This is done by defining a Partial
 Equivalence Relation~\cite{mitchell1996foundations} (PER) on the model: the
 elements equal to themselves will be guaranteed to be well behaved. We
 show that given an environment of values PER-related to themselves,
-the computation produced by evaluating a $λ$-term in it equals itself too.
+the evaluation of a a $λ$-term produces a computation equal to itself too.
 
 We start by defining the PER for the model. It is constructed
 by induction on the type and ensures that terms which behave the same
@@ -2005,7 +1991,7 @@ RenamingSubstitutionFusable = record
 ren-sub : {Γ Δ Θ : Cx} {σ : Ty} (ρ : Γ ⊆ Δ) (ρ′ : (Δ -Env) Tm Θ) (t : Tm σ Γ) → 
 \end{code}}
 \begin{code}
- subst (wk^Tm σ ρ t) ρ′ ≡ subst t (select ρ ρ′)
+ subst ρ′ (wk^Tm σ ρ t) ≡ subst (select ρ ρ′) t
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -2034,7 +2020,7 @@ SubstitutionRenamingFusable =
 sub-ren : {Γ Δ Θ : Cx} {σ : Ty} (ρ : (Γ -Env) Tm Δ) (ρ′ : Δ ⊆ Θ) (t : Tm σ Γ) → 
 \end{code}}
 \begin{code}
- wk^Tm σ ρ′ (subst t ρ) ≡ subst t (map^Env (wk^Tm _ ρ′) ρ)
+ wk^Tm σ ρ′ (subst ρ t) ≡ subst (map^Env (wk^Tm _ ρ′) ρ) t
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -2049,7 +2035,7 @@ sub-ren ρ ρ′ t = let open Fusion (syntacticFusable SubstitutionRenamingFusab
 \begin{code}
 SubstitutionFusable :
   SyntacticFusable syntacticSubstitution syntacticSubstitution syntacticSubstitution
-  PropEq (λ ρ^A ρ^B ρ^C → ∀ σ pr → subst (lookup ρ^A pr) ρ^B ≡ lookup ρ^C pr)
+  PropEq (λ ρ^A ρ^B ρ^C → ∀ σ pr → subst ρ^B (lookup ρ^A pr) ≡ lookup ρ^C pr)
 SubstitutionFusable =
   let module RenSubst = Fusion (syntacticFusable RenamingSubstitutionFusable)
       module SubstRen = Fusion (syntacticFusable SubstitutionRenamingFusable) in
@@ -2087,7 +2073,7 @@ ifRenNorm b l r ρ^R PEq.refl eql eqr | `ff | `ff = eqr
 sub-sub : {Γ Δ Θ : Cx} {σ : Ty} (ρ : (Γ -Env) Tm Δ) (ρ′ : (Δ -Env) Tm Θ) (t : Tm σ Γ) → 
 \end{code}}
 \begin{code}
- subst (subst t ρ) ρ′ ≡ subst t (map^Env (λ t → subst t ρ′) ρ)
+ subst ρ′ (subst ρ t) ≡ subst (map^Env (subst ρ′) ρ) t
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -2151,12 +2137,12 @@ ifSubstNorm :
       ×
       ((σ₁ : Ty) (pr : Var σ₁ Γ) →
        PER σ₁ (Eval.sem Normalise ρ^B (lookup ρ^A  pr)) (lookup ρ^C pr)) →
-      Eval.sem Normalise ρ^B (subst b ρ^A) ≡ Eval.sem Normalise ρ^C b →
-      PER σ (Eval.sem Normalise ρ^B (subst l ρ^A)) (Eval.sem Normalise ρ^C l) →
-      PER σ (Eval.sem Normalise ρ^B (subst r ρ^A)) (Eval.sem Normalise ρ^C r) →
-      PER σ (Eval.sem Normalise ρ^B (subst (`if b l r) ρ^A)) (Eval.sem Normalise ρ^C (`if b l r))
+      Eval.sem Normalise ρ^B (subst ρ^A b) ≡ Eval.sem Normalise ρ^C b →
+      PER σ (Eval.sem Normalise ρ^B (subst ρ^A l)) (Eval.sem Normalise ρ^C l) →
+      PER σ (Eval.sem Normalise ρ^B (subst ρ^A r)) (Eval.sem Normalise ρ^C r) →
+      PER σ (Eval.sem Normalise ρ^B (subst ρ^A (`if b l r))) (Eval.sem Normalise ρ^C (`if b l r))
 ifSubstNorm b l r {ρ^A} {ρ^B} {ρ^C} ρ^R eqb eql eqr
-  with Eval.sem Normalise ρ^B (subst b ρ^A)
+  with Eval.sem Normalise ρ^B (subst ρ^A b)
      | Eval.sem Normalise ρ^C b
 ifSubstNorm b l r ρ^R PEq.refl eql eqr | `ne _ t | `ne _ .t =
   reflect^PER _ (PEq.cong₂ (uncurry `if) (PEq.cong₂ _,_ PEq.refl (reify^PER _ eql)) (reify^PER _ eqr))
@@ -2190,7 +2176,7 @@ actually similar to the Uniformity condition described by C. Coquand~(\citeyear{
 in her detailed account of NBE for a ST$λ$C with explicit substitution.
 
 
-\begin{corollary}[Renaming-Normalise fusion]
+\begin{corollary}[Substitution-Normalise fusion]
 \AgdaHide{
 \begin{code}
 SubstitutionNormaliseFusable : Fusable  Substitution Normalise Normalise
@@ -2238,7 +2224,7 @@ both PEq.refl = PEq.refl , PEq.refl
 sub-nbe : {Γ Δ Θ : Cx} {σ : Ty} (ρ : (Γ -Env) Tm Δ) (ρ′ : (Δ -Env) Kr Θ) (t : Tm σ Γ) (ρ^R : `∀[ PER′ ] ρ′ ρ′) → ∀ ρ^R′ →
 \end{code}}
 \begin{code}
- PER σ (nbe ρ′ (subst t ρ)) (nbe (map^Env (nbe ρ′) ρ) t)
+ PER σ (nbe ρ′ (subst ρ t)) (nbe (map^Env (nbe ρ′) ρ) t)
 \end{code}
 \AgdaHide{
 \begin{code}

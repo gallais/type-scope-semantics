@@ -25,7 +25,9 @@ s/^\\begin{code}/\\begin\{code\}\n\\\\/g
 s/^\\end{code}/\\\\\\end\{code\}\n/g
 
 # Set levels
+s/\\AgdaSymbol{(}[^:]*\\AgdaSymbol{:} \\AgdaPostulate{Level}\\AgdaSymbol{)} \\AgdaSymbol{→} //g
 s/ \\AgdaBound{ℓ}//g
+s/\\AgdaPrimitive{L.suc}//g
 s/ \\AgdaPrimitive{⊔} //g
 s/ \?\\AgdaBound{{ℓ}{[^{]*{[^{]*{}[^}]*}}}//g
 s/\\AgdaSymbol{(}\\AgdaSymbol{)}//g
@@ -33,6 +35,7 @@ s/ \\AgdaSymbol{(}\\AgdaSymbol{))}/\\AgdaSymbol\{)\}/g
 s/\\AgdaFunction{Model} \\AgdaSymbol{\\_}/\\AgdaFunction\{Model\}/g
 
 # Implicit arguments
+s/\\AgdaSymbol{\\{}.*\\AgdaSymbol{\\}}[^()→;]*\\AgdaSymbol{→} //g
 s/\\AgdaSymbol{\\{}.*\\AgdaSymbol{\\}}[^()→;]*\\AgdaSymbol{→} //g
 s/\\AgdaSymbol{\\{}[^();]*\\AgdaSymbol{\\}}//g
 s/\\AgdaSymbol{\\{}[^;]*\\AgdaSymbol{\\}}//g

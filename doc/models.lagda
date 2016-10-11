@@ -1715,8 +1715,8 @@ lemma we prove can then be instantiated six times
 to derive the corresponding corollaries.
 
 The evidence that \AB{𝓢^A}, \AB{𝓢^B} and \AB{𝓢^C} are such
-that \AB{𝓢^A} followed by \AB{𝓢^B} can be said to be equivalent
-to \AB{𝓢^C} (e.g. think \AF{Substitution} followed by \AF{Renaming}
+that \AB{𝓢^A} followed by \AB{𝓢^B} is equivalent
+to \AB{𝓢^C} (e.g. \AF{Substitution} followed by \AF{Renaming}
 can be reduced to \AF{Substitution}) is packed in a record
 \AR{Fusable} indexed by the three semantics but also three
 relations. The first one (\AB{𝓥^R_{BC}}) states what it means
@@ -2092,7 +2092,10 @@ The most simple example of \AR{Fusable} \AR{Semantics} involving a non
 \AR{Syntactic} one is probably the proof that \AR{Renaming} followed
 by \AR{Normalise^{βιξη}} is equivalent to NBE with an adjusted environment.
 
-\begin{corollary}[Renaming-Normalise fusion]
+\begin{corollary}[Renaming-Normalise fusion] Given a renaming \AB{ρ}
+from \AB{Γ} to \AB{Δ}, an environment of values \AB{ρ′} from \AB{Δ} to
+\AB{Θ} such that they are all equal to themselves in the \AF{PER} and
+a term \AB{t} of type \AB{σ} with free variables in \AB{Γ}, we have that:\vspace*{ -1.5em}
 \AgdaHide{
 \begin{code}
 RenamingNormaliseFusable : Fusable Renaming Normalise Normalise PER′
@@ -2176,7 +2179,11 @@ actually similar to the Uniformity condition described by C. Coquand~(\citeyear{
 in her detailed account of NBE for a ST$λ$C with explicit substitution.
 
 
-\begin{corollary}[Substitution-Normalise fusion]
+\begin{corollary}[Substitution-Normalise fusion]Given a substitution \AB{ρ}
+from \AB{Γ} to \AB{Δ}, an environment of values \AB{ρ′} from \AB{Δ} to \AB{Θ}
+such that all these values are equal to themselves and weakening and evaluation
+in \AB{ρ′} commute, and a term \AB{t} of type \AB{σ} with free variables in \AB{Γ},
+we have that:
 \AgdaHide{
 \begin{code}
 SubstitutionNormaliseFusable : Fusable  Substitution Normalise Normalise
@@ -2238,14 +2245,14 @@ sub-nbe ρ ρ′ t ρ^R ρ^R′ =
 \end{corollary}
 
 
-Finally, we use \AR{Fusable} to prove that our
-definition of pretty-printing ignores \AR{Renamings}. In other
-words, as long as the names provided for the free variables are
-compatible after the renaming and as long as the name supplies
-are equal then the string produced, as well as the state of the
-name supply at the end of the process, are equal.
+%Finally, we use \AR{Fusable} to prove that our
+%definition of pretty-printing ignores \AR{Renamings}. In other
+%words, as long as the names provided for the free variables are
+%compatible after the renaming and as long as the name supplies
+%are equal then the string produced, as well as the state of the
+%name supply at the end of the process, are equal.
 
-\begin{corollary}[Renaming-Normalise fusion]
+%\begin{corollary}[Renaming-Printing fusion]
 \AgdaHide{
 \begin{code}
 RenamingPrettyPrintingFusable : Fusable Renaming Printing Printing PropEq
@@ -2285,19 +2292,32 @@ proof Δ ε                = PEq.refl
 proof Δ (Γ ∙ x) {n ∷ ns} = PEq.trans (tailComm Δ Γ) (proof Δ Γ)
 
 ren-print : {Γ : Cx} {σ : Ty} (t : Tm σ ε) (inc : ε ⊆ Γ) →
-\end{code}}
+\end{code}
 \begin{code}
  print (wk^Tm σ inc t) ≡ proj₁ (runP (Eval.sem Printing `ε t) (Stream.drop (size Γ) names))
 \end{code}
-\AgdaHide{
 \begin{code}
 ren-print {Γ} t inc = PEq.cong proj₁ (lemma t (pack^R (λ ())) (proof Γ Γ))
   where open Fusion RenamingPrettyPrintingFusable
 \end{code}}
-\end{corollary}
+%\end{corollary}
 
 
 \section{Related Work}
+
+
+The programming part of this work can be replicated in Haskell
+and a translation of the definitions is available on the paper's
+repository\footnote{\url{https://github.com/gallais/type-scope-semantics}}.
+The subtleties of working with dependent types in Haskell~\cite{lindley2014hasochism} are
+outside the scope of this paper. It should be noted that Danvy, Keller and Puech have achieved
+a similar goal in OCaml~\cite{danvytagless} but their formalisation uses parametric higher
+order abstract syntax~\cite{chlipala2008parametric} which frees them from having to deal
+with variable binding, contexts and use models à la Kripke. However we consider these to be
+primordial: they can still guide the implementation of more complex type theories where,
+until now, being typeful is still out of reach. Type-level guarantees about scope preservation
+can help root out bugs related to fresh name generation, name capture or arithmetic on de
+Bruijn levels to recover de Bruijn indices.
 
 This work is at the intersection of two traditions: the formal treatment
 of programming languages and the implementation of embedded Domain Specific
@@ -2366,22 +2386,5 @@ yield an instance of the third one.
 
 \bibliographystyle{abbrvnat}
 \bibliography{main}
-
-\appendix{}
-
-\section{}
-
-
- The
-subtleties of working with dependent types in Haskell~\cite{lindley2014hasochism} are
-outside the scope of this paper but we do provide a (commented) Haskell module containing
-all the selectlated definitions. It should be noted that Danvy, Keller and Puech have achieved~\todo{\cite{atkey2009syntax}}
-a similar goal in OCaml~\cite{danvytagless} but their formalisation uses parametric higher
-order abstract syntax~\cite{chlipala2008parametric} which frees them from having to deal
-with variable binding, contexts and use models à la Kripke. However we consider these to be
-primordial: they can still guide the implementation of more complex type theories where,
-until now, being typeful is still out of reach. Type-level guarantees about scope preservation
-can help root out bugs related to fresh name generation, name capture or arithmetic on de
-Bruijn levels to recover de Bruijn indices.
 
 \end{document}

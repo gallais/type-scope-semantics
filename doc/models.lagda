@@ -1528,7 +1528,7 @@ related output.
 
 \begin{theorem}[Fundamental Lemma of Simulations]
 Given two Semantics \AB{𝓢^A} and \AB{𝓢^B} in simulation with respect to
-relations \AB{𝓥^R} for values and \AB{𝓒^R} for computations, we have that:
+relations \AB{𝓥^R} for values and \AB{𝓒^R} for computations, we have:
 
 For any term \AB{t} and environments \AB{ρ^A} and \AB{ρ^B}, if the two environments
 are \AB{𝓥^R}-related in a pointwise manner then the semantics associated

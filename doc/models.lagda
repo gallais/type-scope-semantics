@@ -144,8 +144,7 @@ that all constructions are indeed well typed, and all functions are
 total. Nonetheless, it should be noted that the generic model
 constructions and the various examples of \AR{Semantics} given here,
 although not the proofs, can and have been fully replicated in Haskell
-using type families, higher rank polymorphism and generalised
-algebraic data types to build
+using type families, higher rank polymorphism and GADTs to build
 singletons~\cite{eisenberg2013dependently} providing the user with the
 runtime descriptions of their types or their contexts' shapes. This
 yields, to the best of our knowledge, the first tagless and typeful
@@ -177,7 +176,7 @@ b, t, u & ∷= & x \quad{}|\quad{} t\,u \quad{}|\quad{} λx.\, b \quad{}|\quad{}
 We work with a deeply embedded simply typed $λ$-calculus.  It
 has \texttt{1} and \texttt{2} as base types and serves as a minimal
 example of a system with a record type equipped with an η-rule and a
-sum type. This grammar is represented in Agda as follows:
+sum type. This grammar is represented in Agda as follows:\vspace*{ -1em}
 %We embed each category of the grammar as an inductive family
 %in Agda, and to each production corresponds a constructor, which we
 %distinguish with a prefix backtick \AIC{`}.
@@ -221,7 +220,7 @@ disjoint sums (\AF{\_∙⊎\_}) and products (\AF{\_∙×\_}). The ``universally
 operator \AF{[\_]} turn a context-indexed type into a type using an (implicit)
 universal quantification. Last but not least, the operator \AF{\_⊢\_} mechanizes
 the mathematical convention of only mentioning context \emph{extensions} when
-presenting judgements~\cite{martin1982constructive}.
+presenting judgements~\cite{martin1982constructive}.\vspace*{ -1em}
 \begin{code}
 _⟶_ : {ℓ^A ℓ^E : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^E) → (Cx → Set (ℓ^A ⊔ ℓ^E))
 (S ⟶ T) Γ = S Γ → T Γ
@@ -267,7 +266,7 @@ Dybjer's~(\citeyear{dybjer1991inductive}) inductive families. Rather than
 having untyped pre-terms and a typing relation assigning a type to
 them, the typing rules are here enforced in the syntax. Notice that
 the only use of \AF{\_⊢\_} to extend the context is for the body of
-a $λ$.
+a $λ$.\vspace*{ -1em}
 \AgdaHide{
 \begin{code}
 open import Data.Nat as ℕ using (ℕ ; _+_)
@@ -306,7 +305,7 @@ The content of environments may vary wildly between different semantics:
 when defining renaming, the environments will carry variables whilst the
 ones used for normalisation by evaluation contain elements of the model.
 But their structure stays the same which prompts us to define the notion
-generically for a notion of \AF{Model}.
+generically for a notion of \AF{Model}.\vspace*{ -1em}
 \begin{code}
 Model : (ℓ^A : Level) → Set (L.suc ℓ^A)
 Model ℓ^A = Ty → Cx → Set ℓ^A
@@ -318,7 +317,7 @@ such a lifting, we choose to use a function space. This decision is based
 on Jeffrey's observation~(\citeyear{jeffrey2011assoc}) that one can obtain
 associativity of append for free by using difference lists. In our case the
 interplay between various combinators (e.g. \AF{refl} and \AF{select})
-defined later on is vastly simplified by this rather simple decision.
+defined later on is vastly simplified by this rather simple decision.\vspace*{ -1em}
 %<*environment>
 \begin{code}
 record _-Env {ℓ^A : Level} (Γ : Cx) (𝓥 : Model ℓ^A) (Δ : Cx) : Set ℓ^A where
@@ -334,7 +333,7 @@ map^Env : {ℓ^A ℓ^B : Level} {𝓥 : Model ℓ^A} {𝓦 : Model ℓ^B} {Γ Δ
 lookup (map^Env f ρ) v = f (lookup ρ v)
 \end{code}}
 Just as an environment interprets variables in a model, a computation
-gives a meaning to terms into a model.
+gives a meaning to terms into a model.\vspace*{ -1em}
 \begin{code}
 _-Comp : {ℓ^A : Level} → Cx → (𝓒 : Model ℓ^A) → Cx → Set ℓ^A
 (Γ -Comp) 𝓒 Δ = {σ : Ty} → Tm σ Γ → 𝓒 σ Δ
@@ -354,11 +353,11 @@ the function representing to the environment in a record allows for two
 things: it helps the typechecker by stating explicitly which \AF{Model}
 the values correspond to and it empowers us to define environments by
 copattern-matching~\cite{abel2013copatterns} thus defining environments
-by their use cases.
+by their use cases.\vspace*{ -1em}
 \begin{code}
 `ε : {ℓ^A : Level} {𝓥 : Model ℓ^A} → [ (ε -Env) 𝓥 ]
 _`∙_ :  {ℓ^A : Level} {Γ : Cx} {𝓥 : Model ℓ^A} {σ : Ty} → [ (Γ -Env) 𝓥 ⟶ 𝓥 σ ⟶ (Γ ∙ σ -Env) 𝓥 ]
-\end{code}\vspace*{ -1.5em}
+\end{code}\vspace*{ -1.75em}
 \begin{code}
 lookup `ε        ()
 lookup (ρ `∙ s)  ze      = s
@@ -413,7 +412,7 @@ lookup (th[ th ] inc ρ) = th _ inc ∘ lookup ρ
 These simple observations allow us to prove that context inclusions
 form a category which, in turn, lets us provide the user with the
 constructors Altenkirch, Hofmann and Streicher's ``Category of
-Weakening"~(\citeyear{altenkirch1995categorical}) is based on.
+Weakening"~(\citeyear{altenkirch1995categorical}) is based on.\vspace*{ -1em}
 \begin{code}
 refl : {Γ : Cx} → Γ ⊆ Γ
 refl = pack id
@@ -462,7 +461,7 @@ evaluation, \AB{𝓥} and \AB{𝓒} will happen to coincide but keeping
 these two relations distinct is precisely what makes it possible
 to go beyond these and also model renaming or printing with names.
 The record packs the properties of these relations necessary to
-define the evaluation function.
+define the evaluation function.\vspace*{ -1em}
 \begin{code}
 record Semantics {ℓ^E ℓ^M : Level} (𝓥 : Model ℓ^E) (𝓒 : Model ℓ^M) : Set (ℓ^E ⊔ ℓ^M) where
 \end{code}
@@ -473,7 +472,7 @@ record Semantics {ℓ^E ℓ^M : Level} (𝓥 : Model ℓ^E) (𝓒 : Model ℓ^M)
 \end{code}}
 The first method of a \AR{Semantics} deals with environment values. They
 need to be thinnable (\ARF{th}) so that the traversal may introduce fresh
-variables when going under a binder whilst keeping the environment well-scoped.
+variables when going under a binder whilst keeping the environment well-scoped.\vspace*{ -1em}
 \begin{code}
     th      :  (σ : Ty) → Thinnable (𝓥 σ)
 \end{code}
@@ -484,7 +483,7 @@ case bridges the gap between the fact that the environment translates
 variables into values \AB{𝓥} but the evaluation function returns
 computations \AB{𝓒}.
 \begin{code}
-    ⟦var⟧   :  {σ : Ty} → [ 𝓥 σ ⟶ 𝓒 σ ]
+    ⟦var⟧ :  {σ : Ty} → [ 𝓥 σ ⟶ 𝓒 σ ]
 \end{code}
 The semantic $λ$-abstraction is notable for two reasons: first, following
 Mitchell and Moggi~(\citeyear{mitchell1991kripke}), its \AF{□}-structure is
@@ -494,18 +493,18 @@ computations to computations,  it takes \emph{values} to computations.
 It matches precisely the fact that the body of a $λ$-abstraction exposes
 one extra free variable, prompting us to extend the environment with a
 value for it. In the special case where \AB{𝓥} = \AB{𝓒} (normalisation
-by evaluation for instance), we recover the usual Kripke structure.
+by evaluation for instance), we recover the usual Kripke structure.\vspace*{ -1em}
 \AgdaHide{
 \begin{code}
   field
 \end{code}}
 \begin{code}
-    ⟦λ⟧     :  {σ τ : Ty} → [ □ (𝓥 σ ⟶ 𝓒 τ) ⟶ 𝓒 (σ `→ τ) ]
+    ⟦λ⟧ :  {σ τ : Ty} → [ □ (𝓥 σ ⟶ 𝓒 τ) ⟶ 𝓒 (σ `→ τ) ]
 \end{code}
 The remaining fields' types are a direct translation of the types
 of the constructor they correspond to: substructures have simply
 been replaced with computations thus making these operators ideal
-to combine induction hypotheses. 
+to combine induction hypotheses.\vspace*{ -1em}
 \AgdaHide{
 \begin{code}
   field
@@ -558,7 +557,7 @@ McBride, it is enough to provide three operations describing the properties
 of the values in the environment to get a full-blown \AR{Semantics}. This
 fact is witnessed by our simple \AR{Syntactic} record type together with
 the \AF{syntactic} function turning its inhabitants into associated
-\AR{Semantics}.
+\AR{Semantics}.\vspace*{ -1em}
 %<*syntactic>
 \begin{code}
 record Syntactic {ℓ^A : Level} (𝓥 : Model ℓ^A) : Set ℓ^A where
@@ -636,8 +635,7 @@ for the variables currently in scope whilst the computations thread a name-suppl
 (a stream of strings) to be used to generate fresh names for bound variables.
 If the values in the environment had to be computations too, we would not root
 out some faulty implementations e.g a program picking a new name each time a
-variable is mentioned.
-
+variable is mentioned.\vspace*{ -1em}
 \AgdaHide{
 \begin{code}
 open import Data.Char using (Char)
@@ -669,8 +667,7 @@ poses no problem whatsoever in this framework means it is appropriate for
 handling languages with effects~\cite{moggi1991notions}, or effectful
 semantics e.g. logging the various function calls. Here is the full definition
 of the printer assuming the existence of various \AF{format} primitives picking
-a way to display \AIC{`λ}, \AIC{`\$} and \AIC{`if}.
-
+a way to display \AIC{`λ}, \AIC{`\$} and \AIC{`if}.\vspace*{ -1em}
 \AgdaHide{
 \begin{code}
 formatλ : String → String → String
@@ -738,8 +735,7 @@ In order to kickstart the evaluation, we still need to provide \AR{Name}s
 for each one of the free variables in scope. We deliver that environment
 by a simple stateful computation \AF{init} chopping off an initial segment
 of the name supply of the appropriate length. The definition of \AF{print}
-follows:
-
+follows:\vspace*{ -1em}
 \AgdaHide{
 \begin{code}
 nameContext : ∀ Δ Γ → State (Stream String) ((Γ -Env) Name Δ)
@@ -765,7 +761,7 @@ propositional equality and prove it using \AIC{refl}, forcing the typechecker
 to check that both expressions indeed compute to the same normal form. Here
 we display the identity function defined in a context of size 2. As we can see,
 the binder receives the name \AStr{"c"} because \AStr{"a"} and \AStr{"b"} have
-already been assigned to the free variables in scope.
+already been assigned to the free variables in scope.\vspace*{ -1em}
 \begin{code}
 prettyId : {σ : Ty} → print {Γ = ε ∙ `1 ∙ `2} {σ = σ `→ σ} (`λ (`var ze)) ≡ "λc. c"
 prettyId = PEq.refl
@@ -775,23 +771,23 @@ prettyId = PEq.refl
 
 Normalisation by Evaluation (NBE) is a technique leveraging the computational
 power of a host language in order to normalise expressions of a deeply
-embedded one. The process is based on a model construction describing a
-family of types \AB{𝓜} indexed by a context \AB{Γ} and a type \AB{σ}. Two
-procedures are then defined: the first one (\AF{eval}) constructs an element
-of \AB{𝓜} \AB{Γ} \AB{σ} provided a well typed term of the corresponding
-\AB{Γ} \AD{⊢} \AB{σ} type whilst the second one (\AF{reify}) extracts, in
+embedded one. The process is based on a \AF{Model} construction describing a
+family of types by induction on its \AF{Ty} index. Two
+procedures are then defined: the first (\AF{eval}) constructs an element
+of \AB{𝓒} \AB{σ} \AB{Γ} provided a well typed term of the corresponding
+\AD{Tm} \AB{σ} \AB{Γ} type whilst the second (\AF{reify}) extracts, in
 a type-directed manner, normal forms \AB{Γ} \AD{⊢^{nf}} \AB{σ} from elements
-of the model \AB{𝓜} \AB{Γ} \AB{σ}. NBE composes the two procedures. The
+of the model \AB{𝓒} \AB{σ} \AB{Γ}. NBE composes the two procedures. The
 definition of this \AF{eval} function is a natural candidate for our
 \AF{Semantics} framework. NBE is always defined \emph{for} a
-given equational theory so we are going to start by recalling the various
+given equational theory; we start by recalling the various
 rules a theory may satisfy.
 
 Thanks to \AF{Renaming} and \AF{Substitution} respectively, we can formally
 define η-expansion and β-reduction. The η-rules say that for some types,
 terms have a canonical form: functions will all be λ-headed whilst records will
 collect their fields --- here this makes all elements of
-\AIC{`1} equal to \AIC{`⟨⟩}.
+\AIC{`1} equal to \AIC{`⟨⟩}.\vspace*{ -1em}
 \AgdaHide{
 \begin{code}
 infixl 10 _⟨_/var₀⟩
@@ -1011,24 +1007,29 @@ is stuck. This forces us to define \AF{reify} and \AF{reflect} first. These
 functions, also known as quote and unquote respectively, give the interplay
 between neutral terms, model values and normal forms. \AF{reflect} performs a
 form of semantic η-expansion: all stuck \AIC{`1} terms are equated and all functions
-are $λ$-headed. It allows us to define \AF{var‿0}, the semantic counterpart of \AIC{`var} \AIC{ze}.
+are $λ$-headed. It allows us to define \AF{var‿0}, the semantic counterpart of \AIC{`var} \AIC{ze}.\vspace*{ -1em}
 \AgdaHide{
 \begin{code}
- mutual
-  var‿0 : (σ : Ty) → [ σ ⊢ Kr σ ]
-  var‿0 σ = reflect σ (`var ze)
+ var‿0 : (σ : Ty) → [ σ ⊢ Kr σ ]
 \end{code}}
 \begin{code}
-  reflect : (σ : Ty) → [ Ne σ ⟶ Kr σ ]
-  reflect `1        t = ⟨⟩
-  reflect `2        t = `ne _ t
-  reflect (σ `→ τ)  t =  λ ρ u → let b = th^ne (σ `→ τ) ρ t 
-                         in reflect τ (b `$ reify σ u)
- 
-  reify : (σ : Ty) → [ Kr σ ⟶ Nf σ ]
-  reify `1        T = `⟨⟩
-  reify `2        T = T
-  reify (σ `→ τ)  T = `λ (reify τ (T (step refl) (var‿0 σ)))
+ reify    : (σ : Ty) → [ Kr σ ⟶ Nf σ ]
+ reflect  : (σ : Ty) → [ Ne σ ⟶ Kr σ ]
+\end{code}\vspace*{ -1em}
+\AgdaHide{
+\begin{code}
+ var‿0 σ = reflect σ (`var ze)
+\end{code}}\vspace*{ -1em}
+\begin{code}
+ reflect `1        t = ⟨⟩
+ reflect `2        t = `ne _ t
+ reflect (σ `→ τ)  t =  λ ρ u → let b = th^ne (σ `→ τ) ρ t 
+                        in reflect τ (b `$ reify σ u)
+\end{code}\vspace*{ -2em}
+\begin{code}
+ reify `1        T = `⟨⟩
+ reify `2        T = T
+ reify (σ `→ τ)  T = `λ (reify τ (T (step refl) (var‿0 σ)))
 \end{code}
 
 We can then give the semantics of \AIC{`if}: if the boolean
@@ -1045,17 +1046,17 @@ a $λ$-abstraction is simply the identity function: the structure of the
 functional case in the definition of the model matches precisely the shape
 expected in a \AF{Semantics}. Because the environment carries model values,
 the variable case is trivial. We obtain a normaliser by kickstarting the
-evaluation with a dummy environment of reflected variables.
+evaluation with a dummy environment of reflected variables.\vspace*{ -1em}
 \begin{code}
  Normalise : Semantics Kr Kr
  Normalise = record
    { th = th^Kr; ⟦var⟧ = id; _⟦$⟧_ = λ {σ} {τ} → _$$_ {σ} {τ}; ⟦λ⟧ = id
    ; ⟦⟨⟩⟧ = ⟨⟩; ⟦tt⟧ = `tt; ⟦ff⟧ = `ff; ⟦if⟧ = λ {σ} → if {σ} }
-\end{code}\vspace*{ -1.5em}
+\end{code}\vspace*{ -1.75em}
 \begin{code}
  nbe : {Γ : Cx} → [ (Γ -Env) Kr ⟶ (Γ -Comp) Kr ]
  nbe ρ t = let open Eval Normalise in sem ρ t
-\end{code}\vspace*{ -1.5em}
+\end{code}\vspace*{ -1.75em}
 \begin{code}
  norm : (σ : Ty) → [ Tm σ ⟶ Nf σ ]
  norm σ t = reify σ (nbe (pack (reflect _ ∘ `var)) t)
@@ -1093,7 +1094,7 @@ theories.
 
 This leads us to using a predicate \AF{R} allowing embedding of neutrals
 into normal forms at all types and mutually defining the model (\AF{Kr})
-together with the \emph{acting} model (\AF{Go}):
+together with the \emph{acting} model (\AF{Go}):\vspace*{ -1em}
 \AgdaHide{
 \begin{code}
 module βιξ where
@@ -1175,7 +1176,7 @@ more interesting: in case the function is a stuck term, we grow its
 spine by reifying its argument; otherwise we have an Agda function ready
 to be applied. We proceed similarly for the definition of the semantical
 ``if'' (omitted here). Altogether, we get another
-normaliser which is, this time, \emph{not} producing η-long normal forms.
+normaliser which is, this time, \emph{not} producing η-long normal forms.\vspace*{ -1em}
 \begin{code}
   _$$_ : {σ τ : Ty} → [ Kr (σ `→ τ) ⟶ Kr σ ⟶ Kr τ ]
   (inj₁ ne)  $$ u = inj₁ (ne `$ reify _ u)
@@ -1258,7 +1259,7 @@ of the input term (i.e. a stuck term or the term's computational
 content) or the original. We exploit this ability most
 notably in reification where once we have obtained either a
 head constructor or a head variable, no subterms need
-be evaluated.
+be evaluated.\vspace*{ -1em}
 
 \AgdaHide{
 \begin{code}
@@ -1370,7 +1371,7 @@ when considering more complex properties.
 
 \subsection{The Simulation Relation}
 
-This first example is basically describing the relational interpretation
+This first example is describing the relational interpretation
 of the terms. It should give the reader a good introduction to
 the setup before we take on more complexity. The types
 involved might look a bit scarily abstract but the idea is rather simple:
@@ -1383,7 +1384,6 @@ packaged in a record indexed by the semantics as well as two relations.
 We call \AF{RModel} (for \emph{R}elational \emph{Model}) the type of these
 relations; the first one (\AB{𝓥^R}) relates values in the respective environments
 and the second one (\AB{𝓒^R}) describes simulation for computations.
-
 \AgdaHide{
 \begin{code}
 record RModel {ℓ^E ℓ^M : Level} (𝓥 : Model ℓ^E) (𝓒 : Model ℓ^M) (ℓ^R : Level) : Set (ℓ^E ⊔ ℓ^M ⊔ L.suc ℓ^R) where
@@ -1418,7 +1418,6 @@ need to have. \ARF{𝓥^R‿th} states that two similar environments
 can be thinned whilst staying in simulation. It is stated using the
 \AF{`∀[\_]} predicate transformer (omitted here) which lifts \AB{𝓥^R}
 to contexts in a pointwise manner.
-
 \begin{code}
   𝓥^R‿th  :  {Γ Δ Θ : Cx} (inc : Δ ⊆ Θ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} → `∀[ 𝓥^R ] ρ^A ρ^B →
              `∀[ 𝓥^R ] (th[ 𝓢^A.th ] inc ρ^A) (th[ 𝓢^B.th ] inc ρ^B)
@@ -1578,7 +1577,7 @@ extensionally are declared equal. Two values of type \AIC{`1} are
 always trivially equal;  values of type \AIC{`2} are normal forms
 and are declared equal when they are effectively syntactically the same;
 finally functions are equal whenever equal inputs map to equal
-outputs.
+outputs.\vspace*{ -1em}
 \AgdaHide{
 \begin{code}
 open βιξη
@@ -1642,8 +1641,7 @@ to be described in one go because of their mutual definition.
 It confirms that \AF{PER} is an appropriate notion of
 semantic equality: \AF{PER}-related values are reified to propositionally
 equal normal forms whilst propositionally equal neutral terms are reflected
-to \AF{PER}-related values.
-
+to \AF{PER}-related values.\vspace*{ -1em}
 \begin{code}
 reify^PER    :  {Γ : Cx} (σ : Ty) {T U : Kr σ Γ} → PER σ T U → reify σ T ≡ reify σ U
 reflect^PER  :  {Γ : Cx} (σ : Ty) {t u : Ne σ Γ} → t ≡ u → PER σ (reflect σ t) (reflect σ u)
@@ -1699,7 +1697,7 @@ SimulationNormalise =
           }
 \end{code}}
 
-We can now move on to the more complex example of a proof
+We can move on to the more complex example of a proof
 framework built generically over our notion of \AF{Semantics}
 
 \subsection{Fusions of Evaluations}
@@ -1761,12 +1759,13 @@ merely extending the one for \AB{𝓢^A} with the token value \ARF{var‿0^A}.
 
 \ARF{𝓥^R‿th} guarantees that it is always possible to thin
 the environments for \AB{𝓢^B} and \AB{𝓢^C} in a \AB{𝓥^R}
-preserving manner.
+preserving manner.\vspace*{ -1em}
 \begin{code}
   𝓥^R‿∙   :  {Γ Δ Θ : Cx} {σ : Ty} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} {u^B : 𝓥^B σ Θ} {u^C : 𝓥^C σ Θ} → 𝓥^R ρ^A ρ^B ρ^C → rmodel 𝓥^R‿BC u^B u^C →
              let ρ^A′ = th[ 𝓢^A.th ] (step refl) ρ^A `∙ var‿0^A
              in 𝓥^R ρ^A′ (ρ^B `∙ u^B) (ρ^C `∙ u^C)
-
+\end{code}\vspace*{ -1.75em}
+\begin{code}
   𝓥^R‿th  :  {Γ Δ Θ E : Cx} (inc : Θ ⊆ E) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} → 𝓥^R ρ^A ρ^B ρ^C →
              𝓥^R ρ^A (th[ 𝓢^B.th ] inc ρ^B) (th[ 𝓢^C.th ] inc ρ^C)
 \end{code}
@@ -1791,7 +1790,6 @@ obtained by directly evaluating the term in the third environment.
 As with the previous section, only a handful of these combinators are out
 of the ordinary. We will start with the \AIC{`var} case. It states that
 fusion indeed happens when evaluating a variable using related environments.
-
 \begin{code}
   R⟦var⟧  :  {Γ Δ Θ : Cx} {σ : Ty} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} → ∀ v → 𝓥^R ρ^A ρ^B ρ^C → 𝓡 {σ} (`var v) ρ^A ρ^B ρ^C
 \end{code}
@@ -1804,8 +1802,9 @@ given that \ARF{reify^A} quotes the result back, we are expecting this
 type of evaluation in an extended context (i.e. under one lambda). And
 it turns out that this is indeed enough for all of our examples.
 The evaluation environments used by the semantics \AB{𝓢^B} and \AB{𝓢^C}
-on the other hand can be arbitrarily thinned before being extended with
-related values to be substituted for the variable bound by the \AIC{`λ}.
+on the other hand can be arbitrarily thinneded before being extended with
+related values to be substituted for the variable bound by the \AIC{`λ}.\vspace*{ -1em}
+
 \begin{code}
   R⟦λ⟧    :  {Γ Δ Θ : Cx} {σ τ : Ty} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Δ -Env) 𝓥^B Θ} {ρ^C : (Γ -Env) 𝓥^C Θ} (t : Tm τ (Γ ∙ σ))
              (r :  {E : Cx} {u^B : 𝓥^B σ E} {u^C : 𝓥^C σ E} → ∀ inc → rmodel 𝓥^R‿BC u^B u^C →
@@ -1874,15 +1873,14 @@ module Fusion {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REB ℓ^RM :
 
 \paragraph{The Special Case of Syntactic Semantics}
 
-Given that the translation from \AR{Syntactic} to \AR{Semantics} uses a lot
-of constructors as their own semantic counterpart, it is possible to generate
+The translation from \AR{Syntactic} to \AR{Semantics} uses a lot
+of constructors as their own semantic counterpart, it is hence possible to generate
 evidence of \AR{Syntactic} triplets being fusable with much fewer assumptions.
 We isolate them and prove the result generically to avoid repetition. A
-\AR{SyntacticFusable} record packs the necessary evidence for
+\AR{SyntacticFusable} record packs the evidence for
 \AR{Syntactic} semantics \AB{syn^A}, \AB{syn^B} and \AB{syn^C}. It is indexed
 by these three \AR{Syntactic}s as well as two relations corresponding to the
 \AB{𝓥^R_{BC}} and \AB{𝓥^R} ones of the \AR{Fusable} framework.
-
 It contains the same \ARF{𝓥^R‿∙}, \ARF{𝓥^R‿th} and \ARF{R⟦var⟧}
 fields as a \AR{Fusable} as well as a fourth one (\ARF{var‿0^{BC}})
 saying that \AB{syn^B} and \AB{syn^C}'s respective \ARF{var‿0}s are
@@ -1913,7 +1911,7 @@ record SyntacticFusable
               → (v : Var σ Γ) → 𝓥^R ρ^A ρ^B ρ^C →
               Eval.sem (syntactic synB) ρ^B (Eval.sem (syntactic synA) ρ^A (`var v))
               ≡ Eval.sem (syntactic synC) ρ^C (`var v)
-\end{code}}
+\end{code}}\vspace*{ -1.5em}
 \begin{code}
     var‿0^BC : {Γ : Cx} {σ : Ty} → rmodel 𝓥^R‿BC {σ} {Γ ∙ σ} Syn^B.var‿0 Syn^C.var‿0
 \end{code}
@@ -2083,8 +2081,8 @@ sub-sub ρ ρ′ t = let open Fusion (syntacticFusable SubstitutionFusable) in l
 
 These four lemmas are usually proven in painful separation. Here
 we discharged them by rapid successive instantiation of our framework,
-using the earlier results to discharge the later constraints.
-But we are not at all limited to proving \AR{Syntactic} statements.
+using the earlier results to satisfy the later constraints.
+We are not limited to \AR{Syntactic} statements:
 
 \paragraph{Examples of Fusable Semantics}
 
@@ -2311,13 +2309,12 @@ and a translation of the definitions is available on the paper's
 repository\footnote{\url{https://github.com/gallais/type-scope-semantics}}.
 The subtleties of working with dependent types in Haskell~\cite{lindley2014hasochism} are
 outside the scope of this paper. It should be noted that Danvy, Keller and Puech have achieved
-a similar goal in OCaml~\cite{danvytagless} but their formalisation uses parametric higher
-order abstract syntax~\cite{chlipala2008parametric} which frees them from having to deal
+a similar goal in OCaml~(\citeyear{danvytagless}) but their formalisation uses parametric higher
+order abstract syntax~\cite{chlipala2008parametric} freeing them from having to deal
 with variable binding, contexts and use models à la Kripke. However we consider these to be
 primordial: they can still guide the implementation of more complex type theories where,
 until now, being typeful is still out of reach. Type-level guarantees about scope preservation
-can help root out bugs related to fresh name generation, name capture or arithmetic on de
-Bruijn levels to recover de Bruijn indices.
+can help root out bugs related to fresh name generation, name capture or conversion from de Bruijn levels to de Bruijns indices.
 
 This work is at the intersection of two traditions: the formal treatment
 of programming languages and the implementation of embedded Domain Specific

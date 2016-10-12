@@ -409,7 +409,7 @@ th[_] :  {ℓ^A : Level} {𝓥 : Model ℓ^A} → ((σ : Ty) → Thinnable (𝓥
          {Γ : Cx} → Thinnable ((Γ -Env) 𝓥)
 lookup (th[ th ] inc ρ) = th _ inc ∘ lookup ρ
 \end{code}
-These simple observations allow us to prove that context inclusions
+These simple observations allow us to prove that thinnings
 form a category which, in turn, lets us provide the user with the
 constructors Altenkirch, Hofmann and Streicher's ``Category of
 Weakening"~(\citeyear{altenkirch1995categorical}) is based on.\vspace*{ -1em}
@@ -872,11 +872,11 @@ module NormalForms (R : Ty → Set) where
     `tt `ff  :                    [             Nf `2        ]
     `λ       : {σ τ : Ty} →       [ σ ⊢ Nf τ ⟶  Nf (σ `→ τ)  ]
 \end{code}
-Once more, context inclusions induce the expected notions of thinning \AF{th^{ne}}
-and \AF{th^{nf}}. We omit their purely structural implementation here and wish we could do
-so in source code, too: our constructions so far have
-been syntax-directed and could surely be leveraged by a generic account of syntaxes
-with binding.
+Once more, the expected notions of thinning \AF{th^ne} and \AF{th^nf}
+are induced as \AD{Nf} and \AD{Ne} are syntaxes. We omit their purely
+structural implementation here and wish we could do so in source code,
+too: our constructions so far have been syntax-directed and could
+surely be leveraged by a generic account of syntaxes with binding.
 \AgdaHide{
 \begin{code}
  th^ne : (σ : Ty) → Thinnable (Ne σ)

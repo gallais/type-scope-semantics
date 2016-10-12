@@ -341,7 +341,8 @@ _-Comp : {ℓ^A : Level} → Cx → (𝓒 : Model ℓ^A) → Cx → Set ℓ^A
 An appropriate notion of semantics for the calculus is one that
 will map environments to computations. In other words, a set of
 constraints on $𝓥$ and $𝓒$ guaranteeing the existence of a function
-of type:\ExecuteMetaData[motivation.tex]{sem}
+of type: \AF{[} (\AB{Γ} \AR{─Env}) \AB{𝓥} \AF{⟶} (\AB{Γ} \AF{─Comp}) \AB{𝓒} \AF{]}
+
 \AgdaHide{
 \begin{code}
 infixl 10 _`∙_
@@ -412,7 +413,7 @@ lookup (th[ th ] inc ρ) = th _ inc ∘ lookup ρ
 These simple observations allow us to prove that thinnings
 form a category which, in turn, lets us provide the user with the
 constructors Altenkirch, Hofmann and Streicher's ``Category of
-Weakening"~(\citeyear{altenkirch1995categorical}) is based on.\vspace*{ -1em}
+Weakening"~(\citeyear{altenkirch1995categorical}) is based on.
 \begin{code}
 refl : {Γ : Cx} → Γ ⊆ Γ
 refl = pack id
@@ -429,8 +430,8 @@ step inc = select inc (pack su)
 pop! : {σ : Ty} {Γ Δ : Cx} → Γ ⊆ Δ → (Γ ∙ σ) ⊆ (Δ ∙ σ)
 pop! inc = step inc `∙ ze
 \end{code}
-The modal operator \AF{□} stating that a given predicate holds for
-all extensions of a context is a closure operator for \AF{Thinnable}.
+The modal operator \AF{□} states that a given predicate holds for
+all thinnings of a context. It is a closure operator for \AF{Thinnable}.
 \begin{code}
 □ : {ℓ^A : Level} → (Cx → Set ℓ^A) → (Cx → Set ℓ^A)
 (□ S) Γ = {Δ : Cx} → Γ ⊆ Δ → S Δ
@@ -445,7 +446,7 @@ of the simply typed $λ$-calculus.
 
 \section{Semantics and their Generic Evaluators}
 
-The upcoming sections are dedicated to demonstrating that renaming,
+The upcoming sections demonstrate that renaming,
 substitution, printing with names, and normalisation by evaluation all
 share the same structure. We start by abstracting away a notion of
 \AR{Semantics} encompassing all these constructions. This approach
@@ -516,15 +517,15 @@ to combine induction hypotheses.\vspace*{ -1em}
     ⟦ff⟧   :               [                     𝓒 `2  ]
     ⟦if⟧   : {σ : Ty} →    [ 𝓒 `2 ⟶ 𝓒 σ ⟶ 𝓒 σ ⟶  𝓒 σ   ]
 \end{code}
-The type we chose for the \ARF{⟦λ⟧} field makes the \AF{Semantics} notion
+The type we chose for \ARF{⟦λ⟧} makes the \AF{Semantics} notion
 powerful enough that even logical predicates are instances of it. And we
-indeed exploit this power later on when defining normalisation by evaluation
+indeed exploit this power when defining normalisation by evaluation
 as a semantics: the model construction is, after all, nothing but a logical
 predicate. As a consequence it seems rather natural to call \AF{sem}, the
 fundamental lemma of semantics. We prove it in a module parameterised by a
 \AF{Semantics}, which would correspond to using a Section in Coq. It is
 defined by structural recursion on the term. Each constructor is replaced
-by its semantic counterpart in order to combine the induction hypotheses
+by its semantic counterpart which combines the induction hypotheses
 for its subterms.
 \begin{code}
 module Eval {ℓ^E ℓ^M : Level} {𝓥 : Model ℓ^E} {𝓒 : Model ℓ^M} (𝓢 : Semantics 𝓥 𝓒) where

@@ -365,16 +365,19 @@ lookup (ρ `∙ s)  ze      = s
 lookup (ρ `∙ s)  (su n)  = lookup ρ n
 \end{code}
 
-\paragraph{The Category of Renamings}\label{category}
-A key instance of environments playing a predominant role in this paper
-is the notion of renaming. The reader may be accustomed to the more
-restrictive notion of context inclusions as described by Order Preserving
-Embeddings~\cite{altenkirch1995categorical}. Writing non-injective or
-non-order preserving renamings would take perverse effort given that we
-only implement generic interpretations. In practice, the only combinators
-we use do guarantee that all the renamings we generate are context inclusions.
-As a consequence, we will use the two expressions interchangeably from now
-on.
+\paragraph{The Category of Renamings}\label{category} A key instance
+of environments playing a predominant role in this paper is the notion
+of renaming. The reader may be accustomed to the more restrictive
+notion of renamings as described variously as Order Preserving
+Embeddings~\cite{chapman2009type}, thinnings (which we use) or context
+inclusions, or just weakenings
+~\cite{altenkirch1995categorical}. Writing non-injective or non-order
+preserving renamings would take perverse effort given that we only
+implement generic interpretations. In practice, although the type of
+renamings is more generous, we only introduce weakenings (skipping
+variables at the beginning of the context) that become thinnings
+(skipping variables at arbitrary points in the context) when we push
+them under binders.
 
 A thinning \AB{Γ} \AF{⊆} \AB{Δ} is an environment pairing each variable of
 type \AB{σ} in \AB{Γ} to one of the same type in \AB{Δ}.
@@ -387,8 +390,9 @@ infix 5 _⊆_
 _⊆_ : (Γ Δ : Cx) → Set
 Γ ⊆ Δ = (Γ -Env) Var Δ
 \end{code}
-Context inclusions allow for the formulation of weakening principles
-explaining how to transport properties along inclusions. By a ``weakening
+We formulate a weakening principle using \AF{⊆}.
+
+By a ``weakening
 principle'', we mean that if \AB{P} holds of \AB{Γ} and \AB{Γ} \AF{⊆} \AB{Δ}
 then \AB{P} holds for \AB{Δ} too.
 In the case of variables, weakening merely corresponds to applying the

@@ -10,6 +10,10 @@ data Context (A : Set) : Set where
   ε    : Context A
   _∙_  : Context A → A → Context A
 
+length : {A : Set} → Context A → ℕ
+length ε       = zero
+length (Γ ∙ _) = 1 + length Γ
+
 -- Contexts are functorial
 infixr 6 _<$>_
 _<$>_ : {A B : Set} → (A → B) → Context A → Context B

@@ -33,7 +33,7 @@
 
 \authorinfo{Guillaume Allais}
            {gallais@cs.ru.nl}
-           {Radboud University Nijmegen}
+           {Radboud University}
 \authorinfo{James Chapman}
            {james.chapman@strath.ac.uk}
            {University of Strathclyde}
@@ -138,8 +138,8 @@ ground covered by these Semantics: from the syntactic ones
 corresponding to renaming and substitution to printing with names or
 variations of Normalisation by Evaluation. Finally, given the generic
 definition of Semantics, we can prove fundamental lemmas about these
-evaluation functions: we characterise the semantics which are
-synchronisable and give an abstract treatment of composition yielding
+evaluation functions: we characterise the semantics which can simulate
+one another and give an abstract treatment of composition yielding
 compaction and reuse of proofs compared to Benton et
 al.~(\citeyear{benton2012strongly}).
 

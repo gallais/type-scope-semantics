@@ -50,9 +50,10 @@ s/`→/`\\!\\!→/g
 s/`1/`\\!1/g
 s/`2/`\\!2/g
 
-# Awful Hack
+# Awful, Awful Hacks
 s/\\AgdaSymbol{∀} \\AgdaBound{T}/\\AgdaSymbol{∀} \\AgdaSymbol{\\{}\\AgdaBound{Γ}\\AgdaSymbol{\\}} \\AgdaSymbol{→} \\AgdaBound{T}/
-
+s/\\>\[13\]\\AgdaSymbol{(}\\AgdaBound{r} \\AgdaSymbol{:} \\<\[19\]%/\\>\[13\]\\AgdaSymbol{(}/
+s/\\>\[19\]\\AgdaSymbol{∀} \\AgdaBound{inc}/\\AgdaSymbol{∀} \\AgdaBound{inc}/
 s/\\AgdaFunction{CBN} \\AgdaSymbol{:}/\\AgdaFunction{CBX} \\AgdaSymbol{:}/
 s/\\AgdaFunction{CBN} \\AgdaInductiveConstructor{`\\!1}/\\AgdaFunction{CBX} \\AgdaInductiveConstructor{`\\!1}/
 s/\\AgdaFunction{CBN} \\AgdaInductiveConstructor{`\\!2}/\\AgdaFunction{CBX} \\AgdaInductiveConstructor{`\\!2}/

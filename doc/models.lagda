@@ -2522,20 +2522,35 @@ ren-print {Γ} t inc = PEq.cong proj₁ (lemma t (pack^R (λ ())) (proof Γ Γ))
 %\end{corollary}
 
 
-\section{Related Work}
+\section{Future and Related Work}
 
-
-The programming part of this work can be replicated in Haskell
-and a translation of the definitions is available on the paper's
+The programming part of this work can be replicated in Haskell and a translation
+of the definitions is available on the paper's
 repository\footnote{\url{https://github.com/gallais/type-scope-semantics}}.
-The subtleties of working with dependent types in Haskell~\cite{lindley2014hasochism} are
-outside the scope of this paper. It should be noted that Danvy, Keller and Puech have achieved
-a similar goal in OCaml~(\citeyear{danvytagless}) but their formalisation uses parametric higher
-order abstract syntax~\cite{chlipala2008parametric} freeing them from having to deal
-with variable binding, contexts and use models à la Kripke. However we consider these to be
-primordial: they can still guide the implementation of more complex type theories where,
-until now, being typeful is still out of reach. Type-level guarantees about scope preservation
-can help root out bugs related to fresh name generation, name capture or conversion from de Bruijn levels to de Bruijns indices.
+The subtleties of working with dependent types in Haskell~\cite{lindley2014hasochism}
+are outside the scope of this paper.
+
+If the Tagless and Typeful NbE procedure derived in Haskell from our Semantics
+framework is to the best of our knowledge the first of its kind, Danvy,
+Keller and Puech have achieved a similar goal in OCaml~(\citeyear{danvytagless}).
+But their formalisation uses parametric higher order abstract syntax~\cite{chlipala2008parametric}
+freeing them from having to deal with variable binding, contexts and use models à
+la Kripke at the cost of using a large encoding. However we find scope safety
+enforced at the type level to be a helpful guide when formalising complex
+type theories. It helps us root out bugs related to fresh name generation,
+name capture or conversion from de Bruijn levels to de Bruijns indices.
+
+This paper's method really shines in a simply typed setting but it is not
+limited to it: we have successfully used an analogue of our Semantics
+framework to enforce scope safety when implementing the expected traversals
+(renaming, substitution, normalisation by evaluation and printing with names)
+for the untyped λ-calculus (for which the notion of type safety does not make
+sense) or Martin-Löf type theory (for which type safety enforced at the type
+level is still out of reach). Apart from NbE (which relies on a non
+strictly-positive datatype), all of these traversals are total. Simulation and
+Fusion fundamental theorems akin to the ones proven in this paper also hold
+true. The common structure across all these variations suggests a possible
+generic scope safe treatment of syntaxes with binding.
 
 This work is at the intersection of two traditions: the formal treatment
 of programming languages and the implementation of embedded Domain Specific

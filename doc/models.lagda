@@ -1384,7 +1384,7 @@ Semantics framework. Let us start with the definition of Moggi's Meta
 Language. Its types are fairly straightforward, we simply have an extra
 constructor \AIC{\#\_} for computations and the arrow has been turned
 into a \emph{computational} arrow meaning that its codomain is considered
-to be a computational type:
+to be a computational type:\vspace*{-1.5em}
 \AgdaHide{
 \begin{code}
 infixr 20 #_
@@ -1413,7 +1413,6 @@ data Ml : CTy → Cx CTy → Set where
   `ret     : {σ : CTy} →    [ Ml σ                         ⟶  Ml (# σ)  ]
   _`>>=_   : {σ τ : CTy} →  [ Ml (# σ) ⟶ Ml (σ `→# τ)      ⟶  Ml (# τ)  ]
 \end{code}
-
 \AgdaHide{
 \begin{code}
 th^Ml : ∀ {σ} → Thinnable (Ml σ)
@@ -1472,7 +1471,7 @@ can be encoded. They behave the same way on base types (and we group
 the corresponding equations under the \AF{CBX} name) but differ in
 case of the function space. In \AF{CBN} the argument of a function is
 a computation whilst it is expected to have been fully evaluated in
-\AF{CBV}.
+\AF{CBV}.\vspace*{-1.5em}
 \begin{code}
 CBN : Ty → CTy
 CBN `1        = `1
@@ -1530,20 +1529,20 @@ a simple \AD{Tm} and as such can contain redexes. Variables
 then play different roles: in the by name strategy, they
 are all computations whereas in the by value one they are
 expected to be evaluated already. This leads to the following
-definitions:
+definitions:\vspace*{-1.5em}
 \begin{code}
 Var^N  σ Γ = Var  (# CBN σ)  (map^Cx (#_ ∘ CBN) Γ)
 Ml^N   σ Γ = Ml   (# CBN σ)  (map^Cx (#_ ∘ CBN) Γ)
 Var^V  σ Γ = Var  (CBV σ)    (map^Cx CBV Γ)
 Ml^V   σ Γ = Ml   (# CBV σ)  (map^Cx CBV Γ)
 \end{code}
-Finally, the corresponding \AF{Semantics} can be defined
-and we get the two CPS transformations by creating dummy
-environments to kickstart the evaluation:
+Finally, the corresponding \AF{Semantics} can be defined (code
+omitted here) and we get the two CPS transformations by creating
+dummy environments to kickstart the evaluation:\vspace*{-1.5em}
 \begin{code}
 CPS^N : Semantics Var^N Ml^N
 CPS^V : Semantics Var^V Ml^V
-\end{code}
+\end{code}\vspace*{-1.5em}
 \AgdaHide{
 \begin{code}
 CPS^N = record
@@ -1567,12 +1566,12 @@ CPS^V = record
 \end{code}}
 \begin{code}
 cps^N : {σ : Ty} → [ Tm σ ⟶ Ml^N σ ]
-cps^N = Eval.sem CPS^N (pack (map^Var (#_ ∘ CBN)))
-
+cps^N = let open Eval CPS^N in sem dummy
+  where dummy = pack (map^Var (#_ ∘ CBN))
 cps^V : {σ : Ty} → [ Tm σ ⟶ Ml^V σ ]
-cps^V = Eval.sem CPS^V (pack (map^Var CBV))
+cps^V = let open Eval CPS^V in sem dummy
+  where dummy = pack (map^Var CBV)
 \end{code}
-
 
 \section{Proving Properties of Semantics}
 \label{properties}
@@ -1946,13 +1945,14 @@ relations. The first one (\AB{𝓥^R_{BC}}) states what it means
 for two environment values of \AB{𝓢^B} and \AB{𝓢^C} respectively
 to be related. The second one (\AB{𝓥^R}) characterises the triples
 of environments (one for each one of the semantics) which are
-compatible. Finally, the last one (\AB{𝓒^R}) relates values
-in \AB{𝓢^B} and \AB{𝓢^C}'s respective models.
+compatible. The last one (\AB{𝓒^R}) relates values
+in \AB{𝓢^B} and \AB{𝓢^C}'s models.
 \begin{code}
 record Fusable {ℓ^EA ℓ^MA ℓ^EB ℓ^MB ℓ^EC ℓ^MC ℓ^RE ℓ^REBC ℓ^RM : Level} {𝓥^A : Model ℓ^EA} {𝓥^B : Model ℓ^EB} {𝓥^C : Model ℓ^EC} {𝓒^A : Model ℓ^MA} {𝓒^B : Model ℓ^MB} {𝓒^C : Model ℓ^MC} (𝓢^A : Semantics 𝓥^A 𝓒^A)
  (𝓢^B : Semantics 𝓥^B 𝓒^B) (𝓢^C : Semantics 𝓥^C 𝓒^C)
  (𝓥^R‿BC : RModel 𝓥^B 𝓥^C ℓ^REBC)
- (𝓥^R : {Θ Δ Γ : Cx Ty} → (Γ -Env) 𝓥^A Δ → (Δ -Env) 𝓥^B Θ → (Γ -Env) 𝓥^C Θ → Set ℓ^RE)
+ (𝓥^R :  {Θ Δ Γ : Cx Ty} → (Γ -Env) 𝓥^A Δ → (Δ -Env) 𝓥^B Θ →
+         (Γ -Env) 𝓥^C Θ → Set ℓ^RE)
  (𝓒^R : RModel 𝓒^B 𝓒^C ℓ^RM) : Set (ℓ^RM ⊔ ℓ^RE ⊔ ℓ^EC ⊔ ℓ^EB ⊔ ℓ^EA ⊔ ℓ^MA ⊔ ℓ^REBC) where
 \end{code}
 \AgdaHide{
@@ -2136,7 +2136,7 @@ record SyntacticFusable
               → (v : Var σ Γ) → 𝓥^R ρ^A ρ^B ρ^C →
               Eval.sem (syntactic synB) ρ^B (Eval.sem (syntactic synA) ρ^A (`var v))
               ≡ Eval.sem (syntactic synC) ρ^C (`var v)
-\end{code}}\vspace*{ -1.5em}
+\end{code}}
 \begin{code}
     var‿0^BC : {Γ : Cx Ty} {σ : Ty} → rmodel 𝓥^R‿BC {σ} {Γ ∙ σ} Syn^B.var‿0 Syn^C.var‿0
 \end{code}

@@ -52,3 +52,7 @@ s/`2/`\\!2/g
 
 # Awful Hack
 s/\\AgdaSymbol{∀} \\AgdaBound{T}/\\AgdaSymbol{∀} \\AgdaSymbol{\\{}\\AgdaBound{Γ}\\AgdaSymbol{\\}} \\AgdaSymbol{→} \\AgdaBound{T}/
+
+s/\\AgdaFunction{CBN} \\AgdaSymbol{:}/\\AgdaFunction{CBX} \\AgdaSymbol{:}/
+s/\\AgdaFunction{CBN} \\AgdaInductiveConstructor{`\\!1}/\\AgdaFunction{CBX} \\AgdaInductiveConstructor{`\\!1}/
+s/\\AgdaFunction{CBN} \\AgdaInductiveConstructor{`\\!2}/\\AgdaFunction{CBX} \\AgdaInductiveConstructor{`\\!2}/

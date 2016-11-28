@@ -15,7 +15,7 @@ mutual
   ⟦_⟧ : λC.Type → ML.Type
   ⟦ `Unit  ⟧ = `Unit
   ⟦ `Bool  ⟧ = `Bool
-  ⟦ σ `→ τ ⟧ = #⟦ σ ⟧ `→ #⟦ τ ⟧
+  ⟦ σ `→ τ ⟧ = #⟦ σ ⟧ `→# ⟦ τ ⟧
 
   #⟦_⟧ : λC.Type → ML.Type
   #⟦ σ ⟧ = # ⟦ σ ⟧
@@ -27,7 +27,7 @@ mutual
   ⟦⟧-inj `Bool `Bool eq = refl
   ⟦⟧-inj (σ₁ `→ τ₁) (σ₂ `→ τ₂) eq =
     let (eqσ , eqτ) = ML.`→-inj eq
-    in cong₂ _`→_ (#⟦⟧-inj σ₁ σ₂ eqσ) (#⟦⟧-inj τ₁ τ₂ eqτ)
+    in cong₂ _`→_ (#⟦⟧-inj σ₁ σ₂ eqσ) (⟦⟧-inj τ₁ τ₂ eqτ)
   ⟦⟧-inj `Unit `Bool ()
   ⟦⟧-inj `Unit (_ `→ _) ()
   ⟦⟧-inj `Bool `Unit ()

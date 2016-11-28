@@ -88,7 +88,24 @@ invariant preserving too!
 In an unpublished manuscript, McBride~(\citeyear{mcbride2005type})
 observes the similarity between the types and implementations of
 renaming and substitution for simply typed $λ$-calculus (ST$λ$C) in a
-dependently typed language. He defines a notion of ``Kit'' abstracting
+dependently typed language as shown in \cref{ren}. There are three
+differences between the implemenations of renaming and substitution:
+(1) in the variable case, after renaming a variable we must wrap it in
+a \AIC{`var} constructor whereas a substitution directly produces a
+term; (2) when weakening a renaming to push it under a $λ$ we need
+only post-compose the remaning with the De Bruijn variable successor
+constructor \AIC{su} (which is essentially weakening for variables)
+whereas for a substitution we need a weakening operation for terms
+which can be given by renaming via the successor constructor \AF{ren}
+\AIC{su}. (3) also in the $λ$ case when pushing a renaming or
+substitution under a binder we must extend it to ensure that the
+variable bound by the $λ$ mapped to itself. For renaming this involves
+extended by the zeroth variable \AIC{ze} whereas for
+subsitutions we must extend by the zeroth variable seen as a
+term \AIC{`var} \AIC{ze}.
+
+
+He defines a notion of ``Kit'' abstracting
 the difference between the two. The \ARF{Kit.─} uses generalising the
 traversal are shown (in pink) in \cref{kit}.
 

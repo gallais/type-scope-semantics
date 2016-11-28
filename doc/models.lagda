@@ -40,6 +40,9 @@
 \authorinfo{Conor McBride}
            {conor.mcbride@strath.ac.uk}
            {University of Strathclyde}
+\authorinfo{James McKinna}
+           {james.mckinna@ed.ac.uk}
+           {University of Edinburgh}
 \maketitle
 
 \begin{abstract}

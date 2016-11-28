@@ -25,6 +25,7 @@ s/^\\begin{code}/\\begin\{code\}\n\\\\/g
 s/^\\end{code}/\\\\\\end\{code\}\n/g
 
 # Set levels
+s/L.zero//g
 s/\\AgdaSymbol{(}[^:]*\\AgdaSymbol{:} \\AgdaPostulate{Level}\\AgdaSymbol{)} \\AgdaSymbol{→} //g
 s/ \\AgdaBound{ℓ}//g
 s/\\AgdaPrimitive{L.suc}//g

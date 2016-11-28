@@ -85,6 +85,18 @@ off common bugs, she can opt for inductive families~\cite{dybjer1991inductive}
 to enforce precise invariants. But the traversals now have to be
 invariant preserving too!
 
+\begin{figure}[h]
+\ExecuteMetaData[motivation.tex]{ren}\vspace{ -1.75em}
+\ExecuteMetaData[motivation.tex]{sub}
+\caption{Renaming\label{ren} and Substitution\label{sub} for the ST$λ$C}
+
+\ExecuteMetaData[motivation.tex]{kit}
+\caption{Kit traversal for the ST$λ$C\label{kit}, for κ of type \AR{Kit} $\blacklozenge{}$}
+
+\ExecuteMetaData[motivation.tex]{nbe}
+\caption{Normalisation by Evaluation for the ST$λ$C\label{nbe}}
+\end{figure}
+
 In an unpublished manuscript, McBride~(\citeyear{mcbride2005type})
 observes the similarity between the types and implementations of
 renaming and substitution for simply typed $λ$-calculus (ST$λ$C) in a
@@ -100,14 +112,11 @@ which can be given by renaming via the successor constructor \AF{ren}
 \AIC{su}. (3) also in the $λ$ case when pushing a renaming or
 substitution under a binder we must extend it to ensure that the
 variable bound by the $λ$ mapped to itself. For renaming this involves
-extended by the zeroth variable \AIC{ze} whereas for
-subsitutions we must extend by the zeroth variable seen as a
-term \AIC{`var} \AIC{ze}.
-
-
-He defines a notion of ``Kit'' abstracting
-the difference between the two. The \ARF{Kit.─} uses generalising the
-traversal are shown (in pink) in \cref{kit}.
+extended by the zeroth variable \AIC{ze} whereas for subsitutions we
+must extend by the zeroth variable seen as a term \AIC{`var}
+\AIC{ze}. He defines a notion of ``Kit'' abstracting these
+differences.  The uses of \ARF{Kit.─} operations in the generalising
+the traversal function \AF{kit} are shown (in pink) in \cref{kit}.
 
 The contributions of the present paper are twofold:
 \begin{itemize}
@@ -119,19 +128,6 @@ with a name supply into our framework.
 generic results about simulations between and fusions of semantics
 given by, and enabled by, Kit.
 \end{itemize}
-
-
-\begin{figure}[h]
-\ExecuteMetaData[motivation.tex]{ren}\vspace{ -1.75em}
-\ExecuteMetaData[motivation.tex]{sub}
-\caption{Renaming\label{ren} and Substitution\label{sub} for the ST$λ$C}
-
-\ExecuteMetaData[motivation.tex]{kit}
-\caption{Kit traversal for the ST$λ$C\label{kit}, for κ of type \AR{Kit} $\blacklozenge{}$}
-
-\ExecuteMetaData[motivation.tex]{nbe}
-\caption{Normalisation by Evaluation for the ST$λ$C\label{nbe}}
-\end{figure}
 
 \paragraph{Outline} We start by defining the simple calculus we will
 use as a running example. We then introduce a notion of environments
@@ -147,15 +143,15 @@ synchronisable and give an abstract treatment of composition yielding
 compaction and reuse of proofs compared to Benton et
 al.~(\citeyear{benton2012strongly}).
 
-\paragraph{Notation} This article is a literate Agda
-file. We hide telescopes of implicit arguments and \APT{Set} levels,
-and properly display (super / sub)-scripts as well as special
-operators such as \AF{>>=} or \AF{++}. Colours matter: \AIC{green}
-identifiers are data constructors, \ARF{pink} names refer to record
-fields, and \AF{blue} is characteristic of defined
-symbols. Underscores have a special status: when defining mixfix
-identifiers~\cite{danielsson2011parsing}, they mark positions where
-arguments may be inserted.
+\paragraph{Notation} This article is a literate Agda file. We hide
+telescopes of implicit arguments and \APT{Set} levels, and properly
+display (super / sub)-scripts as well as special operators such as
+\AF{>>=} or \AF{++}. Colours help: \AIC{green} identifiers are data
+constructors, \ARF{pink} names refer to record fields, \AF{blue} is
+characteristic of defined symbols, and comments are \AgdaComment{red}
+typewrite font. Underscores have a special status: when defining
+mixfix identifiers~\cite{danielsson2011parsing}, they mark positions
+where arguments may be inserted.
 
 \paragraph{Formalisation} This whole
 development\footnote{\url{https://github.com/gallais/type-scope-semantics}}
@@ -276,7 +272,7 @@ data Var {ty : Set} (τ : ty) : Cx ty → Set where
   ze  :            -- ∀ Γ. Var τ (Γ ∙ τ)
                    [          τ ⊢ Var τ ]
   su  :            -- ∀ Γ σ. Var τ Γ → Var τ (Γ ∙ σ)
-       {σ : ty} →  [ Var τ ⟶  σ ⊢ Var τ ]
+       {σ : ty} →  [ Var τ ⟶  (σ ⊢ Var τ) ]
 \end{code}
 %</var>
 The syntax for this calculus guarantees that terms are well scoped-and-typed
@@ -1623,7 +1619,7 @@ normalisation has good properties. This is done by defining a Partial
 Equivalence Relation~\cite{mitchell1996foundations} (PER) on the model: the
 elements equal to themselves will be guaranteed to be well behaved. We
 show that given an environment of values PER-related to themselves,
-the evaluation of a a $λ$-term produces a computation equal to itself too.
+the evaluation of a $λ$-term produces a computation equal to itself too.
 
 We start by defining the PER for the model. It is constructed
 by induction on the type and ensures that terms which behave the same

@@ -225,6 +225,12 @@ data Cx (ty : Set) : Set where
 %</context>
 \end{minipage}
 \end{tabular}
+\AgdaHide{
+\begin{code}
+map^Cx : {ty ty′ : Set} → (ty → ty′) → Cx ty → Cx ty′
+map^Cx _ ε        = ε
+map^Cx f (Γ ∙ σ)  = map^Cx f Γ ∙ f σ
+\end{code}}
 
 To talk about the types of the variables in scope, we need \emph{contexts}.
 We choose to represent them as ``snoc'' lists of types; \AIC{ε} denotes the
@@ -422,8 +428,8 @@ Thinnable : {ℓ^A : Level} {ty : Set} → (Cx ty → Set ℓ^A) → Set ℓ^A
 Thinnable S = {Γ Δ : Cx _} → Γ ⊆ Δ → (S Γ → S Δ)
 \end{code}\vspace*{ -1.5em}
 \begin{code}
-th^∈ : (σ : Ty) → Thinnable (Var σ)
-th^∈ σ inc v = lookup inc v
+th^Var : {ty : Set} (σ : ty) → Thinnable (Var σ)
+th^Var σ inc v = lookup inc v
 \end{code}\vspace*{ -1.5em}
 \begin{code}
 th[_] :  {ℓ^A : Level} {ty : Set} {𝓥 : Model ℓ^A} → ((σ : ty) → Thinnable (𝓥 σ)) →
@@ -612,7 +618,7 @@ that terms are thinnable.
 \AgdaHide{
 \begin{code}
 syntacticRenaming : Syntactic Var
-syntacticRenaming = record { var‿0 = ze; th = th^∈; ⟦var⟧ = `var }
+syntacticRenaming = record { var‿0 = ze; th = th^Var; ⟦var⟧ = `var }
 
 Renaming : Semantics Var Tm; Renaming = syntactic syntacticRenaming
 \end{code}}\vspace*{ -1em}
@@ -903,7 +909,7 @@ surely be leveraged by a generic account of syntaxes with binding.
  th^ne : (σ : Ty) → Thinnable (Ne σ)
  th^nf : (σ : Ty) → Thinnable (Nf σ)
 
- th^ne σ inc (`var v)        = `var (th^∈ σ inc v)
+ th^ne σ inc (`var v)        = `var (th^Var σ inc v)
  th^ne σ inc (ne `$ u)       = th^ne _ inc ne `$ th^nf _ inc u
  th^ne σ inc (`if ne l r)  = `if (th^ne `2 inc ne) (th^nf σ inc l) (th^nf σ inc r)
 
@@ -1257,7 +1263,7 @@ module βι where
 \begin{code}
  th^whne : (σ : Ty) → Thinnable (Whne σ)
  th^whnf : (σ : Ty) → Thinnable (Whnf σ)
- th^whne σ inc (`var v)        = `var (th^∈ σ inc v)
+ th^whne σ inc (`var v)        = `var (th^Var σ inc v)
  th^whne σ inc (ne `$ u)       = th^whne _ inc ne `$ th^Tm _ inc u
  th^whne σ inc (`if ne l r)  = `if (th^whne `2 inc ne) (th^Tm σ inc l) (th^Tm σ inc r)
 
@@ -1373,34 +1379,205 @@ be evaluated.\vspace*{ -1em}
 \section{CPS Transformation}
 \label{cps-transformation}
 
-Paying attention to the structure of the transformations described
-in Hatcliff and Danvy's generic account of continuation passing
-styles~(\citeyear{hatcliff1994generic}), we can observe yet another
-instance of our Semantics framework.
-
+In their generic account of continuation passing styles, Hatcliff and
+Danvy~(\citeyear{hatcliff1994generic}) decompose both call by name and
+call by value CPS transformations in two phases. The first one, an
+embedding of the source language into Moggi's Meta Language~(\citeyear{moggi1991notions}),
+picks an evaluation strategy whilst the second one is a generic erasure
+from Moggi's ML back to the original language. Looking closely at the
+structure of the first pass, we can see that it is an instance of our
+Semantics framework. Let us start with the definition of Moggi's Meta
+Language. Its types are fairly straightforward, we simply have an extra
+constructor \AIC{\#\_} for computations and the arrow has been turned
+into a \emph{computational} arrow meaning that its codomain is considered
+to be a computational type:
 \AgdaHide{
 \begin{code}
 infixr 20 #_
+infixr 15 _`→#_
 \end{code}}
 \begin{code}
 data CTy : Set where
-  `1 `2  : CTy
-  _`→_   : CTy → CTy → CTy
-  #_     : CTy → CTy
+  `1 `2   : CTy
+  _`→#_   : CTy → CTy → CTy
+  #_      : CTy → CTy
 \end{code}
-
+Then comes the Meta-Language itself. It incorporates \AD{Tm} constructors
+and eliminators with slightly different types: \emph{value} constructors
+are associated to \emph{value} types whilst eliminators (and their branches)
+have \emph{computational} types. Two new term constructors have been added:
+\AIC{`ret} and \AIC{\_`>>=\_} make \AIC{\#\_} a monad. They can be used to
+explicitly schedule the evaluation order of various subterms.
 \begin{code}
-data ML : CTy → Cx CTy → Set where
-  `var     : {σ : CTy} →    [ Var σ                        ⟶  ML σ         ]
-  _`$_     : {σ τ : CTy} →  [ ML (σ `→ # τ) ⟶ ML σ         ⟶  ML τ         ]
-  `λ       : {σ τ : CTy} →  [ σ ⊢ ML (# τ)                 ⟶  ML (σ `→ τ)  ]
-  `⟨⟩      :                [                                 ML `1        ]
-  `tt `ff  :                [                                 ML `2        ]
-  `ifte    : {σ : CTy} →    [ ML `2 ⟶ ML (# σ) ⟶ ML (# σ)  ⟶  ML (# σ)     ]
-  _`>>=_   : {σ τ : CTy} →  [ ML (# σ) ⟶ ML (σ `→ # τ)     ⟶  ML (# τ)     ]
-  `ret     : {σ : CTy} →    [ ML σ                         ⟶  ML (# σ)     ]
+data Ml : CTy → Cx CTy → Set where
+  `λ       : {σ τ : CTy} →  [ σ ⊢ Ml (# τ) ⟶ Ml (σ `→# τ)               ]
+  `var     : {σ : CTy} →    [ Var σ                        ⟶  Ml σ      ]
+  _`$_     : {σ τ : CTy} →  [ Ml (σ `→# τ) ⟶ Ml σ          ⟶  Ml (# τ)  ]
+  `⟨⟩      :                [                                 Ml `1     ]
+  `tt `ff  :                [                                 Ml `2     ]
+  `if      : {σ : CTy} →    [ Ml `2 ⟶ Ml (# σ) ⟶ Ml (# σ)  ⟶  Ml (# σ)  ]
+  `ret     : {σ : CTy} →    [ Ml σ                         ⟶  Ml (# σ)  ]
+  _`>>=_   : {σ τ : CTy} →  [ Ml (# σ) ⟶ Ml (σ `→# τ)      ⟶  Ml (# τ)  ]
 \end{code}
 
+\AgdaHide{
+\begin{code}
+th^Ml : ∀ {σ} → Thinnable (Ml σ)
+th^Ml ρ (`λ b)      = `λ (th^Ml (pop! ρ) b)
+th^Ml ρ (`var v)    = `var (lookup ρ v)
+th^Ml ρ (f `$ t)    = th^Ml ρ f `$ th^Ml ρ t
+th^Ml ρ `⟨⟩         = `⟨⟩
+th^Ml ρ `tt         = `tt
+th^Ml ρ `ff         = `ff
+th^Ml ρ (`if b l r) = `if (th^Ml ρ b) (th^Ml ρ l) (th^Ml ρ r)
+th^Ml ρ (`ret t)    = `ret (th^Ml ρ t)
+th^Ml ρ (t `>>= f)  = th^Ml ρ t `>>= th^Ml ρ f
+
+map^Var : {ty ty′ : Set} {Γ : Cx ty} {σ : ty} → 
+          (f : ty → ty′) → Var σ Γ → Var (f σ) (map^Cx f Γ)
+map^Var f ze     = ze
+map^Var f (su v) = su (map^Var f v)
+
+
+map^Var-inv : {A B : Set} {Γ : Cx A} {τ : B} (f : A → B) →
+              Var τ (map^Cx f Γ) → ∃ λ σ → τ ≡ f σ
+map^Var-inv f = go _ PEq.refl where
+
+  go : ∀ Γ {Δ τ} → map^Cx f Γ ≡ Δ → Var τ Δ → ∃ λ σ → τ ≡ f σ
+  go ε       ()       ze
+  go ε       ()       (su v)
+  go (Γ ∙ _) PEq.refl ze     = , PEq.refl
+  go (Γ ∙ _) PEq.refl (su v) = go Γ PEq.refl v
+
+
+map⁻¹^Var : {A B : Set} {Γ : Cx A} {σ : A} {f : A → B} →
+            (∀ {σ τ} → f σ ≡ f τ → σ ≡ τ) → Var (f σ) (map^Cx f Γ) → Var σ Γ
+map⁻¹^Var {f = f} inj = go _ PEq.refl PEq.refl where
+
+  go : ∀ Γ {σ τ Δ} → map^Cx f Γ ≡ Δ → f σ ≡ τ → Var τ Δ → Var σ Γ
+  go ε       ()       eq ze
+  go ε       ()       eq (su v)
+  go (Γ ∙ σ) PEq.refl eq ze rewrite inj eq = ze
+  go (Γ ∙ σ) PEq.refl eq (su v) = su (go Γ PEq.refl eq v)
+
+map^⊆ : {A B : Set} {Γ Δ : Cx A} {f : A → B} →
+        (∀ {σ τ} → f σ ≡ f τ → σ ≡ τ) → Γ ⊆ Δ → map^Cx f Γ ⊆ map^Cx f Δ
+lookup (map^⊆ {f = f} f-inj inc) v =
+  let (σ , eq) = map^Var-inv f v
+      v₁       = map⁻¹^Var f-inj (PEq.subst (λ σ → Var σ _) eq v)
+      v₂       = lookup inc v₁
+      v₃       = map^Var f v₂
+  in PEq.subst (λ σ → Var σ _) (PEq.sym eq) v₃
+
+CBV : Ty → CTy
+\end{code}}
+As explained in Hatcliff and Danvy's paper, the translation from
+\AD{Ty} to \AD{CTy} fixes the calling convention the CPS translation
+will have. Both call by name (\AF{CBV}) and call by value (\AF{CBV})
+can be encoded. They behave the same way on base types (and we group
+the corresponding equations under the \AF{CBX} name) but differ in
+case of the function space. In \AF{CBN} the argument of a function is
+a computation whilst it is expected to have been fully evaluated in
+\AF{CBV}.
+\begin{code}
+CBN : Ty → CTy
+CBN `1        = `1
+CBN `2        = `2
+CBN (σ `→ τ)  = (#  CBN σ)  `→# CBN τ 
+CBV (σ `→ τ)  =     CBV σ   `→# CBV τ
+\end{code}
+\AgdaHide{
+\begin{code}
+CBV `1        = `1
+CBV `2        = `2
+
+`→#-inj : ∀ {σ σ′ τ τ′} → σ `→# τ ≡ σ′ `→# τ′ → σ ≡ σ′ × τ ≡ τ′
+`→#-inj PEq.refl = PEq.refl , PEq.refl
+
+#-inj : ∀ {σ τ} → # σ ≡ # τ → σ ≡ τ
+#-inj PEq.refl = PEq.refl
+
+CBN-inj : ∀ σ τ → CBN σ ≡ CBN τ → σ ≡ τ
+CBN-inj `1 `1 eq = PEq.refl
+CBN-inj `1 `2 ()
+CBN-inj `1 (τ `→ τ₁) ()
+CBN-inj `2 `1 ()
+CBN-inj `2 `2 eq = PEq.refl
+CBN-inj `2 (τ `→ τ₁) ()
+CBN-inj (σ `→ σ₁) `1 ()
+CBN-inj (σ `→ σ₁) `2 ()
+CBN-inj (σ `→ σ₁) (τ `→ τ₁) eq =
+  let (eq₁ , eq₂) = `→#-inj eq in
+  PEq.cong₂ _`→_ (CBN-inj _ _ (#-inj eq₁)) (CBN-inj _ _ eq₂)
+
+CBV-inj : ∀ σ τ → CBV σ ≡ CBV τ → σ ≡ τ
+CBV-inj `1 `1 eq = PEq.refl
+CBV-inj `1 `2 ()
+CBV-inj `1 (τ `→ τ₁) ()
+CBV-inj `2 `1 ()
+CBV-inj `2 `2 eq = PEq.refl
+CBV-inj `2 (τ `→ τ₁) ()
+CBV-inj (σ `→ σ₁) `1 ()
+CBV-inj (σ `→ σ₁) `2 ()
+CBV-inj (σ `→ σ₁) (τ `→ τ₁) eq =
+  let (eq₁ , eq₂) = `→#-inj eq in
+  PEq.cong₂ _`→_ (CBV-inj _ _ eq₁) (CBV-inj _ _ eq₂)
+
+Ml^N : Model L.zero
+Var^N : Model L.zero
+Ml^V : Model L.zero
+Var^V : Model L.zero
+\end{code}}
+From these translations, we can described the respective
+interpretations of variables and terms for the two CPS
+transformations. In both cases the return type of the
+compiled term is a computational type: the source term is
+a simple \AD{Tm} and as such can contain redexes. Variables
+then play different roles: in the by name strategy, they
+are all computations whereas in the by value one they are
+expected to be evaluated already. This leads to the following
+definitions:
+\begin{code}
+Var^N  σ Γ = Var  (# CBN σ)  (map^Cx (#_ ∘ CBN) Γ)
+Ml^N   σ Γ = Ml   (# CBN σ)  (map^Cx (#_ ∘ CBN) Γ)
+Var^V  σ Γ = Var  (CBV σ)    (map^Cx CBV Γ)
+Ml^V   σ Γ = Ml   (# CBV σ)  (map^Cx CBV Γ)
+\end{code}
+Finally, the corresponding \AF{Semantics} can be defined
+and we get the two CPS transformations by creating dummy
+environments to kickstart the evaluation:
+\begin{code}
+CPS^N : Semantics Var^N Ml^N
+CPS^V : Semantics Var^V Ml^V
+\end{code}
+\AgdaHide{
+\begin{code}
+CPS^N = record
+ { th     = λ σ → th^Var (# CBN σ) ∘ (map^⊆ (CBN-inj _ _ ∘ #-inj))
+ ; ⟦var⟧  = `var
+ ; ⟦λ⟧    = λ b → `ret (`λ (b (step refl) ze))
+ ; _⟦$⟧_  = λ f t → f `>>= `λ (`var ze `$ th^Ml (step refl) t)
+ ; ⟦⟨⟩⟧   = `ret `⟨⟩
+ ; ⟦tt⟧   = `ret `tt
+ ; ⟦ff⟧   = `ret `ff
+ ; ⟦if⟧   = λ b l r → b `>>= `λ (`if (`var ze) (th^Ml (step refl) l) (th^Ml (step refl) r)) }
+CPS^V = record
+ { th     = λ σ → th^Var (CBV σ) ∘ map^⊆ (CBV-inj _ _)
+ ; ⟦var⟧  = `ret ∘ `var
+ ; ⟦λ⟧    = λ b → `ret (`λ (b (step refl) ze))
+ ; _⟦$⟧_  = λ f t → f `>>= `λ (th^Ml (step refl) t `>>= `λ (`var (su ze) `$ `var ze))
+ ; ⟦⟨⟩⟧   = `ret `⟨⟩
+ ; ⟦tt⟧   = `ret `tt
+ ; ⟦ff⟧   = `ret `ff
+ ; ⟦if⟧   = λ b l r → b `>>= `λ (`if (`var ze) (th^Ml (step refl) l) (th^Ml (step refl) r)) }
+\end{code}}
+\begin{code}
+cps^N : {σ : Ty} → [ Tm σ ⟶ Ml^N σ ]
+cps^N = Eval.sem CPS^N (pack (map^Var (#_ ∘ CBN)))
+
+cps^V : {σ : Ty} → [ Tm σ ⟶ Ml^V σ ]
+cps^V = Eval.sem CPS^V (pack (map^Var CBV))
+\end{code}
 
 
 \section{Proving Properties of Semantics}

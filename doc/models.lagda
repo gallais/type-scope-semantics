@@ -132,8 +132,9 @@ and one well known instance: the category of renamings. This leads us
 to defining a generic notion of type and scope-preserving Semantics
 together with a generic evaluation function. We then showcase the
 ground covered by these Semantics: from the syntactic ones
-corresponding to renaming and substitution to printing with names or
-variations of Normalisation by Evaluation. Finally, given the generic
+corresponding to renaming and substitution to printing with names,
+variations of Normalisation by Evaluation or CPS transformations.
+Finally, given the generic
 definition of Semantics, we can prove fundamental lemmas about these
 evaluation functions: we characterise the semantics which can simulate
 one another and give an abstract treatment of composition yielding

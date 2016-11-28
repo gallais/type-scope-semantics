@@ -34,11 +34,8 @@
 \authorinfo{Guillaume Allais}
            {gallais@cs.ru.nl}
            {Radboud University}
-\authorinfo{James Chapman}
-           {james.chapman@strath.ac.uk}
-           {University of Strathclyde}
-\authorinfo{Conor McBride}
-           {conor.mcbride@strath.ac.uk}
+\authorinfo{James~Chapman\and Conor~McBride}
+           {\{james.chapman,conor.mcbride\}@strath.ac.uk}
            {University of Strathclyde}
 \authorinfo{James McKinna}
            {james.mckinna@ed.ac.uk}

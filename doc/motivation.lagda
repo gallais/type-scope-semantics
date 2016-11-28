@@ -129,7 +129,7 @@ module Goal {𝓥 𝓒 : Model zero} (𝓢 : Semantics 𝓥 𝓒) where
 
 %<*sem>
 \begin{code}
- throwawaygoal : {Γ : Cx} → [ (Γ -Env) 𝓥 ⟶ (Γ -Comp) 𝓒 ]
+ throwawaygoal : {Γ : Cx Ty} → [ (Γ -Env) 𝓥 ⟶ (Γ -Comp) 𝓒 ]
 \end{code}
 %</sem>
 \begin{code}

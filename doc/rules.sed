@@ -40,7 +40,7 @@ s/\\AgdaSymbol{λ} \\AgdaSymbol{\\{}\\AgdaBound{σ}\\AgdaSymbol{\\}} \\AgdaSymbo
 s/\\AgdaSymbol{\\{}\\AgdaBound{σ}\\AgdaSymbol{\\}} \\AgdaSymbol{\\{}\\AgdaBound{τ}\\AgdaSymbol{\\};}/\\AgdaSymbol{;}/g
 s/\\AgdaSymbol{λ} \\AgdaSymbol{\\{}\\AgdaBound{σ}\\AgdaSymbol{\\}} \\AgdaSymbol{→} //g
 s/\\AgdaSymbol{\\{}\\AgdaBound{σ}\\AgdaSymbol{\\}} //g
-s/\\AgdaSymbol{\\{}.*\\AgdaSymbol{\\}}[^()→;]*\\AgdaSymbol{→} //g
+s/\\AgdaSymbol{\\{}.*\\AgdaSymbol{\\}}\([^=]*\)\\AgdaSymbol{=}/\1\\AgdaSymbol{=}/g
 s/\\AgdaSymbol{\\{}.*\\AgdaSymbol{\\}}[^()→;]*\\AgdaSymbol{→} //g
 s/\\AgdaSymbol{\\{}[^();]*\\AgdaSymbol{\\}}//g
 s/\\AgdaSymbol{\\{}[^;]*\\AgdaSymbol{\\}}//g

@@ -18,15 +18,10 @@
 \newtheorem{corollary}{Corollary}
 
 \begin{document}
-
+\toappear{}
 \special{papersize=8.5in,11in}
 \setlength{\pdfpageheight}{\paperheight}
 \setlength{\pdfpagewidth}{\paperwidth}
-
-\conferenceinfo{CONF 'yy}{Month d--d, 20yy, City, ST, Country}
-\copyrightyear{20yy}
-\copyrightdata{978-1-nnnn-nnnn-n/yy/mm}
-\copyrightdoi{nnnnnnn.nnnnnnn}
 
 \title{Type-and-Scope Safe Programs and their Proofs}
 % \subtitle{Subtitle Text, if any}
@@ -327,8 +322,8 @@ ones used for normalisation by evaluation contain elements of the model.
 But their structure stays the same which prompts us to define the notion
 generically for a notion of \AF{Model}.\vspace*{ -1em}
 \begin{code}
-Model : (ℓ^A : Level) {ty : Set} → Set (L.suc ℓ^A)
-Model ℓ^A {ty} = ty → Cx ty → Set ℓ^A
+Model : {ty : Set} → (ℓ^A : Level) → Set (L.suc ℓ^A)
+Model {ty} ℓ^A = ty → Cx ty → Set ℓ^A
 \end{code}
 Formally, this translates to \AB{𝓔}-environments being the
 pointwise lifting of the relation \AB{𝓔} between contexts and types to a
@@ -376,7 +371,7 @@ the values correspond to and it empowers us to define environments by
 copattern-matching~\cite{abel2013copatterns} thus defining environments
 by their use cases.\vspace*{ -1em}
 \begin{code}
-`ε : {ℓ^A : Level} {ty : Set} {𝓥 : Model ℓ^A {ty}} → [ (ε -Env) 𝓥 ]
+`ε : {ℓ^A : Level} {ty : Set} {𝓥 : Model {ty} ℓ^A} → [ (ε -Env) 𝓥 ]
 _`∙_ :  {ℓ^A : Level} {ty : Set} {Γ : Cx ty} {𝓥 : Model ℓ^A} {σ : ty} → [ (Γ -Env) 𝓥 ⟶ 𝓥 σ ⟶ (Γ ∙ σ -Env) 𝓥 ]
 \end{code}\vspace*{ -1.75em}
 \begin{code}
@@ -418,8 +413,8 @@ order to obtain a new variable. The environments' case is also quite
 simple: being a pointwise lifting of a relation \AB{𝓥} between
 contexts and types, they enjoy thinning if \AB{𝓥} does.
 \begin{code}
-Thinnable : {ℓ^A : Level} {ty : Set} → (Cx ty → Set ℓ^A) → Set ℓ^A
-Thinnable S = {Γ Δ : Cx _} → Γ ⊆ Δ → (S Γ → S Δ)
+Thinnable : {ty : Set} {ℓ^A : Level} → (Cx ty → Set ℓ^A) → Set ℓ^A
+Thinnable {ty} S = {Γ Δ : Cx ty} → Γ ⊆ Δ → (S Γ → S Δ)
 \end{code}\vspace*{ -1.5em}
 \begin{code}
 th^Var : {ty : Set} (σ : ty) → Thinnable (Var σ)
@@ -675,7 +670,8 @@ open import Relation.Binary.PropositionalEquality as PEq using (_≡_)
 record Name (σ : Ty) (Γ : Cx Ty) : Set where
  constructor mkN; field getN : String
 record Printer (σ : Ty) (Γ : Cx Ty) : Set where
- constructor mkP; field runP : State (Stream String) String
+ constructor mkP
+ field runP : State (Stream String) String
 \end{code}
 \AgdaHide{
 \begin{code}

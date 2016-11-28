@@ -34,8 +34,8 @@
 \authorinfo{Guillaume Allais}
            {gallais@cs.ru.nl}
            {Radboud University}
-\authorinfo{James~Chapman\and Conor~McBride}
-           {\{james.chapman,conor.mcbride\}@strath.ac.uk}
+\authorinfo{\hspace*{-0.3in}James Chapman ~ ~ Conor McBride\hspace*{-0.3in}}
+           {\hspace*{-0.3in}\{james.chapman,conor.mcbride\}@strath.ac.uk\hspace*{-0.3in}}
            {University of Strathclyde}
 \authorinfo{James McKinna}
            {james.mckinna@ed.ac.uk}
@@ -2027,7 +2027,7 @@ given that \ARF{reify^A} quotes the result back, we are expecting this
 type of evaluation in an extended context (i.e. under one lambda). And
 it turns out that this is indeed enough for all of our examples.
 The evaluation environments used by the semantics \AB{𝓢^B} and \AB{𝓢^C}
-on the other hand can be arbitrarily thinneded before being extended with
+on the other hand can be arbitrarily thinned before being extended with
 related values to be substituted for the variable bound by the \AIC{`λ}.\vspace*{ -1em}
 
 \begin{code}

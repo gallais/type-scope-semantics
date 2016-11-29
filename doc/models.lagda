@@ -41,6 +41,9 @@
 \category{D.3.2}{Language Classifications}{Applicative (functional) languages}
 \category{F.3.2}{Semantics of Programming Languages}{Denotational semantics, Partial evaluation}
 
+\keywords
+Lambda-calculus, Mechanized Meta-Theory, Normalisation by Evaluation, Semantics, Generic Programming, Agda
+
 \begin{abstract}
 We abstract the common type-and-scope safe structure from
 computations on $λ$-terms that deliver, e.g., renaming, substitution, evaluation,

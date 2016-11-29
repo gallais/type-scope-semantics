@@ -1,4 +1,4 @@
-\documentclass[preprint,10pt]{sigplanconf}
+\documentclass[10pt]{sigplanconf}
 
 \usepackage{amsmath,amstext,amsthm,amssymb}
 \usepackage{agda}
@@ -24,7 +24,7 @@
 \setlength{\pdfpageheight}{\paperheight}
 \setlength{\pdfpagewidth}{\paperwidth}
 
-\title{Type-and-Scope Safe Programs and their Proofs}
+\title{Type-and-Scope Safe Programs and Their Proofs}
 % \subtitle{Subtitle Text, if any}
 
 \authorinfo{Guillaume Allais}

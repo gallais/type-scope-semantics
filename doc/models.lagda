@@ -251,7 +251,7 @@ _⟶_ : {ℓ^A ℓ^E : Level} {ty : Set} → (Cx ty → Set ℓ^A) → (Cx ty �
 \begin{code}
 _⊢_ : {ℓ^A : Level} {ty : Set} → ty → (Cx ty → Set ℓ^A) → (Cx ty → Set ℓ^A)
 (σ ⊢ S) Γ = S (Γ ∙ σ)
-\end{code}
+\end{code}\vspace*{-1em}
 \AgdaHide{
 \begin{code}
 infixr 5 _⟶_
@@ -277,7 +277,7 @@ data Var {ty : Set} (τ : ty) : Cx ty → Set where
   su  :            -- ∀ Γ σ. Var τ Γ → Var τ (Γ ∙ σ)
        {σ : ty} →  [ Var τ ⟶  (σ ⊢ Var τ) ]
 \end{code}
-%</var>
+%</var>\vspace*{-1em}
 The syntax for this calculus guarantees that terms are well scoped-and-typed
 by construction. This presentation due to
 Altenkirch and Reus~(\citeyear{altenkirch1999monadic}) relies heavily on

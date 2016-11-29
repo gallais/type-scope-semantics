@@ -246,26 +246,24 @@ presenting judgements~\cite{martin1982constructive}.\vspace*{ -1em}
 \begin{code}
 _⟶_ : {ℓ^A ℓ^E : Level} {ty : Set} → (Cx ty → Set ℓ^A) → (Cx ty → Set ℓ^E) → (Cx ty → Set (ℓ^A ⊔ ℓ^E))
 (S ⟶ T) Γ = S Γ → T Γ
-\end{code}\vspace*{ -1.75em}
+\end{code}\vspace*{ -2em}
 \begin{code}
 [_] : {ℓ^A : Level} {ty : Set} → (Cx ty → Set ℓ^A) → Set ℓ^A
 [ T ] = ∀ {Γ} → T Γ
-\end{code}\vspace*{ -1.75em}
+\end{code}\vspace*{ -2em}
 \begin{code}
 _⊢_ : {ℓ^A : Level} {ty : Set} → ty → (Cx ty → Set ℓ^A) → (Cx ty → Set ℓ^A)
 (σ ⊢ S) Γ = S (Γ ∙ σ)
-\end{code}\vspace*{-1em}
+\end{code}
 \AgdaHide{
 \begin{code}
 infixr 5 _⟶_
 infixr 6 _∙⊎_
 _∙⊎_ : {ℓ^A ℓ^E : Level} {ty : Set} → (Cx ty → Set ℓ^A) → (Cx ty → Set ℓ^E) → (Cx ty → Set (ℓ^A ⊔ ℓ^E))
 (S ∙⊎ T) Γ = S Γ ⊎ T Γ
-
 infixr 7 _∙×_
 _∙×_ : {ℓ^A ℓ^E : Level} {ty : Set} → (Cx ty → Set ℓ^A) → (Cx ty → Set ℓ^E) → (Cx ty → Set (ℓ^A ⊔ ℓ^E))
 (S ∙× T) Γ = S Γ × T Γ
-
 infixr 6 _⊢_
 \end{code}}
 Variables are then positions in such a context represented as typed de
@@ -280,7 +278,7 @@ data Var {ty : Set} (τ : ty) : Cx ty → Set where
   su  :            -- ∀ Γ σ. Var τ Γ → Var τ (Γ ∙ σ)
        {σ : ty} →  [ Var τ ⟶  (σ ⊢ Var τ) ]
 \end{code}
-%</var>\vspace*{-1em}
+%</var>
 The syntax for this calculus guarantees that terms are well scoped-and-typed
 by construction. This presentation due to
 Altenkirch and Reus~(\citeyear{altenkirch1999monadic}) relies heavily on
@@ -342,8 +340,9 @@ interplay between various combinators (e.g. \AF{refl} and \AF{select})
 defined later on is vastly simplified by this rather simple decision.\vspace*{ -1em}
 %<*environment>
 \begin{code}
-record _-Env {ℓ^A : Level} {ty : Set} (Γ : Cx ty) (𝓥 : Model ℓ^A) (Δ : Cx ty) : Set ℓ^A where
-  constructor pack; field lookup : {σ : ty} → Var σ Γ → 𝓥 σ Δ
+record _-Env {ℓ^A : Level} {ty : Set} (Γ : Cx ty) (𝓥 : Model ℓ^A) (Δ : Cx ty) : Set ℓ^A
+  where  constructor pack
+         field lookup : {σ : ty} → Var σ Γ → 𝓥 σ Δ
 \end{code}
 %</environment>
 \AgdaHide{
@@ -677,8 +676,8 @@ open import Relation.Binary.PropositionalEquality as PEq using (_≡_)
 record Name (σ : Ty) (Γ : Cx Ty) : Set where
  constructor mkN; field getN : String
 record Printer (σ : Ty) (Γ : Cx Ty) : Set where
- constructor mkP
- field runP : State (Stream String) String
+  constructor mkP
+  field runP : State (Stream String) String
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -986,7 +985,7 @@ The model construction then follows the usual pattern pioneered by
 Berger~(\citeyear{berger1993program}) and formally analysed and thoroughly
 explained by Catarina Coquand~(\citeyear{coquand2002formalised}). We work
 by induction on the type and describe η-expanded values: all inhabitants
-of \AF{Kr} \AIC{`1} \AB{Γ} are indeed equal and all elements
+of \AF{Kr} \AIC{`1} \AB{Γ} are equal and all elements
 of \AF{Kr} (\AB{σ} \AIC{`→} \AB{τ}) \AB{Γ} are functions in Agda.
 \AgdaHide{
 \begin{code}
@@ -1407,14 +1406,14 @@ have \emph{computational} types. Two new term constructors have been added:
 explicitly schedule the evaluation order of various subterms.
 \begin{code}
 data Ml : CTy → Cx CTy → Set where
-  `λ       : {σ τ : CTy} →  [ σ ⊢ Ml (# τ) ⟶ Ml (σ `→# τ)               ]
-  `var     : {σ : CTy} →    [ Var σ                        ⟶  Ml σ      ]
-  _`$_     : {σ τ : CTy} →  [ Ml (σ `→# τ) ⟶ Ml σ          ⟶  Ml (# τ)  ]
-  `⟨⟩      :                [                                 Ml `1     ]
-  `tt `ff  :                [                                 Ml `2     ]
-  `if      : {σ : CTy} →    [ Ml `2 ⟶ Ml (# σ) ⟶ Ml (# σ)  ⟶  Ml (# σ)  ]
-  `ret     : {σ : CTy} →    [ Ml σ                         ⟶  Ml (# σ)  ]
-  _`>>=_   : {σ τ : CTy} →  [ Ml (# σ) ⟶ Ml (σ `→# τ)      ⟶  Ml (# τ)  ]
+  `var     : {σ : CTy} →    [ Var σ                    ⟶  Ml σ      ]
+  _`$_     : {σ τ : CTy} →  [ Ml (σ `→# τ) ⟶ Ml σ      ⟶  Ml (# τ)  ]
+  `⟨⟩      :                [                             Ml `1     ]
+  `tt `ff  :                [                             Ml `2     ]
+  `ret     : {σ : CTy} →    [ Ml σ                     ⟶  Ml (# σ)  ]
+  _`>>=_   : {σ τ : CTy} →  [ Ml (# σ) ⟶ Ml (σ `→# τ)  ⟶  Ml (# τ)  ]
+  `λ   : {σ τ : CTy} →      [ σ ⊢ Ml (# τ) ⟶  Ml (σ `→# τ)          ]
+  `if  : {σ : CTy} → [ Ml `2 ⟶ Ml (# σ) ⟶ Ml (# σ) ⟶ Ml (# σ) ]
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -1656,7 +1655,7 @@ the evaluation of a term in distinct contexts yields related computations.
 And we focus on the most interesting combinators, giving only one
 characteristic example of the remaining ones.
 \begin{code}
- 𝓡 : {Γ Δ : Cx Ty} {σ : Ty} → Tm σ Γ → (Γ -Env) 𝓥^A Δ → (Γ -Env) 𝓥^B Δ → Set _
+ 𝓡 : {Γ Δ : Cx Ty} {σ : Ty} → Tm σ Γ → (Γ -Env) 𝓥^A Δ → (Γ -Env) 𝓥^B Δ → Set ℓ^RM
  𝓡 t ρ^A ρ^B = rmodel 𝓒^R (sem^A ρ^A t) (sem^B ρ^B t)
 \end{code}
 \AgdaHide{

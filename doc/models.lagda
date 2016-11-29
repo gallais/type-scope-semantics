@@ -3,6 +3,7 @@
 \usepackage{amsmath,amstext,amsthm,amssymb}
 \usepackage{agda}
 \usepackage{upgreek}
+\usepackage{balance}
 \usepackage[english]{babel}
 \usepackage{hyperref,cleveref}
 \usepackage{catchfilebetweentags}
@@ -36,6 +37,9 @@
            {james.mckinna@ed.ac.uk}
            {University of Edinburgh}
 \maketitle
+\category{D.2.4}{Software/Program Verification}{Correctness Proofs}
+\category{D.3.2}{Language Classifications}{Applicative (functional) languages}
+\category{F.3.2}{Semantics of Programming Languages}{Denotational semantics, Partial evaluation}
 
 \begin{abstract}
 We abstract the common type-and-scope safe structure from
@@ -2525,7 +2529,7 @@ ren-print {Γ} t inc = PEq.cong proj₁ (lemma t (pack^R (λ ())) (proof Γ Γ))
 \section{Future and Related Work}
 
 The programming part of this work can be replicated in Haskell and a translation
-of the definitions is available on the paper's
+of the definitions is available in the paper's
 repository\footnote{\url{https://github.com/gallais/type-scope-semantics}}.
 The subtleties of working with dependent types in Haskell~\cite{lindley2014hasochism}
 are outside the scope of this paper.
@@ -2543,14 +2547,13 @@ name capture or conversion from de Bruijn levels to de Bruijns indices.
 This paper's method really shines in a simply typed setting but it is not
 limited to it: we have successfully used an analogue of our Semantics
 framework to enforce scope safety when implementing the expected traversals
-(renaming, substitution, normalisation by evaluation and printing with names)
-for the untyped λ-calculus (for which the notion of type safety does not make
-sense) or Martin-Löf type theory (for which type safety enforced at the type
-level is still out of reach). Apart from NbE (which relies on a non
-strictly-positive datatype), all of these traversals are total. Simulation and
-Fusion fundamental theorems akin to the ones proven in this paper also hold
-true. The common structure across all these variations suggests a possible
-generic scope safe treatment of syntaxes with binding.
+(renaming, substitution, untyped normalisation by evaluation and printing
+with names) for the untyped λ-calculus (for which the notion of type safety
+does not make sense) or Martin-Löf type theory. Apart from NbE (which relies
+on a non strictly-positive datatype), all of these traversals are total.
+Simulation and Fusion fundamental theorems akin to the ones proven in this
+paper also hold true. The common structure across all these variations
+suggests a possible generic scope safe treatment of syntaxes with binding.
 
 This work is at the intersection of two traditions: the formal treatment
 of programming languages and the implementation of embedded Domain Specific
@@ -2617,6 +2620,8 @@ second logical relation gave us a general description of triples of
 \AR{Fusable} semantics such that composing the two first ones would
 yield an instance of the third one.
 
+\newpage{}
+\balance
 \bibliographystyle{abbrvnat}
 \bibliography{main}
 

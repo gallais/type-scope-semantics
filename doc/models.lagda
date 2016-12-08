@@ -181,7 +181,7 @@ open import Data.Product hiding (map)
 open import Function as F hiding (_∋_ ; _$_)
 \end{code}}
 
-\section{The Calculus and its Embedding}
+\section{The Calculus and Its Embedding}
 
 \[\begin{array}{rrl}
 σ, τ    & ∷= & \mathtt{1} \quad{}|\quad{} \mathtt{2} \quad{}|\quad{} σ → τ \\
@@ -466,7 +466,7 @@ Now that we are equipped with the notion of inclusion, we have all
 the pieces necessary to describe the Kripke structure of our models
 of the simply typed $λ$-calculus.
 
-\section{Semantics and their Generic Evaluators}
+\section{Semantics and Their Generic Evaluators}
 
 The upcoming sections demonstrate that renaming,
 substitution, printing with names, and normalisation by evaluation all
@@ -567,7 +567,7 @@ module Eval {ℓ^E ℓ^M : Level} {𝓥 : Model ℓ^E} {𝓒 : Model ℓ^M} (�
 \end{code}
 %</evaluation>
 
-\section{Syntax is the Identity Semantics}
+\section{Syntax Is the Identity Semantics}
 \label{syntactic}
 
 As we have explained earlier, this work has been directly influenced by

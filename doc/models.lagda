@@ -29,20 +29,14 @@
 
 \authorinfo{Guillaume Allais}
            {gallais@cs.ru.nl}
-           {Radboud University}
+           {Radboud University, The~Netherlands}
 \authorinfo{\hspace*{-0.3in}James Chapman ~ ~ Conor McBride\hspace*{-0.3in}}
            {\hspace*{-0.3in}\{james.chapman,conor.mcbride\}@strath.ac.uk\hspace*{-0.3in}}
-           {University of Strathclyde}
+           {University of Strathclyde, UK}
 \authorinfo{James McKinna}
            {james.mckinna@ed.ac.uk}
-           {University of Edinburgh}
+           {University of Edinburgh, UK}
 \maketitle
-\category{D.2.4}{Software/Program Verification}{Correctness Proofs}
-\category{D.3.2}{Language Classifications}{Applicative (functional) languages}
-\category{F.3.2}{Semantics of Programming Languages}{Denotational semantics, Partial evaluation}
-
-\keywords
-Lambda-calculus, Mechanized Meta-Theory, Normalisation by Evaluation, Semantics, Generic Programming, Agda
 
 \begin{abstract}
 We abstract the common type-and-scope safe structure from
@@ -70,6 +64,13 @@ This work has been fully formalised in Agda.
 %lemma. All of this work has been formalised in Agda.
 
 \end{abstract}
+
+\category{D.2.4}{Software / Program Verification}{Correctness Proofs}
+\category{D.3.2}{Language Classifications}{Applicative (functional) languages}
+\category{F.3.2}{Semantics of Programming Languages}{Denotational semantics, Partial evaluation}
+
+\keywords
+Lambda-calculus, Mechanized Meta-Theory, Normalisation by Evaluation, Semantics, Generic Programming, Agda
 
 \section{Introduction}
 
@@ -2622,8 +2623,8 @@ second logical relation gave us a general description of triples of
 \AR{Fusable} semantics such that composing the two first ones would
 yield an instance of the third one.
 
-\newpage{}
-\balance
+%\newpage{}
+%\balance
 \bibliographystyle{abbrvnat}
 \bibliography{main}
 

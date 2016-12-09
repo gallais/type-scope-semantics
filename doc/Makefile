@@ -1,4 +1,4 @@
-STDLIB=~/repos/agda/std-lib/src/
+STDLIB=~/repos/agda-stdlib-0.12/src/
 
 PAPER=models
 AUXILIARY=usual

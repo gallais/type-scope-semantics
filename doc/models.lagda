@@ -1,5 +1,5 @@
 \documentclass[10pt]{sigplanconf}
-%insert for 'reprint' option above to get page number+copyright notice
+%insert 'reprint' option above to get page number+copyright notice
 \usepackage{amsmath,amstext,amsthm,amssymb}
 \usepackage{agda}
 \usepackage{upgreek}
@@ -24,12 +24,14 @@
 \setlength{\pdfpageheight}{\paperheight}
 \setlength{\pdfpagewidth}{\paperwidth}
 
+%\setpagenumber{1} % don't know actual page yet
 %\conferenceinfo{CPP '17}{January 16--17, 2017, Paris, France}
 %\copyrightyear{2017}
 %\copyrightdata{978-1-4503-4705-1/17/01}
 %\proceedings{Proceedings of the 6th ACM SIGPLAN Conference on Certified Programs and Proofs}
 %\publicationrights{licensed}
 %\copyrightdoi{http://dx.doi.org/10.1145/3018610.3018613}
+
 
 \title{Type-and-Scope Safe Programs and Their Proofs}
 % \subtitle{Subtitle Text, if any}

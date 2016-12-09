@@ -2621,10 +2621,10 @@ yield an instance of the third one.
 
 \section{Acknowledgements} We would like to thank the anonymous
 referees for their helpful comments. This work was supported by EPSRC
-grant EP/M016951/1. Data (Agda code) associated with research
-published in this paper is available at the University of
-Strathclyde's KnowledgeBase~\cite{repo}.
-
+grant EP/M016951/1 and EP/K020218/1 and the European Research Council
+under grant agreement N°320571. Data (Agda code) associated with research
+published in this paper is available at the University of Strathclyde's
+KnowledgeBase~\cite{repo}.
 
 %\newpage{}
 %\balance

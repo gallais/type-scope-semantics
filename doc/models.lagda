@@ -2619,6 +2619,13 @@ second logical relation gave us a general description of triples of
 \AR{Fusable} semantics such that composing the two first ones would
 yield an instance of the third one.
 
+\section{Acknowledgements} We would like to thank the anonymous
+referees for their helpful comments. This work was supported by EPSRC
+grant EP/M016951/1. Data (Agda code) associated with research
+published in this paper is available at the University of
+Strathclyde's KnowledgeBase~\cite{repo}.
+
+
 %\newpage{}
 %\balance
 \bibliographystyle{abbrvnat}

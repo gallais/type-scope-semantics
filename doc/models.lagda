@@ -165,8 +165,11 @@ singletons~\cite{eisenberg2013dependently} providing the user with the
 runtime descriptions of their types or their contexts' shapes. This
 yields, to the best of our knowledge, the first tagless and typeful
 implementation of a Kripke-style Normalisation by Evaluation in
-Haskell.  \AgdaHide{ \begin{code} {-# OPTIONS --copatterns #-} module
-models where
+Haskell.
+\AgdaHide{
+\begin{code}
+{-# OPTIONS --copatterns #-}
+module models where
 
 open import Level as L using (Level ; _⊔_)
 open import Data.Empty

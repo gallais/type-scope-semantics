@@ -154,9 +154,9 @@ typewrite font. Underscores have a special status: when defining
 mixfix identifiers~\cite{danielsson2011parsing}, they mark positions
 where arguments may be inserted.
 
-\paragraph{Formalisation} This whole development\footnote~\cite{repo}
+\paragraph{Formalisation} This whole development~\cite{repo}
 has been checked by Agda~\cite{norell2009dependently} which guarantees
-that all constructions are indeed well typed, and all functions are
+that all constructions are well typed, and all functions are
 total. Nonetheless, it should be noted that the generic model
 constructions and the various examples of \AR{Semantics} given here,
 although not the proofs, can and have been fully replicated in Haskell
@@ -2630,7 +2630,7 @@ published in this paper is available at the University of Strathclyde's
 KnowledgeBase~\cite{repo}.
 
 %\newpage{}
-%\balance
+\balance
 \bibliographystyle{abbrvnat}
 \bibliography{main}
 

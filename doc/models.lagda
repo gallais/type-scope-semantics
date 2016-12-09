@@ -1,5 +1,5 @@
 \documentclass[10pt]{sigplanconf}
-
+%insert for 'reprint' option above to get page number+copyright notice
 \usepackage{amsmath,amstext,amsthm,amssymb}
 \usepackage{agda}
 \usepackage{upgreek}
@@ -23,6 +23,13 @@
 \special{papersize=8.5in,11in}
 \setlength{\pdfpageheight}{\paperheight}
 \setlength{\pdfpagewidth}{\paperwidth}
+
+%\conferenceinfo{CPP '17}{January 16--17, 2017, Paris, France}
+%\copyrightyear{2017}
+%\copyrightdata{978-1-4503-4705-1/17/01}
+%\proceedings{Proceedings of the 6th ACM SIGPLAN Conference on Certified Programs and Proofs}
+%\publicationrights{licensed}
+%\copyrightdoi{http://dx.doi.org/10.1145/3018610.3018613}
 
 \title{Type-and-Scope Safe Programs and Their Proofs}
 % \subtitle{Subtitle Text, if any}
@@ -2622,7 +2629,8 @@ second logical relation gave us a general description of triples of
 \AR{Fusable} semantics such that composing the two first ones would
 yield an instance of the third one.
 
-\section{Acknowledgements} We would like to thank the anonymous
+\acks
+We would like to thank the anonymous
 referees for their helpful comments. This work was supported by EPSRC
 grant EP/M016951/1 and EP/K020218/1 and the European Research Council
 under grant agreement N°320571. Data (Agda code) associated with research

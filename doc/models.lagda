@@ -154,8 +154,7 @@ typewrite font. Underscores have a special status: when defining
 mixfix identifiers~\cite{danielsson2011parsing}, they mark positions
 where arguments may be inserted.
 
-\paragraph{Formalisation} This whole
-development\footnote{\url{https://github.com/gallais/type-scope-semantics}}
+\paragraph{Formalisation} This whole development\footnote~\cite{repo}
 has been checked by Agda~\cite{norell2009dependently} which guarantees
 that all constructions are indeed well typed, and all functions are
 total. Nonetheless, it should be noted that the generic model
@@ -166,11 +165,8 @@ singletons~\cite{eisenberg2013dependently} providing the user with the
 runtime descriptions of their types or their contexts' shapes. This
 yields, to the best of our knowledge, the first tagless and typeful
 implementation of a Kripke-style Normalisation by Evaluation in
-Haskell.
-\AgdaHide{
-\begin{code}
-{-# OPTIONS --copatterns #-}
-module models where
+Haskell.  \AgdaHide{ \begin{code} {-# OPTIONS --copatterns #-} module
+models where
 
 open import Level as L using (Level ; _⊔_)
 open import Data.Empty
@@ -2533,7 +2529,7 @@ ren-print {Γ} t inc = PEq.cong proj₁ (lemma t (pack^R (λ ())) (proof Γ Γ))
 
 The programming part of this work can be replicated in Haskell and a translation
 of the definitions is available in the paper's
-repository\footnote{\url{https://github.com/gallais/type-scope-semantics}}.
+repository~\cite{repo}
 The subtleties of working with dependent types in Haskell~\cite{lindley2014hasochism}
 are outside the scope of this paper.
 

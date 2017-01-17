@@ -1,0 +1,160 @@
+\documentclass[xetex, mathserif, serif]{beamer}
+
+%% Using the Radboud Uni theme. If you don't have it, comment
+%% out this line. Or get it here:
+%% https://gitlab.science.ru.nl/benoit/rutheme
+\usetheme{ru}
+
+\usepackage[english]{babel}
+\usepackage[references]{agda}
+\setmainfont[Ligatures=TeX]{XITS}
+\setmathfont{XITS Math}
+\usepackage{catchfilebetweentags}
+\usepackage{graphicx} 
+\setlength\mathindent{-1.5em}
+
+\title{Type-and-Scope Safe Programs and their Proofs}
+\author[me]{\underline{Guillaume Allais} \and James Chapman \and Conor McBride \and James McKinna}
+\institute{}
+\date{CPP, 2017-01-17}
+
+
+\begin{document}
+ 
+  \begin{frame}
+    \titlepage
+  \end{frame}
+
+  \begin{frame}\frametitle{Motivations}
+    \begin{itemize}
+      \item Formally studying PLs
+      \begin{itemize}
+        \item Representation of Terms / Typing derivations
+        \item With good properties: closed under renaming and substitution, normalising
+        \item Themselves with good properties
+      \end{itemize}
+      \item Writing DSLs
+      \begin{itemize}
+        \item Strong guarantees (type, scope safety)
+        \item With ASTs we can inspect (optimise, compile)
+      \end{itemize}  
+    \end{itemize}
+  \end{frame}
+  
+  \begin{frame}\frametitle{Simple Types}
+    Minimal system: A record type, a sum type and function spaces.
+
+    \ExecuteMetaData[models.tex]{ty}\unskip
+    \ExecuteMetaData[models.tex]{context}\unskip
+  \end{frame}
+
+  \begin{frame}\frametitle{Deep Embedding - Variables}
+    Typed de Bruijn indices
+
+    \ExecuteMetaData[models.tex]{var}\unskip
+  \end{frame}
+  \begin{frame}\frametitle{Deep Embedding - Terms}
+    ASTs type and scope correct by construction
+
+    \ExecuteMetaData[models.tex]{term}\unskip
+  \end{frame}
+
+% onslide / only are not working with the RU theme for some reason.
+  \begin{frame}\frametitle{Goguen \& McKinna: Conspicuously similar functions}
+    \ExecuteMetaData[usual.tex]{rename}
+  \end{frame}
+  \begin{frame}\frametitle{Goguen \& McKinna: Conspicuously similar functions}
+    \ExecuteMetaData[usual.tex]{subst}
+  \end{frame}
+
+  \begin{frame}\frametitle{Factoring Out the Common Parts}
+    \ExecuteMetaData[models.tex]{syntactic}\unskip
+  \end{frame}
+
+  \begin{frame}\frametitle{Implementing the traversal Once and For All}
+    \ExecuteMetaData[usual.tex]{syn}\unskip
+    \ExecuteMetaData[usual.tex]{synextend}\unskip
+  \end{frame}
+
+  \begin{frame}\frametitle{Is that it? Not quite.}
+    \begin{itemize}
+      \item Other interesting instance?
+      \item Properties of these traversals? (4 fusion lemmas)
+      \item What if I don't program in Agda?
+      \item Generic boilerplate for all syntaxes with binding?
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}\frametitle{Normalisation by Evaluation's ``eval''}
+    \ExecuteMetaData[usual.tex]{sem}
+  \end{frame}
+  \begin{frame}\frametitle{Normalisation by Evaluation's ``eval''}
+    \ExecuteMetaData[usual.tex]{subst}
+  \end{frame}
+
+  \begin{frame}\frametitle{An Abstract Notion of Semantics}
+    \ExecuteMetaData[usual.tex]{semantics}
+  \end{frame}
+
+  \begin{frame}\frametitle{And a Fundamental Lemma}
+    \ExecuteMetaData[models.tex]{evaluation}
+  \end{frame}
+
+  \begin{frame}\frametitle{Various Instances}
+    \ExecuteMetaData[usual.tex]{semexamples}
+  \end{frame}
+
+  \begin{frame}\frametitle{Is that it? Not quite.}
+    \begin{itemize}
+      \item \textcolor{gray}{Other interesting instance?}
+      \item Properties of these traversals? (4 fusion lemmas)
+      \item What if I don't program in Agda?
+      \item Generic boilerplate for all syntaxes with binding?
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}{A Relational Interpretation}
+    \ExecuteMetaData[usual.tex]{synchronisable}
+  \end{frame}
+
+  \begin{frame}{And a Fundamental Lemma}
+    \ExecuteMetaData[models.tex]{relational}
+  \end{frame}
+
+  \begin{frame}{An interesting corollary}
+    \ExecuteMetaData[models.tex]{synchroexample}
+    \ExecuteMetaData[usual.tex]{synchroexample2}
+  \end{frame}
+  
+  \begin{frame}{A Generic Fusion Theorem}
+    \ExecuteMetaData[models.tex]{renren}\vspace{-1.8em}
+    \ExecuteMetaData[models.tex]{subren}\vspace{-1.8em}
+    \ExecuteMetaData[models.tex]{rensub}\vspace{-1.8em}
+    \ExecuteMetaData[models.tex]{subsub}
+    \ExecuteMetaData[models.tex]{subnbe}\unskip
+  \end{frame}
+
+  \begin{frame}{Is that it? Not quite.}
+    \begin{itemize}
+      \item \textcolor{gray}{Other interesting instance?}
+      \item \textcolor{gray}{Properties of these traversals? (4 fusion lemmas)}
+      \item What if I don't program in Agda?
+      \item Generic boilerplate for all syntaxes with binding?
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}{Using this somewhere else}
+    The programming part of this talk can be implemented in Haskell:
+    {\small\url{https://github.com/gallais/type-scope-semantics/}}
+  \end{frame}
+
+  \begin{frame}{Is that it? Not quite.}
+    \begin{itemize}
+      \item \textcolor{gray}{Other interesting instance?}
+      \item \textcolor{gray}{Properties of these traversals? (4 fusion lemmas)}
+      \item \textcolor{gray}{What if I don't program in Agda?}
+      \item Generic boilerplate for all syntaxes with binding?
+    \end{itemize}
+  \end{frame}
+
+\end{document}

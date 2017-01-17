@@ -312,6 +312,9 @@ data Tm : Ty → Cx Ty → Set where
   `var     : {σ : Ty} →    [ Var σ ⟶                 Tm σ         ]
   _`$_     : {σ τ : Ty} →  [ Tm (σ `→ τ) ⟶ Tm σ ⟶    Tm τ         ]
   `λ       : {σ τ : Ty} →  [ σ ⊢ Tm τ ⟶              Tm (σ `→ τ)  ]
+\end{code}
+%</term>
+\begin{code}
   `⟨⟩      :               [                         Tm `1        ]
   `tt `ff  :               [                         Tm `2        ]
   `if      : {σ : Ty} →    [ Tm `2 ⟶ Tm σ ⟶ Tm σ ⟶   Tm σ         ]
@@ -452,6 +455,11 @@ refl = pack id
 select : {ℓ^A : Level} {ty : Set} {Γ Δ Θ : Cx ty} {𝓥 : Model ℓ^A} → Γ ⊆ Δ → (Δ -Env) 𝓥 Θ → (Γ -Env) 𝓥 Θ
 lookup (select inc ρ) = lookup ρ ∘ lookup inc
 \end{code}\vspace*{ -1.75em}
+\AgdaHide{
+\begin{code}
+_[∘]_ :{ℓ^A : Level} {ty : Set} {Γ Δ Θ : Cx ty} {𝓥 : Model ℓ^A} → (Δ -Env) 𝓥 Θ → Γ ⊆ Δ → (Γ -Env) 𝓥 Θ
+_[∘]_ = flip select
+\end{code}}
 \begin{code}
 step : {ty : Set} {σ : ty} {Γ Δ : Cx ty} → Γ ⊆ Δ → Γ ⊆ (Δ ∙ σ)
 step inc = select inc (pack su)
@@ -568,6 +576,9 @@ module Eval {ℓ^E ℓ^M : Level} {𝓥 : Model ℓ^E} {𝓒 : Model ℓ^M} (�
  sem ρ (t `$ u)     = sem ρ t ⟦$⟧ sem ρ u
  sem ρ (`λ b)       = ⟦λ⟧  (λ σ v →
                            sem (th[ th ] σ ρ `∙ v) b)
+\end{code}
+%</evaluation>
+\begin{code}
  sem ρ `⟨⟩          = ⟦⟨⟩⟧
  sem ρ `tt          = ⟦tt⟧
  sem ρ `ff          = ⟦ff⟧
@@ -1747,16 +1758,18 @@ module Simulate {ℓ^EA ℓ^MA ℓ^EB ℓ^MB : Level} {𝓥^A : Model ℓ^EA} {�
 %<*relational>
 \begin{code}
   sim :  {Γ Δ : Cx Ty} {σ : Ty} (t : Tm σ Γ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} (ρ^R : `∀[ 𝓥^R ] ρ^A ρ^B) →
-       rmodel 𝓒^R (sem^A ρ^A t) (sem^B ρ^B t)
+         rmodel 𝓒^R (sem^A ρ^A t) (sem^B ρ^B t)
   sim (`var v)     ρ^R = R⟦var⟧ v ρ^R
   sim (f `$ t)     ρ^R = R⟦$⟧ {f = f} {t} (sim f ρ^R) (sim t ρ^R) ρ^R
   sim (`λ t)       ρ^R = R⟦λ⟧ {b = t} (λ inc u^R → sim t (𝓥^R‿th inc ρ^R ∙^R u^R)) ρ^R
+\end{code}
+%</relational>
+\begin{code}
   sim `⟨⟩          ρ^R = R⟦⟨⟩⟧ ρ^R
   sim `tt          ρ^R = R⟦tt⟧ ρ^R
   sim `ff          ρ^R = R⟦ff⟧ ρ^R
   sim (`if b l r)  ρ^R = R⟦if⟧ {b = b} {l} {r} (sim b ρ^R) (sim l ρ^R) (sim r ρ^R) ρ^R
 \end{code}
-%</relational>
 }
 
 \begin{corollary}[Renaming is a Substitution]Applying a renaming \AB{ρ} to
@@ -2199,9 +2212,11 @@ RenamingFusable = record
 
 ren-ren : {Γ Δ Θ : Cx Ty} {σ : Ty} (ρ : Γ ⊆ Δ) (ρ′ : Δ ⊆ Θ) (t : Tm σ Γ) → 
 \end{code}}
+%<*renren>
 \begin{code}
- th^Tm σ ρ′ (th^Tm σ ρ t) ≡ th^Tm σ (select ρ ρ′) t
+ th^Tm σ ρ′ (th^Tm σ ρ t) ≡ th^Tm σ (ρ′ [∘] ρ) t
 \end{code}
+%</renren>
 \AgdaHide{
 \begin{code}
 ren-ren ρ ρ′ t = let open Fusion (syntacticFusable RenamingFusable) in lemma t (λ _ _ → PEq.refl)
@@ -2224,9 +2239,11 @@ RenamingSubstitutionFusable = record
 
 ren-sub : {Γ Δ Θ : Cx Ty} {σ : Ty} (ρ : Γ ⊆ Δ) (ρ′ : (Δ -Env) Tm Θ) (t : Tm σ Γ) → 
 \end{code}}
+%<*rensub>
 \begin{code}
- subst ρ′ (th^Tm σ ρ t) ≡ subst (select ρ ρ′) t
+ subst ρ′ (th^Tm σ ρ t) ≡ subst (ρ′ [∘] ρ) t
 \end{code}
+%</rensub>
 \AgdaHide{
 \begin{code}
 ren-sub ρ ρ′ t = let open Fusion (syntacticFusable RenamingSubstitutionFusable) in lemma t (λ _ _ → PEq.refl)
@@ -2253,9 +2270,11 @@ SubstitutionRenamingFusable =
          ; var‿0^BC   = PEq.refl }
 sub-ren : {Γ Δ Θ : Cx Ty} {σ : Ty} (ρ : (Γ -Env) Tm Δ) (ρ′ : Δ ⊆ Θ) (t : Tm σ Γ) → 
 \end{code}}
+%<*subren>
 \begin{code}
  th^Tm σ ρ′ (subst ρ t) ≡ subst (map^Env (th^Tm _ ρ′) ρ) t
 \end{code}
+%</subren>
 \AgdaHide{
 \begin{code}
 sub-ren ρ ρ′ t = let open Fusion (syntacticFusable SubstitutionRenamingFusable) in lemma t (λ _ _ → PEq.refl)
@@ -2306,9 +2325,11 @@ ifRenNorm b l r ρ^R () eql eqr | `ff | `tt
 ifRenNorm b l r ρ^R PEq.refl eql eqr | `ff | `ff = eqr
 sub-sub : {Γ Δ Θ : Cx Ty} {σ : Ty} (ρ : (Γ -Env) Tm Δ) (ρ′ : (Δ -Env) Tm Θ) (t : Tm σ Γ) → 
 \end{code}}
+%<*subsub>
 \begin{code}
  subst ρ′ (subst ρ t) ≡ subst (map^Env (subst ρ′) ρ) t
 \end{code}
+%</subsub>
 \AgdaHide{
 \begin{code}
 sub-sub ρ ρ′ t = let open Fusion (syntacticFusable SubstitutionFusable) in lemma t (λ _ _ → PEq.refl)
@@ -2464,9 +2485,11 @@ both PEq.refl = PEq.refl , PEq.refl
 
 sub-nbe : {Γ Δ Θ : Cx Ty} {σ : Ty} (ρ : (Γ -Env) Tm Δ) (ρ′ : (Δ -Env) Kr Θ) (t : Tm σ Γ) (ρ^R : `∀[ PER′ ] ρ′ ρ′) → ∀ ρ^R′ →
 \end{code}}
+%<*subnbe>
 \begin{code}
  PER σ (nbe ρ′ (subst ρ t)) (nbe (map^Env (nbe ρ′) ρ) t)
 \end{code}
+%</subnbe>
 \AgdaHide{
 \begin{code}
 sub-nbe ρ ρ′ t ρ^R ρ^R′ =

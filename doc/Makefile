@@ -9,12 +9,14 @@ all: finish
 
 prepare:
 	mkdir -p latex/
-	rm -f latex/$(SLIDES).*
+#	rm -f latex/$(SLIDES).*
 	cp *.tex *.cls *.bib *.sed *.config latex/
 
-paper: prepare
+paper-lagda:	
 	./lagda2tex motivation.lagda
 	./lagda2tex $(PAPER).lagda
+
+paper: prepare paper-lagda
 	cd latex && ${SED} -f rules.sed -f rules2.sed -i $(PAPER).tex && ${SED} -f rules-motivation.sed -f rules.sed -f rules2.sed -i motivation.tex && \
 	latexmk -bibtex -pdf -e '$$pdflatex=q/xelatex %O %S/' $(PAPER).tex && cd ..
 
@@ -22,7 +24,7 @@ auxiliary:
 	./lagda2tex $(AUXILIARY).lagda
 	sed -f rulesUsual.sed -f rules.sed -f rules2.sed -i latex/$(AUXILIARY).tex
 
-slides: prepare auxiliary
+slides: prepare auxiliary paper-lagda
 	cd latex && ${SED} -f rules.sed -f rules2.sed -i $(SLIDES).tex -i $(AUXILIARY).tex $(PAPER).tex && \
 	latexmk -bibtex -pdf -e '$$pdflatex=q/xelatex %O %S/' $(SLIDES).tex
 	ln -sf latex/${SLIDES}.pdf .

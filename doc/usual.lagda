@@ -10,136 +10,147 @@
 \begin{code}
 module usual where
 
-open import models hiding (Semantics ; module Semantics ; Synchronisable ; module Synchronisable ; Fusable ; Renaming ; Substitution ; Printing ; Normalise^βιξη)
+open import models hiding (Semantics ; module Semantics ; Simulation ; module Simulation ; Fusable ; Renaming ; Substitution ; Printing)
 open import Data.Unit
 open import Data.Bool
 open import Function
 
-ren⟦var⟧ : {Γ : Con} {σ : ty} (pr : σ ∈ Γ) → Γ ⊢ σ
-ren⟦var⟧ = `var
-ren𝓔 : (Γ : Con) (σ : ty) → Set
-ren𝓔 = flip _∈_
-sub𝓔 : (Γ : Con) (σ : ty) → Set
-sub𝓔 = _⊢_
+import Level as L
+`Model : Set₁
+`Model = Model {Ty} L.zero
 
-renextend : {Γ Δ : Con} {σ : ty} (ρ : Δ [ ren𝓔 ] Γ) → Δ ∙ σ [ ren𝓔 ] Γ ∙ σ
+`RModel : `Model → `Model → Set₁
+`RModel 𝓥 𝓒 = RModel 𝓥 𝓒 L.zero
+
+ren⟦var⟧ : ∀ {σ} → [ Var σ ⟶ Tm σ ]
+ren⟦var⟧ = `var
+
+renextend : {Γ Δ : Cx Ty} {σ : Ty} (ρ : (Γ -Env) Var Δ) → (Γ ∙ σ -Env) Var (Δ ∙ σ)
 renextend = pop!
 
 \end{code}
 %<*rename>
 \begin{code}
-ren : {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) (ρ : Δ [ ren𝓔 ] Γ) → Δ ⊢ σ
-ren (`var v)       ρ = ren⟦var⟧ (lookup ρ v)
-ren (t `$ u)       ρ = ren t ρ `$ ren u ρ
-ren (`λ t)         ρ = `λ (ren t (renextend ρ))
-ren `⟨⟩            ρ = `⟨⟩
-ren `tt            ρ = `tt
-ren `ff            ρ = `ff
-ren (`ifte b l r)  ρ = `ifte (ren b ρ) (ren l ρ) (ren r ρ)
+ren : {Γ Δ : Cx Ty} {σ : Ty} → (Γ -Env) Var Δ → Tm σ Γ → Tm σ Δ
+ren ρ (`var v)       = ren⟦var⟧ (lookup ρ v)
+ren ρ (t `$ u)       = ren ρ t `$ ren ρ u
+ren ρ (`λ t)         = `λ (ren (renextend ρ) t)
 \end{code}
 %</rename>
 \begin{code}
-subextend : {Γ Δ : Con} {σ : ty} (ρ : Δ [ _⊢_ ] Γ) → Δ ∙ σ [ _⊢_ ] Γ ∙ σ
-subextend ρ = wk[ wk^⊢ ] (step refl) ρ `∙ `var zero
+ren ρ `⟨⟩            = `⟨⟩
+ren ρ `tt            = `tt
+ren ρ `ff            = `ff
+ren ρ (`if b l r)  = `if (ren ρ b) (ren ρ l) (ren ρ r)
+
+subextend : {Γ Δ : Cx Ty} {σ : Ty} (ρ : (Γ -Env) Tm Δ) → (Γ ∙ σ -Env) Tm (Δ ∙ σ)
+subextend ρ = th[ th^Tm ] (step refl) ρ `∙ `var ze
 
 sub⟦var⟧ = id
 \end{code}
 %<*subst>
 \begin{code}
-sub : {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) (ρ : Δ [ sub𝓔 ] Γ) → Δ ⊢ σ
-sub (`var v)       ρ = sub⟦var⟧ (lookup ρ v)
-sub (t `$ u)       ρ = sub t ρ `$ sub u ρ
-sub (`λ t)         ρ = `λ (sub t (subextend ρ))
-sub `⟨⟩            ρ = `⟨⟩
-sub `tt            ρ = `tt
-sub `ff            ρ = `ff
-sub (`ifte b l r)  ρ = `ifte (sub b ρ) (sub l ρ) (sub r ρ)
+sub : {Γ Δ : Cx Ty} {σ : Ty} → (Γ -Env) Tm Δ → Tm σ Γ → Tm σ Δ
+sub ρ (`var v)        = sub⟦var⟧ (lookup ρ v)
+sub ρ (t `$ u)        = sub ρ t  `$ sub ρ u 
+sub ρ (`λ t)          = `λ (sub (subextend ρ) t)
 \end{code}
 %</subst>
-
+\begin{code}
+sub ρ `⟨⟩             = `⟨⟩
+sub ρ `tt             = `tt
+sub ρ `ff             = `ff
+sub ρ (`if b l r)   = `if (sub ρ b) (sub ρ l) (sub ρ r)
+\end{code}
 %<*synextend>
 \begin{code}
-synextend : {Γ Δ : Con} {σ : ty} {𝓔 : (Γ : Con) (σ : ty) → Set} (𝓢 : Syntactic 𝓔) (ρ : Δ [ 𝓔 ] Γ) → Δ ∙ σ [ 𝓔 ] Γ ∙ σ
-synextend {𝓔 = 𝓔} 𝓢 ρ = ρ′ `∙ var
-  where  var  = Syntactic.embed 𝓢 zero
-         ρ′   = pack $ Syntactic.wk 𝓢 (step refl) ∘ lookup ρ
+synextend : ∀ {Γ Δ : Cx Ty} {σ : Ty} {𝓥 : `Model} (𝓢 : Syntactic 𝓥) (ρ : (Γ -Env) 𝓥 Δ) → (Γ ∙ σ -Env) 𝓥 (Δ ∙ σ)
+synextend 𝓢 ρ = ρ′ `∙ var
+  where  var  = Syntactic.var‿0 𝓢
+         ρ′   = pack $ Syntactic.th 𝓢 _ (step refl) ∘ lookup ρ
 \end{code}
 %</synextend>
 
 
 %<*syn>
 \begin{code}
-syn : {Γ Δ : Con} {σ : ty} {𝓔 : (Γ : Con) (σ : ty) → Set} (𝓢 : Syntactic 𝓔) (t : Γ ⊢ σ) (ρ : Δ [ 𝓔 ] Γ) → Δ ⊢ σ
-syn 𝓢 (`var v)       ρ = Syntactic.⟦var⟧ 𝓢 (lookup ρ v)
-syn 𝓢 (t `$ u)       ρ = syn 𝓢 t ρ `$ syn 𝓢 u ρ
-syn 𝓢 (`λ t)         ρ = `λ (syn 𝓢 t (synextend 𝓢 ρ))
-syn 𝓢 `⟨⟩            ρ = `⟨⟩
-syn 𝓢 `tt            ρ = `tt
-syn 𝓢 `ff            ρ = `ff
-syn 𝓢 (`ifte b l r)  ρ = `ifte (syn 𝓢 b ρ) (syn 𝓢 l ρ) (syn 𝓢 r ρ)
+syn : {Γ Δ : Cx Ty} {σ : Ty} {𝓥 : `Model} (𝓢 : Syntactic 𝓥) → (Γ -Env) 𝓥 Δ → Tm σ Γ → Tm σ Δ
+syn 𝓢 ρ (`var v)  = Syntactic.⟦var⟧ 𝓢 (lookup ρ v)
+syn 𝓢 ρ (t `$ u)  = syn 𝓢 ρ t `$ syn 𝓢 ρ u
+syn 𝓢 ρ (`λ t)    = `λ (syn 𝓢 (synextend 𝓢 ρ) t)
 \end{code}
 %</syn>
-
 \begin{code}
+syn 𝓢 ρ `⟨⟩       = `⟨⟩
+syn 𝓢 ρ `tt       = `tt
+syn 𝓢 ρ `ff       = `ff
+syn 𝓢 ρ (`if b l r)  = `if (syn 𝓢 ρ b) (syn 𝓢 ρ l) (syn 𝓢 ρ r)
+
 sem⟦var⟧ = id
 
-semλ : {Γ Δ Θ : Con} {σ τ : ty} (⟦t⟧ : Θ [ _⊨^βιξη_ ] Γ ∙ σ → Θ ⊨^βιξη τ)
-       (ρ : Δ ⊆ Θ → Θ ⊨^βιξη σ → Θ [ _⊨^βιξη_ ] Γ ∙ σ) (inc : Δ ⊆ Θ) (u : Θ ⊨^βιξη σ) → Θ ⊨^βιξη τ
-semλ ⟦t⟧ ρ inc u = ⟦t⟧ (ρ inc u)
+semλ : {Γ Δ Θ : Cx Ty} {σ τ : Ty} (b : Tm τ (Γ ∙ σ)) (⟦t⟧ : (Γ ∙ σ -Env) βιξη.Kr Θ → βιξη.Kr τ Θ)
+       (ρ : Δ ⊆ Θ → βιξη.Kr σ Θ → (Γ ∙ σ -Env) βιξη.Kr Θ) (inc : Δ ⊆ Θ) (u : βιξη.Kr σ Θ ) → βιξη.Kr τ Θ
+semλ _ ⟦t⟧ ρ inc u = ⟦t⟧ (ρ inc u)
 
 ⟨⟩ = tt
 
-semextend : {Γ Δ Θ : Con} {σ : ty} (ρ : Δ [ _⊨^βιξη_ ] Γ) → Δ ⊆ Θ → Θ ⊨^βιξη σ → Θ [ _⊨^βιξη_ ] Γ ∙ σ
-semextend ρ inc u = pack (wk^βιξη _ inc ∘ lookup ρ) `∙ u
+semextend : {Γ Δ Θ : Cx Ty} {σ : Ty} (ρ : (Γ -Env) βιξη.Kr Δ) → Δ ⊆ Θ → βιξη.Kr σ Θ → (Γ ∙ σ -Env) βιξη.Kr Θ
+semextend ρ inc u = pack (λ {σ} → βιξη.th^Kr σ inc ∘ lookup ρ) `∙ u
+
+
+sem$ : ∀ {Γ Δ σ τ} → Tm (σ `→ τ) Γ → Tm σ Γ → βιξη.Kr (σ `→ τ) Δ → βιξη.Kr σ Δ → βιξη.Kr τ Δ
+sem$ _ _ F T = F refl T
+
 \end{code}
 
 %<*sem>
 \begin{code}
-sem : {Γ Δ : Con} {σ : ty} (t : Γ ⊢ σ) (ρ : Δ [ _⊨^βιξη_ ] Γ) → Δ ⊨^βιξη σ
-sem (`var v)       ρ = sem⟦var⟧ (lookup ρ v)
-sem (t `$ u)       ρ = sem t ρ $^βιξη sem u ρ
-sem (`λ t)         ρ = semλ (sem t) (semextend ρ)
-sem `⟨⟩            ρ = ⟨⟩
-sem `tt            ρ = `tt
-sem `ff            ρ = `ff
-sem (`ifte b l r)  ρ = ifte^βιξη (sem b ρ) (sem l ρ) (sem r ρ)
+sem : {Γ Δ : Cx Ty} {σ : Ty} → (Γ -Env) βιξη.Kr Δ → Tm σ Γ → βιξη.Kr σ Δ
+sem ρ (`var v)  = sem⟦var⟧ (lookup ρ v)
+sem ρ (t `$ u)  = sem$ t u (sem ρ t) (sem ρ u)
+sem ρ (`λ t)    = semλ t (λ ρ → sem ρ t) (semextend ρ)
 \end{code}
 %</sem>
-
+\begin{code}
+sem ρ `⟨⟩             = ⟨⟩
+sem ρ `tt             = NormalForms.`tt
+sem ρ `ff             = NormalForms.`ff
+sem {σ = σ} ρ (`if b l r)   = βιξη.if {σ} (sem ρ b ) (sem ρ l ) (sem ρ r )
+\end{code}
 %<*semantics>
 \begin{code}
-record Semantics (𝓔 𝓜 : Con → ty → Set) : Set where
+record Semantics {ℓ} (𝓔 𝓜 : `Model) : Set ℓ where
   field 
 \end{code}\vspace{ -2em}
 \uncover<2->{
 \begin{code}
-    wk      :  {Γ Δ : Con} {σ : ty} → Γ ⊆ Δ → 𝓔 Γ σ → 𝓔 Δ σ
-    embed   :  {Γ : Con} → ∀ σ → σ ∈ Γ → 𝓔 Γ σ
-    ⟦var⟧   :  {Γ : Con} {σ : ty} → 𝓔 Γ σ → 𝓜 Γ σ
+    wk      :  ∀ σ → Thinnable (𝓔 σ)
+    embed   :  ∀ σ   → [ Var σ ⟶ 𝓔 σ ]
+    ⟦var⟧   :  ∀ {σ} → [ 𝓔 σ ⟶ 𝓜 σ ]
 \end{code}}\vspace{ -2em}
 \uncover<3->{
 \begin{code}
-    ⟦λ⟧     :  {Γ : Con} {σ τ : ty} → (t : ∀ Δ → Γ ⊆ Δ → 𝓔 Δ σ → 𝓜 Δ τ) → 𝓜 Γ (σ `→ τ)
+    ⟦λ⟧     :  {σ τ : Ty} → [ □ (𝓔 σ ⟶ 𝓜 τ) ⟶ 𝓜 (σ `→ τ) ]
 \end{code}}\vspace{ -2em}
 \uncover<4->{
 \begin{code}
-    _⟦$⟧_   :  {Γ : Con} {σ τ : ty} → 𝓜 Γ (σ `→ τ) → 𝓜 Γ σ → 𝓜 Γ τ
+    _⟦$⟧_   :  {σ τ : Ty} → [ 𝓜 (σ `→ τ) ⟶ 𝓜 σ ⟶ 𝓜 τ ]
 \end{code}}\vspace{ -2em}
 \uncover<5->{
 \begin{code}
-    ⟦⟨⟩⟧    :  {Γ : Con} → 𝓜 Γ `Unit
-    ⟦tt⟧    :  {Γ : Con} → 𝓜 Γ `Bool
-    ⟦ff⟧    :  {Γ : Con} → 𝓜 Γ `Bool
-    ⟦ifte⟧  :  {Γ : Con} {σ : ty} (b : 𝓜 Γ `Bool) (l r : 𝓜 Γ σ) → 𝓜 Γ σ
+    ⟦⟨⟩⟧    :  [ 𝓜 `1 ]
+    ⟦tt⟧    :  [ 𝓜 `2 ]
+    ⟦ff⟧    :  [ 𝓜 `2 ]
+    ⟦ifte⟧  :  {σ : Ty} → [ 𝓜 `2 ⟶ 𝓜 σ ⟶ 𝓜 σ ⟶ 𝓜 σ ]
 \end{code}}
 %</semantics>
 
 %<*semexamples>
 \begin{code}
-Renaming        : models.Semantics (flip _∈_) _⊢_
-Substitution    : models.Semantics _⊢_ _⊢_
+Renaming        : models.Semantics Var Tm
+Substitution    : models.Semantics Tm Tm
 Printing        : models.Semantics Name Printer
-Normalise^βιξη  : models.Semantics _⊨^βιξη_ _⊨^βιξη_
+Normalise^βιξη  : models.Semantics βιξη.Kr βιξη.Kr
 \end{code}
 %</semexamples>
 
@@ -147,35 +158,40 @@ Normalise^βιξη  : models.Semantics _⊨^βιξη_ _⊨^βιξη_
 Renaming = syntactic syntacticRenaming
 Substitution = syntactic syntacticSubstitution
 Printing = models.Printing
-Normalise^βιξη = models.Normalise^βιξη
+Normalise^βιξη = models.βιξη.Normalise
 \end{code}
 
 %<*synchronisable>
 \begin{code}
-record Synchronisable {𝓔^A 𝓔^B 𝓜^A 𝓜^B : (Γ : Con) (σ : ty) → Set}
+record Synchronisable  {𝓔^A 𝓔^B 𝓜^A 𝓜^B : `Model}
   (𝓢^A : models.Semantics 𝓔^A 𝓜^A) (𝓢^B : models.Semantics 𝓔^B 𝓜^B)
-  (𝓔^R  : {Γ : Con} {σ : ty} → 𝓔^A Γ σ → 𝓔^B Γ σ → Set)
-  (𝓜^R  : {Γ : Con} {σ : ty} → 𝓜^A Γ σ → 𝓜^B Γ σ → Set) : Set where
+  (𝓔^R  : `RModel 𝓔^A 𝓔^B)
+  (𝓜^R  : `RModel 𝓜^A 𝓜^B) : Set where
 \end{code}
 \AgdaHide{
 \begin{code}
   module 𝓢^A = models.Semantics 𝓢^A
   module 𝓢^B = models.Semantics 𝓢^B
+
+  𝓡 : {Γ Δ : Cx Ty} {σ : Ty} → Tm σ Γ → (Γ -Env) 𝓔^A Δ → (Γ -Env) 𝓔^B Δ → Set
+  𝓡 t ρ^A ρ^B = rmodel 𝓜^R (Eval.sem 𝓢^A ρ^A t) (Eval.sem 𝓢^B ρ^B t)
+
   field
 \end{code}}\vspace{ -2em}
 \uncover<2->{
 \begin{code}
-    𝓔^R‿wk  :  {Γ Δ Θ : Con} (inc : Δ ⊆ Θ) {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Δ [ 𝓔^B ] Γ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
-               `∀[ 𝓔^R ] (wk[ 𝓢^A.wk ] inc ρ^A) (wk[ 𝓢^B.wk ] inc ρ^B)
+    𝓔^R‿wk  :  {Γ Δ Θ : Cx Ty} (inc : Δ ⊆ Θ) {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B : (Γ -Env) 𝓔^B Δ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
+               `∀[ 𝓔^R ] (th[ 𝓢^A.th ] inc ρ^A) (th[ 𝓢^B.th ] inc ρ^B)
 \end{code}}\vspace{ -2em}
 \uncover<3->{
 \begin{code}
-    R⟦var⟧    :  {Γ Δ : Con} {σ : ty} (v : σ ∈ Γ) {ρ^A : Δ [ 𝓔^A ] Γ} {ρ^B : Δ [ 𝓔^B ] Γ} (ρ^R : `∀[ 𝓔^R ] ρ^A ρ^B) →
-                 𝓜^R (𝓢^A.⟦var⟧ (lookup ρ^A v)) (𝓢^B.⟦var⟧ (lookup ρ^B v))
+    R⟦var⟧    :  ∀ {Γ Δ σ} (v : Var σ Γ) {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B} → `∀[ 𝓔^R ] ρ^A ρ^B → 𝓡 (`var v) ρ^A ρ^B
 \end{code}}\vspace{ -2em}
 \uncover<4->{
 \begin{code}
-    R⟦λ⟧ :  {Γ : Con} {σ τ : ty} {f^A : {Δ : Con} → Γ ⊆ Δ → 𝓔^A Δ σ → 𝓜^A Δ τ} → {f^B : {Δ : Con} → Γ ⊆ Δ → 𝓔^B Δ σ → 𝓜^B Δ τ} → (f^R : {Δ : Con} (pr : Γ ⊆ Δ) {u^A : 𝓔^A Δ σ} {u^B : 𝓔^B Δ σ} (u^R : 𝓔^R u^A u^B) → 𝓜^R (f^A pr u^A) (f^B pr u^B))
-            → 𝓜^R (𝓢^A.⟦λ⟧ f^A) (𝓢^B.⟦λ⟧ f^B)
+    R⟦λ⟧ :  ∀ {Γ Δ Θ : Cx Ty} {σ τ} (b : Tm τ (Γ ∙ σ)) {ρ^A : (Γ -Env) 𝓔^A Δ} {ρ^B} →
+     (f^R : ∀ {Θ} (pr : Δ ⊆ Θ) {u^A : 𝓔^A σ Θ} {u^B : 𝓔^B σ Θ} (u^R : rmodel 𝓔^R u^A u^B) →
+            𝓡 b (th[ 𝓢^A.th ] pr ρ^A `∙ u^A) (th[ 𝓢^B.th ] pr ρ^B `∙ u^B)) →
+           `∀[ 𝓔^R ] ρ^A ρ^B →  𝓡 (`λ b) ρ^A ρ^B
 \end{code}}
 %</synchronisable>

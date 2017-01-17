@@ -202,8 +202,7 @@ record Simulation
 \end{code}}\vspace{ -2em}
 \uncover<2->{
 \begin{code}
-    𝓥^R‿th  :  {Γ Δ Θ : Cx Ty} (inc : Δ ⊆ Θ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} → `∀[ 𝓥^R ] ρ^A ρ^B →
-               `∀[ 𝓥^R ] (th[ 𝓢^A.th ] inc ρ^A) (th[ 𝓢^B.th ] inc ρ^B)
+    𝓥^R‿th  :  {Γ Δ Θ : Cx Ty} (inc : Δ ⊆ Θ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} → `∀[ 𝓥^R ] ρ^A ρ^B → `∀[ 𝓥^R ] (th[ 𝓢^A.th ] inc ρ^A) (th[ 𝓢^B.th ] inc ρ^B)
 \end{code}}\vspace{ -2em}
 \uncover<3->{
 \begin{code}

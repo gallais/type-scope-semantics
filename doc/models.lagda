@@ -367,10 +367,12 @@ lookup (map^Env f ρ) v = f (lookup ρ v)
 \end{code}}
 Just as an environment interprets variables in a model, a computation
 gives a meaning to terms into a model.\vspace*{ -1em}
+%<*comp>
 \begin{code}
 _-Comp : {ℓ^A : Level} → Cx Ty → (𝓒 : Model ℓ^A) → Cx Ty → Set ℓ^A
 (Γ -Comp) 𝓒 Δ = {σ : Ty} → Tm σ Γ → 𝓒 σ Δ
 \end{code}
+%</comp>
 An appropriate notion of semantics for the calculus is one that
 will map environments to computations. In other words, a set of
 constraints on $𝓥$ and $𝓒$ guaranteeing the existence of a function
@@ -432,8 +434,12 @@ simple: being a pointwise lifting of a relation \AB{𝓥} between
 contexts and types, they enjoy thinning if \AB{𝓥} does.
 \begin{code}
 Thinnable : {ty : Set} {ℓ^A : Level} → (Cx ty → Set ℓ^A) → Set ℓ^A
+\end{code}
+%<*thinnable>
+\begin{code}
 Thinnable {ty} S = {Γ Δ : Cx ty} → Γ ⊆ Δ → (S Γ → S Δ)
-\end{code}\vspace*{ -1.5em}
+\end{code}
+%</thinnable>\vspace*{ -1.5em}
 \begin{code}
 th^Var : {ty : Set} (σ : ty) → Thinnable (Var σ)
 th^Var σ inc v = lookup inc v
@@ -470,10 +476,12 @@ pop! inc = step inc `∙ ze
 \end{code}
 The modal operator \AF{□} states that a given predicate holds for
 all thinnings of a context. It is a closure operator for \AF{Thinnable}.
+%<*box>
 \begin{code}
 □ : {ℓ^A : Level} {ty : Set} → (Cx ty → Set ℓ^A) → (Cx ty → Set ℓ^A)
-(□ S) Γ = {Δ : Cx _} → Γ ⊆ Δ → S Δ
-\end{code}\vspace*{ -1.75em}
+(□ {ℓ} {ty} S) Γ = {Δ : Cx ty} → Γ ⊆ Δ → S Δ
+\end{code}
+%</box>\vspace*{ -1.75em}
 \begin{code}
 th^□ : {ℓ^A : Level} {ty : Set} {S : Cx ty → Set ℓ^A} → Thinnable (□ S)
 th^□ inc s = s ∘ select inc
@@ -569,13 +577,27 @@ for its subterms.
 module Eval {ℓ^E ℓ^M : Level} {𝓥 : Model ℓ^E} {𝓒 : Model ℓ^M} (𝓢 : Semantics 𝓥 𝓒) where
  open Semantics 𝓢
 \end{code}\vspace*{ -2.5em}%ugly but it works!
+\AgdaHide{
+%<*semextend>
+\begin{code}
+ semextend : {Γ Δ Θ : Cx Ty} {σ : Ty} → (Γ -Env) 𝓥 Δ → Δ ⊆ Θ → 𝓥 σ Θ → (Γ ∙ σ -Env) 𝓥 Θ
+ semextend ρ σ v = th[ th ] σ ρ `∙ v
+\end{code}
+%</semextend>
+}
+\AgdaHide{
+%<*semtype>
+\begin{code}
+  -- ∀ Γ Δ. (Γ -Env) V Δ → ∀ σ. Tm σ Γ → C σ Δ
+\end{code}
+%</semtype>
+}
 %<*evaluation>
 \begin{code}
  sem : {Γ : Cx Ty} → [ (Γ -Env) 𝓥 ⟶ (Γ -Comp) 𝓒 ]
  sem ρ (`var v)     = ⟦var⟧ (lookup ρ v)
  sem ρ (t `$ u)     = sem ρ t ⟦$⟧ sem ρ u
- sem ρ (`λ b)       = ⟦λ⟧  (λ σ v →
-                           sem (th[ th ] σ ρ `∙ v) b)
+ sem ρ (`λ b)       = ⟦λ⟧  (λ σ v → sem (semextend ρ σ v) b)
 \end{code}
 %</evaluation>
 \begin{code}
@@ -1674,10 +1696,12 @@ To lighten the presentation we introduce \AF{𝓡}, which states that
 the evaluation of a term in distinct contexts yields related computations.
 And we focus on the most interesting combinators, giving only one
 characteristic example of the remaining ones.
+%<*relmodel>
 \begin{code}
  𝓡 : {Γ Δ : Cx Ty} {σ : Ty} → Tm σ Γ → (Γ -Env) 𝓥^A Δ → (Γ -Env) 𝓥^B Δ → Set ℓ^RM
  𝓡 t ρ^A ρ^B = rmodel 𝓒^R (sem^A ρ^A t) (sem^B ρ^B t)
 \end{code}
+%</relmodel>
 \AgdaHide{
 \begin{code}
  field
@@ -1707,7 +1731,7 @@ are related, we conclude that the evaluation of the whole term should
 yield related computations. We show here the relational counterpart of
 the application constructor and omit the remaining ones:
 \begin{code}
-  R⟦$⟧  :  {Γ Δ : Cx Ty} {σ τ : Ty} {f : Tm (σ `→ τ) Γ} {t : _} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : _} → 𝓡 f ρ^A ρ^B → 𝓡 t ρ^A ρ^B →
+  R⟦$⟧  :  {Γ Δ : Cx Ty} {σ τ : Ty} {f : Tm (σ `→ τ) Γ} {t : _} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} → 𝓡 f ρ^A ρ^B → 𝓡 t ρ^A ρ^B →
            `∀[ 𝓥^R ] ρ^A ρ^B → 𝓡 (f `$ t) ρ^A ρ^B
 \end{code}
 \AgdaHide{
@@ -1757,7 +1781,7 @@ module Simulate {ℓ^EA ℓ^MA ℓ^EB ℓ^MB : Level} {𝓥^A : Model ℓ^EA} {�
 \end{code}\vspace*{ -2.5em}
 %<*relational>
 \begin{code}
-  sim :  {Γ Δ : Cx Ty} {σ : Ty} (t : Tm σ Γ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} (ρ^R : `∀[ 𝓥^R ] ρ^A ρ^B) →
+  sim :  {Γ Δ : Cx Ty} {σ : Ty} {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} → (t : Tm σ Γ) → `∀[ 𝓥^R ] ρ^A ρ^B →
          rmodel 𝓒^R (sem^A ρ^A t) (sem^B ρ^B t)
   sim (`var v)     ρ^R = R⟦var⟧ v ρ^R
   sim (f `$ t)     ρ^R = R⟦$⟧ {f = f} {t} (sim f ρ^R) (sim t ρ^R) ρ^R

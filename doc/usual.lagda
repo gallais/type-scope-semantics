@@ -19,6 +19,18 @@ import Level as L
 `Model : Set₁
 `Model = Model {Ty} L.zero
 
+module PrivateKr where
+
+ Kr : `Model
+ Kr `1        = const ⊤
+ Kr `2        = const ⊤
+\end{code}
+%<*kripkemodel>
+\begin{code}
+ Kr (σ `→ τ)  = □ (Kr σ ⟶ Kr τ)
+\end{code}
+%</kripkemodel>
+\begin{code}
 `RModel : `Model → `Model → Set₁
 `RModel 𝓥 𝓒 = RModel 𝓥 𝓒 L.zero
 
@@ -44,7 +56,7 @@ ren ρ `ff            = `ff
 ren ρ (`if b l r)  = `if (ren ρ b) (ren ρ l) (ren ρ r)
 
 subextend : {Γ Δ : Cx Ty} {σ : Ty} (ρ : (Γ -Env) Tm Δ) → (Γ ∙ σ -Env) Tm (Δ ∙ σ)
-subextend ρ = th[ th^Tm ] (step refl) ρ `∙ `var ze
+subextend ρ = th[ th^Tm ] (pack su) ρ `∙ `var ze
 
 sub⟦var⟧ = id
 \end{code}
@@ -68,7 +80,7 @@ synextend :  ∀ {Γ Δ : Cx Ty} {σ : Ty} {𝓥 : `Model} (𝓢 : Syntactic �
              (Γ -Env) 𝓥 Δ → (Γ ∙ σ -Env) 𝓥 (Δ ∙ σ)
 synextend 𝓢 ρ = ρ′ `∙ var
   where  var  = Syntactic.var‿0 𝓢
-         ρ′   = pack $ Syntactic.th 𝓢 _ (step refl) ∘ lookup ρ
+         ρ′   = pack $ Syntactic.th 𝓢 _ (pack su) ∘ lookup ρ
 \end{code}
 %</synextend>
 
@@ -89,36 +101,37 @@ syn 𝓢 ρ (`if b l r)  = `if (syn 𝓢 ρ b) (syn 𝓢 ρ l) (syn 𝓢 ρ r)
 
 open βιξη hiding (Normalise)
 
-sem⟦var⟧ = id
+module sem where
 
-semλ : {Γ Δ Θ : Cx Ty} {σ τ : Ty} (b : Tm τ (Γ ∙ σ)) (⟦t⟧ : (Γ ∙ σ -Env) Kr Θ → Kr τ Θ)
-       (ρ : Δ ⊆ Θ → Kr σ Θ → (Γ ∙ σ -Env) Kr Θ) (inc : Δ ⊆ Θ) (u : Kr σ Θ ) → Kr τ Θ
-semλ _ ⟦t⟧ ρ inc u = ⟦t⟧ (ρ inc u)
+ sem⟦var⟧ = id
 
-⟨⟩ = tt
+ semλ : {Γ Δ Θ : Cx Ty} {σ τ : Ty} (b : Tm τ (Γ ∙ σ)) (⟦t⟧ : (Γ ∙ σ -Env) Kr Θ → Kr τ Θ)
+        (ρ : Δ ⊆ Θ → Kr σ Θ → (Γ ∙ σ -Env) Kr Θ) (inc : Δ ⊆ Θ) (u : Kr σ Θ ) → Kr τ Θ
+ semλ _ ⟦t⟧ ρ inc u = ⟦t⟧ (ρ inc u)
 
-semextend : {Γ Δ Θ : Cx Ty} {σ : Ty} (ρ : (Γ -Env) Kr Δ) → Δ ⊆ Θ → Kr σ Θ → (Γ ∙ σ -Env) Kr Θ
-semextend ρ inc u = pack (λ {σ} → th^Kr σ inc ∘ lookup ρ) `∙ u
+ ⟨⟩ = tt
+
+ semextend : {Γ Δ Θ : Cx Ty} {σ : Ty} (ρ : (Γ -Env) Kr Δ) → Δ ⊆ Θ → Kr σ Θ → (Γ ∙ σ -Env) Kr Θ
+ semextend ρ inc u = pack (λ {σ} → th^Kr σ inc ∘ lookup ρ) `∙ u
 
 
-sem$ : ∀ {Γ Δ σ τ} → Tm (σ `→ τ) Γ → Tm σ Γ → Kr (σ `→ τ) Δ → Kr σ Δ → Kr τ Δ
-sem$ _ _ F T = F refl T
-
+ sem$ : ∀ {Γ Δ σ τ} → Tm (σ `→ τ) Γ → Tm σ Γ → Kr (σ `→ τ) Δ → Kr σ Δ → Kr τ Δ
+ sem$ _ _ F T = F refl T
 \end{code}
 
 %<*sem>
 \begin{code}
-sem : {Γ Δ : Cx Ty} {σ : Ty} → (Γ -Env) Kr Δ → Tm σ Γ → Kr σ Δ
-sem ρ (`var v)  = sem⟦var⟧ (lookup ρ v)
-sem ρ (t `$ u)  = sem$ t u (sem ρ t) (sem ρ u)
-sem ρ (`λ t)    = semλ t (λ ρ → sem ρ t) (semextend ρ)
+ sem : {Γ Δ : Cx Ty} {σ : Ty} → (Γ -Env) Kr Δ → Tm σ Γ → Kr σ Δ
+ sem ρ (`var v)  = sem⟦var⟧ (lookup ρ v)
+ sem ρ (t `$ u)  = sem$ t u (sem ρ t) (sem ρ u)
+ sem ρ (`λ t)    = semλ t (λ ρ → sem ρ t) (semextend ρ)
 \end{code}
 %</sem>
 \begin{code}
-sem ρ `⟨⟩             = ⟨⟩
-sem ρ `tt             = NormalForms.`tt
-sem ρ `ff             = NormalForms.`ff
-sem {σ = σ} ρ (`if b l r)   = if {σ} (sem ρ b ) (sem ρ l ) (sem ρ r )
+ sem ρ `⟨⟩             = ⟨⟩
+ sem ρ `tt             = NormalForms.`tt
+ sem ρ `ff             = NormalForms.`ff
+ sem {σ = σ} ρ (`if b l r)   = if {σ} (sem ρ b ) (sem ρ l ) (sem ρ r )
 \end{code}
 %<*semantics>
 \begin{code}
@@ -127,7 +140,7 @@ record Semantics {ℓ} (𝓥 𝓒 : `Model) : Set ℓ where
 \end{code}\vspace{ -2em}
 \uncover<2->{
 \begin{code}
-    wk      :  ∀ σ   → Thinnable (𝓥 σ)
+    th      :  ∀ σ   → Thinnable (𝓥 σ)
     ⟦var⟧   :  ∀ σ   → [ 𝓥 σ ⟶ 𝓒 σ ]
 \end{code}}\vspace{ -2em}
 \uncover<3->{
@@ -147,10 +160,19 @@ record Semantics {ℓ} (𝓥 𝓒 : `Model) : Set ℓ where
 \begin{code}
 Renaming        : models.Semantics Var Tm
 Substitution    : models.Semantics Tm Tm
-Printing        : models.Semantics Name Printer
+\end{code}\vspace{ -2em}
+\uncover<2->{
+\begin{code}
 Normalise       : models.Semantics Kr Kr
+\end{code}}\vspace{ -2em}
+\uncover<3->{
+\begin{code}
 CPS^N           : models.Semantics Var^N Ml^N
-\end{code}
+\end{code}}\vspace{ -2em}
+\uncover<4>{
+\begin{code}
+Printing        : models.Semantics Name Printer
+\end{code}}
 %</semexamples>
 
 \begin{code}
@@ -171,6 +193,7 @@ record Simulation
 \begin{code}
   module 𝓢^A = models.Semantics 𝓢^A
   module 𝓢^B = models.Semantics 𝓢^B
+  open Eval
 
   𝓡 : {Γ Δ : Cx Ty} {σ : Ty} → Tm σ Γ → (Γ -Env) 𝓥^A Δ → (Γ -Env) 𝓥^B Δ → Set
   𝓡 t ρ^A ρ^B = rmodel 𝓒^R (Eval.sem 𝓢^A ρ^A t) (Eval.sem 𝓢^B ρ^B t)
@@ -179,18 +202,18 @@ record Simulation
 \end{code}}\vspace{ -2em}
 \uncover<2->{
 \begin{code}
-    𝓥^R‿th  :  {Γ Δ Θ : Cx Ty} (inc : Δ ⊆ Θ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} (ρ^R : `∀[ 𝓥^R ] ρ^A ρ^B) →
+    𝓥^R‿th  :  {Γ Δ Θ : Cx Ty} (inc : Δ ⊆ Θ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : (Γ -Env) 𝓥^B Δ} → `∀[ 𝓥^R ] ρ^A ρ^B →
                `∀[ 𝓥^R ] (th[ 𝓢^A.th ] inc ρ^A) (th[ 𝓢^B.th ] inc ρ^B)
 \end{code}}\vspace{ -2em}
 \uncover<3->{
 \begin{code}
-    R⟦var⟧    :  ∀ {Γ Δ σ} (v : Var σ Γ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B} → `∀[ 𝓥^R ] ρ^A ρ^B → 𝓡 (`var v) ρ^A ρ^B
+    R⟦var⟧    :  {Γ Δ : Cx Ty} {σ : Ty} (v : Var σ Γ) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B : _} → `∀[ 𝓥^R ] ρ^A ρ^B → 𝓡 (`var v) ρ^A ρ^B
 \end{code}}\vspace{ -2em}
 \uncover<4->{
 \begin{code}
     R⟦λ⟧ :  ∀ {Γ Δ Θ : Cx Ty} {σ τ} (b : Tm τ (Γ ∙ σ)) {ρ^A : (Γ -Env) 𝓥^A Δ} {ρ^B} →
-            (b^R :  ∀ {Θ} (pr : Δ ⊆ Θ) {u^A : 𝓥^A σ Θ} {u^B : 𝓥^B σ Θ} → rmodel 𝓥^R u^A u^B →
-                    𝓡 b (th[ 𝓢^A.th ] pr ρ^A `∙ u^A) (th[ 𝓢^B.th ] pr ρ^B `∙ u^B)) →
+            (b^R :  {Θ : Cx Ty} {u^A : 𝓥^A σ Θ} {u^B : 𝓥^B σ Θ} → (pr : Δ ⊆ Θ) → rmodel 𝓥^R u^A u^B →
+                    𝓡 b (semextend 𝓢^A ρ^A pr u^A) (semextend 𝓢^B ρ^B pr u^B)) →
             `∀[ 𝓥^R ] ρ^A ρ^B →  𝓡 (`λ b) ρ^A ρ^B
 \end{code}}
 %</synchronisable>

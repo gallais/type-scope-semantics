@@ -59,6 +59,10 @@
     \ExecuteMetaData[models.tex]{term}\unskip
   \end{frame}
 
+  \begin{frame}{A Generic Notion of Environment}
+    \ExecuteMetaData[models.tex]{environment}\unskip
+  \end{frame}
+
 % onslide / only are not working with the RU theme for some reason.
   \begin{frame}\frametitle{Goguen \& McKinna: Conspicuously similar functions}
     \ExecuteMetaData[usual.tex]{rename}
@@ -68,6 +72,9 @@
   \end{frame}
 
   \begin{frame}\frametitle{Factoring Out the Common Parts}
+    % Comment on Kripke / NBE
+    \ExecuteMetaData[models.tex]{box}\unskip
+    \ExecuteMetaData[models.tex]{thinnable}\unskip
     \ExecuteMetaData[models.tex]{syntactic}\unskip
   \end{frame}
 
@@ -79,25 +86,31 @@
   \begin{frame}\frametitle{Is that it? Not quite.}
     \begin{itemize}
       \item Other interesting instance?
-      \item Properties of these traversals? (4 fusion lemmas)
+      \item Properties of these traversals? (2*n fusion lemmas)
       \item What if I don't program in Agda?
       \item Generic boilerplate for all syntaxes with binding?
     \end{itemize}
   \end{frame}
 
   \begin{frame}\frametitle{Normalisation by Evaluation's ``eval''}
+    \ExecuteMetaData[models.tex]{box}\vspace{-3em}
+    \ExecuteMetaData[usual.tex]{kripkemodel}
     \ExecuteMetaData[usual.tex]{sem}
   \end{frame}
   \begin{frame}\frametitle{Normalisation by Evaluation's ``eval''}
     \ExecuteMetaData[usual.tex]{subst}
   \end{frame}
 
+
   \begin{frame}\frametitle{An Abstract Notion of Semantics}
     \ExecuteMetaData[usual.tex]{semantics}
   \end{frame}
 
   \begin{frame}\frametitle{And a Fundamental Lemma}
+    \ExecuteMetaData[models.tex]{comp}
+    \ExecuteMetaData[models.tex]{semtype}\vspace{-1.5em}
     \ExecuteMetaData[models.tex]{evaluation}
+    \ExecuteMetaData[models.tex]{semextend}
   \end{frame}
 
   \begin{frame}\frametitle{Various Instances}
@@ -107,13 +120,14 @@
   \begin{frame}\frametitle{Is that it? Not quite.}
     \begin{itemize}
       \item \textcolor{gray}{Other interesting instance?}
-      \item Properties of these traversals? (4 fusion lemmas)
+      \item Properties of these traversals? (2*n fusion lemmas)
       \item What if I don't program in Agda?
       \item Generic boilerplate for all syntaxes with binding?
     \end{itemize}
   \end{frame}
 
   \begin{frame}{A Relational Interpretation}
+    \ExecuteMetaData[models.tex]{relmodel}\vspace{-3.5em}
     \ExecuteMetaData[usual.tex]{synchronisable}
   \end{frame}
 
@@ -137,7 +151,7 @@
   \begin{frame}{Is that it? Not quite.}
     \begin{itemize}
       \item \textcolor{gray}{Other interesting instance?}
-      \item \textcolor{gray}{Properties of these traversals? (4 fusion lemmas)}
+      \item \textcolor{gray}{Properties of these traversals? (2*n fusion lemmas)}
       \item What if I don't program in Agda?
       \item Generic boilerplate for all syntaxes with binding?
     \end{itemize}
@@ -151,7 +165,7 @@
   \begin{frame}{Is that it? Not quite.}
     \begin{itemize}
       \item \textcolor{gray}{Other interesting instance?}
-      \item \textcolor{gray}{Properties of these traversals? (4 fusion lemmas)}
+      \item \textcolor{gray}{Properties of these traversals? (2*n fusion lemmas)}
       \item \textcolor{gray}{What if I don't program in Agda?}
       \item Generic boilerplate for all syntaxes with binding?
     \end{itemize}

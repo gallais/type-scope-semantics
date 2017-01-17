@@ -64,7 +64,8 @@ sub ρ (`if b l r)   = `if (sub ρ b) (sub ρ l) (sub ρ r)
 \end{code}
 %<*synextend>
 \begin{code}
-synextend : ∀ {Γ Δ : Cx Ty} {σ : Ty} {𝓥 : `Model} (𝓢 : Syntactic 𝓥) (ρ : (Γ -Env) 𝓥 Δ) → (Γ ∙ σ -Env) 𝓥 (Δ ∙ σ)
+synextend :  ∀ {Γ Δ : Cx Ty} {σ : Ty} {𝓥 : `Model} (𝓢 : Syntactic 𝓥) →
+             (Γ -Env) 𝓥 Δ → (Γ ∙ σ -Env) 𝓥 (Δ ∙ σ)
 synextend 𝓢 ρ = ρ′ `∙ var
   where  var  = Syntactic.var‿0 𝓢
          ρ′   = pack $ Syntactic.th 𝓢 _ (step refl) ∘ lookup ρ
@@ -162,8 +163,9 @@ CPS^N         = models.CPS^N
 
 %<*synchronisable>
 \begin{code}
-record Simulation  {𝓥^A 𝓥^B 𝓒^A 𝓒^B : `Model} (𝓢^A : models.Semantics 𝓥^A 𝓒^A) (𝓢^B : models.Semantics 𝓥^B 𝓒^B)
-                   (𝓥^R  : `RModel 𝓥^A 𝓥^B) (𝓒^R   : `RModel 𝓒^A 𝓒^B) : Set where
+record Simulation
+  {𝓥^A 𝓥^B 𝓒^A 𝓒^B : `Model} (𝓢^A : models.Semantics 𝓥^A 𝓒^A) (𝓢^B : models.Semantics 𝓥^B 𝓒^B)
+  (𝓥^R  : `RModel 𝓥^A 𝓥^B) (𝓒^R   : `RModel 𝓒^A 𝓒^B) : Set where
 \end{code}
 \AgdaHide{
 \begin{code}

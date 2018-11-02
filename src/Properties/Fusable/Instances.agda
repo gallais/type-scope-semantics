@@ -11,6 +11,7 @@ open import Properties.Relation.βιξη
 open import Properties.Synchronisable.Instances
 open import Properties.Fusable.Specification
 open import Properties.Fusable.Syntactic.Instances public
+open import Data.Nat.Base using (ℕ; zero; suc)
 open import Data.Product
 open import Function as F
 open import Relation.Binary.PropositionalEquality as PEq hiding (trans)
@@ -98,7 +99,7 @@ fusableSubstitutionNormalise = record
   ; 𝓔^R‿wk = λ {Γ Δ Θ} inc {ρ^A ρ^B ρ^C} ρ^R →
              let (ρ^R₁ , ρ^R₂ , ρ^R₃) = ρ^R
              in (pack^R $ λ v → wk^≣ inc $ lookup^R ρ^R₁ v)
-             , (λ {Ω} inc′ → 
+             , (λ {Ω} inc′ →
                 let INC : Renaming Θ Ω
                     INC = Env.trans inc inc′
                     wkρ^B : Var Δ ⇒[ βιξη._⊨_ ] Ω
@@ -120,8 +121,8 @@ fusableSubstitutionNormalise = record
   ; R⟦ifte⟧ = λ b l r _ → ifteSubNorm b l r
   }
 
-open import Coinduction
-open import Data.Stream hiding (_≈_)
+open import Codata.Thunk
+open import Codata.Stream
 
 fusableRenamingPrinting :
   Fusable 𝓢^Renaming Printing Printing
@@ -135,7 +136,7 @@ fusableRenamingPrinting = record
               let (neq , nseq)   = ∷-inj eq
                   inc : Renaming Θ (Θ ∙ σ)
                   inc = extend
-                  (ihstr , ihns) = ,-inj (r inc (cong mkName neq) (cong ♭ nseq))
+                  (ihstr , ihns) = ,-inj (r inc (cong mkName neq) nseq)
               in cong₂ _,_ (cong₂ formatλ neq ihstr) ihns}
   ; R⟦$⟧    = λ _ _ _ ihf iht eq →
               let (ihstrf , eq₁) = ,-inj (ihf eq)
@@ -151,12 +152,18 @@ fusableRenamingPrinting = record
               in cong₂ _,_ (cong₂ (uncurry formatIf) (cong₂ _,_ ihstrb ihstrl) ihstrr) eq₃
   } where
 
-  
-  ∷-inj : ∀ {A a b as bs} → (Stream A F.∋ a ∷ as) ≡ b ∷ bs → a ≡ b × as ≡ bs
-  ∷-inj refl = PEq.refl , refl 
+
+  ∷-inj : ∀ {A a b as bs} → (Stream A _ F.∋ a ∷ as) ≡ b ∷ bs →
+          a ≡ b × as .force ≡ bs .force
+  ∷-inj refl = PEq.refl , refl
 
   ,-inj : {A B : Set} {a c : A} {b d : B} → (a , b) ≡ (c , d) → a ≡ c × b ≡ d
-  ,-inj refl = PEq.refl , refl 
+  ,-inj refl = PEq.refl , refl
+
+-- currently missing from the stdlib
+drop : ∀ {a} {A : Set a} → ℕ → Stream A _ → Stream A _
+drop zero    xs = xs
+drop (suc n) xs = drop n (tail xs)
 
 fuseRenamingPrinting :
   ∀ {Γ σ} (t : ε ⊢ σ) (inc : Renaming ε Γ) →
@@ -166,8 +173,8 @@ fuseRenamingPrinting {Γ} t inc =
   cong proj₁ (Fundamental.lemma fusableRenamingPrinting t (pack^R $ λ ()) $ proof Γ Γ)
 
   where
-  
-    tail-init : ∀ Γ Δ {ns} → tail (proj₂ (init Γ Δ ns)) ≡ proj₂ (init Γ Δ (tail ns)) 
+
+    tail-init : ∀ Γ Δ {ns} → tail (proj₂ (init Γ Δ ns)) ≡ proj₂ (init Γ Δ (tail ns))
     tail-init ε       Δ = refl
     tail-init (Γ ∙ _) Δ = cong tail $ tail-init Γ Δ
 

@@ -25,10 +25,10 @@ infixr 5 1+_
 data _∈_ {A : Set} (σ : A) : Context A → Set where
 
   zero  : {Γ : Context A} →
-  
+
           ---------------
             σ ∈ (Γ ∙ σ)
-            
+
   1+_   : {Γ : Context A} {τ : A} →
 
             σ ∈ Γ →
@@ -55,7 +55,7 @@ map-inv f = go _ refl where
   go : ∀ Γ {Δ τ} → f <$> Γ ≡ Δ → Δ ∋ τ → ∃ λ σ → τ ≡ f σ
   go ε       ()   zero
   go ε       ()   (1+ v)
-  go (Γ ∙ _) refl zero   = , refl
+  go (Γ ∙ _) refl zero   = -, refl
   go (Γ ∙ _) refl (1+ v) = go Γ refl v
 
 map⁻¹ : {A B : Set} {Γ : Context A} {σ : A} (f : A → B) →

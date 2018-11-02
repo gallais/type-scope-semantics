@@ -9,12 +9,17 @@ open import Data.Nat
 open import Data.Product hiding (map)
 open import Data.Char using (Char)
 open import Data.String hiding (show)
-open import Data.Nat.Show
-open import Data.List as List hiding (_++_ ; zipWith ; [_])
-open import Coinduction
-open import Data.Stream as Stream using (Stream ; head ; tail ; zipWith ; _∷_)
+open import Data.Nat.Show as NatShow
+open import Data.List as List using (List; _∷_; [])
+open import Data.List.NonEmpty as List⁺ using (List⁺; _∷_)
+
+open import Codata.Thunk
+open import Codata.Stream as Stream using (Stream ; head ; tail ; zipWith ; _∷_)
 open import Category.Monad.State
-open RawIMonadState (StateMonadState (Stream String)) hiding (zipWith ; pure)
+open RawIMonadState (StateMonadState (Stream String _)) hiding (zipWith ; pure)
+
+M : Set → Set
+M = State (Stream String _)
 
 record Name (Γ : Context) (σ : Type) : Set where
   constructor mkName
@@ -22,7 +27,7 @@ record Name (Γ : Context) (σ : Type) : Set where
 
 record Printer (Γ : Context) (σ : Type) : Set where
   constructor mkPrinter
-  field runPrinter : State (Stream String) String
+  field runPrinter : M String
 
 open Name public
 open Printer public
@@ -61,34 +66,29 @@ Printing = record
                formatIf <$> runPrinter mb ⊛ runPrinter ml ⊛ runPrinter mr }
 
 
-flatten : {A : Set} → Stream (A × List A) → Stream A
-flatten ((a , as) ∷ aass) = go a as (♭ aass) where
-  go : {A : Set} → A → List A → Stream (A × List A) → Stream A
-  go a []        aass = a ∷ ♯ flatten aass
-  go a (b ∷ as)  aass = a ∷ ♯ go b as aass
-names : Stream String
-names = flatten $ zipWith cons letters $ "" ∷ ♯ Stream.map show (allNatsFrom 0)
-  where
-    cons : (Char × List Char) → String → (String × List String)
-    cons (c , cs) suffix = appendSuffix c , List.map appendSuffix cs where
-      appendSuffix : Char → String
-      appendSuffix c  = fromList (c ∷ []) ++ suffix
+alphabetWithSuffix : String → List⁺ String
+alphabetWithSuffix suffix = List⁺.map (λ c → fromList (c ∷ []) ++ suffix)
+                          $′ 'a' ∷ toList "bcdefghijklmnopqrstuvwxyz"
 
-    letters = Stream.repeat $ 'a' , toList "bcdefghijklmnopqrstuvwxyz"
+allNats : Stream ℕ _
+allNats = Stream.unfold < id , suc > 0
 
-    allNatsFrom : ℕ → Stream ℕ
-    allNatsFrom k = k ∷ ♯ allNatsFrom (1 + k)
+names : Stream String _
+names = Stream.concat
+      $′ Stream.map alphabetWithSuffix
+      $′ "" ∷ λ where .force → Stream.map NatShow.show allNats
 
-name : {Γ : Context} {σ : Type} → State (Stream String) (Name Γ σ)
-name = get >>= λ names →
-       put (tail names) >>
-       return (mkName $ head names)
+name : {Γ : Context} {σ : Type} → M (Name Γ σ)
+name = do
+  names ← get
+  put (tail names)
+  return (mkName $ head names)
 
-init : (Γ Δ : Context) → State (Stream String) (Var Γ ⇒[ Name ] Δ)
+init : (Γ Δ : Context) → M (Var Γ ⇒[ Name ] Δ)
 init ε       Δ = return `ε
 init (Γ ∙ σ) Δ = (_`∙_ <$> init Γ Δ) ⊛ name
 
-init' : {Γ : Context} → State (Stream String) (Var Γ ⇒[ Name ] Γ)
+init' : {Γ : Context} → M (Var Γ ⇒[ Name ] Γ)
 init' = init _ _
 
 printer : Evaluation Name Printer

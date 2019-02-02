@@ -32,7 +32,7 @@ RenamingIsASubstitution :
   {Γ Δ : Context} {σ : Type} (t : Γ ⊢ σ) (ρ : Renaming Γ Δ) →
   rename ρ t ≡ substitute t (`var <$> ρ)
 RenamingIsASubstitution t ρ = corollary t (pack^R $ λ _ → refl)
-  where corollary = Fundamental.lemma SynchronisableRenamingSubstitution 
+  where corollary = Fundamental.lemma SynchronisableRenamingSubstitution
 
 ifteRelNorm :
   let open Semantics βιξη.Normalise in

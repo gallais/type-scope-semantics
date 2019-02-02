@@ -22,6 +22,7 @@ open import Semantics.Syntactic.Instances
 -- Conversion to CPS via Moggi's ML
 open import Semantics.CPS.CBV
 open import Semantics.CPS.CBN
+open import Syntax.MoggiML.CPS
 
 -- Monadic Model
 open import Semantics.Printing

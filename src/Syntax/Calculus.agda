@@ -15,7 +15,7 @@ infixl 5 _`$_
 data _⊢_ (Γ : Context) : (σ : Type) → Set where
 
   `var     : {σ : Type} →
-  
+
                 σ ∈ Γ →
               --------------
                 Γ ⊢ σ
@@ -41,7 +41,7 @@ data _⊢_ (Γ : Context) : (σ : Type) → Set where
                 Γ ⊢ `Bool
 
   `ifte    : {σ : Type} →
- 
+
                 Γ ⊢ `Bool → Γ ⊢ σ → Γ ⊢ σ →
               ------------------------------
                 Γ ⊢ σ

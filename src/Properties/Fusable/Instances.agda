@@ -160,11 +160,6 @@ fusableRenamingPrinting = record
   ,-inj : {A B : Set} {a c : A} {b d : B} → (a , b) ≡ (c , d) → a ≡ c × b ≡ d
   ,-inj refl = PEq.refl , refl
 
--- currently missing from the stdlib
-drop : ∀ {a} {A : Set a} → ℕ → Stream A _ → Stream A _
-drop zero    xs = xs
-drop (suc n) xs = drop n (tail xs)
-
 fuseRenamingPrinting :
   ∀ {Γ σ} (t : ε ⊢ σ) (inc : Renaming ε Γ) →
   print (rename inc t)

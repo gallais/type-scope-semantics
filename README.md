@@ -1,5 +1,5 @@
 # type-scope-semantics
-A self-contained repository for the paper Type and Scope Preserving Semantics
+A self-contained repository for the paper [Type and Scope Preserving Semantics](https://gallais.github.io/pdf/cpp2017.pdf)
 
 
 TypeChecking
